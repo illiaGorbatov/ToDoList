@@ -15,5 +15,5 @@ class TodoListHeader extends React.Component {
     }
 }
 
-export { TodoListHeader };
+export default TodoListHeader;
 

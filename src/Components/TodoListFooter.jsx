@@ -13,5 +13,5 @@ class TodoListFooter extends React.Component {
     }
 }
 
-export { TodoListFooter };
+export default TodoListFooter;
 
