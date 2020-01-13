@@ -1,7 +1,9 @@
 .App {
 
 }
-
+.filter-active {
+  background-color: blue;
+}
 .todoList {
   width: 500px;
   margin: 0 auto;

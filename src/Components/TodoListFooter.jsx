@@ -3,11 +3,15 @@ import '../App.css';
 
 class TodoListFooter extends React.Component {
     render() {
+        let classForAll = this.props.filterValue === 'All' ? 'filter-active' : '',
+            classForCompleted = this.props.filterValue === 'Completed' ? 'filter-active' : '',
+            classForActive = this.props.filterValue === 'Active' ? 'filter-active' : '';
+
         return (
             <div className="todoList-footer">
-                <button>All</button>
-                <button>Completed</button>
-                <button>Active</button>
+                <button className={classForAll}>All</button>
+                <button className={classForCompleted}>Completed</button>
+                <button className={classForActive}>Active</button>
             </div>
         );
     }
