@@ -1,5 +1,6 @@
 import React from 'react';
 import '../App.css';
+import TodoListFooterButton from "./TodoListFooterButton";
 
 class TodoListFooter extends React.Component {
     render() {
@@ -9,9 +10,12 @@ class TodoListFooter extends React.Component {
 
         return (
             <div className="todoList-footer">
-                <button className={classForAll}>All</button>
-                <button className={classForCompleted}>Completed</button>
-                <button className={classForActive}>Active</button>
+                <TodoListFooterButton className={classForAll} value={'All'}
+                                      changeFilter={this.props.changeFilter}/>
+                <TodoListFooterButton className={classForCompleted} value={'Completed'}
+                                      changeFilter={this.props.changeFilter}/>
+                <TodoListFooterButton className={classForActive} value={'Active'}
+                                      changeFilter={this.props.changeFilter}/>
             </div>
         );
     }
