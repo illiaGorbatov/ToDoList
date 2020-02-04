@@ -16,3 +16,9 @@
 .todoList-task {
 
 }
+.error {
+  border-color: red;
+}
+.todoList-task.done {
+  opacity: 0.5;
+}

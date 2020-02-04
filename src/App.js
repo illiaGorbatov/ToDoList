@@ -22,11 +22,11 @@ class App extends React.Component {
         })
     };
 
-    changeStatus = (checkedTask, isDone) => {
+    changeStatus = (checkedTask, check) => {
         let newTasks = this.state.tasks.map( task => {
-            if (task != checkedTask) return task;
+            if (task !== checkedTask) return task;
             else {
-                return {...task, isDone: isDone}
+                return {...task, isDone: check}
             }
         });
         this.setState({tasks: newTasks})

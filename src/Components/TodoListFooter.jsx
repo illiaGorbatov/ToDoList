@@ -3,6 +3,17 @@ import '../App.css';
 import TodoListFooterButton from "./TodoListFooterButton";
 
 class TodoListFooter extends React.Component {
+
+    state = {
+        isHidden: false
+    };
+
+    onAllFilterClick = () => {this.props.changeFilter('All')};
+    onCompletedFilterClick = () => {this.props.changeFilter('Completed')};
+    onActiveFilterClick = () => {this.props.changeFilter('Active')};
+    onShowFiltersClick = () => {this.setState({isHidden: false})};
+    onHideFiltersClick = () => {this.setState({isHidden: true})};
+
     render() {
         let classForAll = this.props.filterValue === 'All' ? 'filter-active' : '',
             classForCompleted = this.props.filterValue === 'Completed' ? 'filter-active' : '',
@@ -10,12 +21,16 @@ class TodoListFooter extends React.Component {
 
         return (
             <div className="todoList-footer">
-                <TodoListFooterButton className={classForAll} value={'All'}
-                                      changeFilter={this.props.changeFilter}/>
-                <TodoListFooterButton className={classForCompleted} value={'Completed'}
-                                      changeFilter={this.props.changeFilter}/>
-                <TodoListFooterButton className={classForActive} value={'Active'}
-                                      changeFilter={this.props.changeFilter}/>
+                {!this.state.isHidden && <div>
+                    <TodoListFooterButton className={classForAll} value={'All'}
+                                          changeFilter={this.onAllFilterClick}/>
+                    <TodoListFooterButton className={classForCompleted} value={'Completed'}
+                                          changeFilter={this.onCompletedFilterClick}/>
+                    <TodoListFooterButton className={classForActive} value={'Active'}
+                                          changeFilter={this.onActiveFilterClick}/>
+                </div>}
+                {!this.state.isHidden && <span onClick={this.onHideFiltersClick}>hide</span>}
+                {this.state.isHidden && <span onClick={this.onShowFiltersClick}>show</span>}
             </div>
         );
     }
