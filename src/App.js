@@ -1,90 +1,116 @@
 import React from 'react';
-import TodoListHeader from './Components/TodoListHeader.jsx';
-import TodoListTasks from './Components/TodoListTasks.jsx';
-import TodoListFooter from './Components/TodoListFooter.jsx';
-import './App.css'
+import './App.css';
+import TodoList from "./Components/TodoList";
+import AddNewItemForm from "./Components/AddNewItemForm";
+import TodoListTitle from "./Components/TodoListTitle";
+import connect from "react-redux/lib/connect/connect";
+import {addTodoListAC, setTodoListAC} from "./redux/reducer";
+import axios from "axios";
 
 class App extends React.Component {
 
     componentDidMount() {
         this.restoreState()
-    }
+    };
 
     saveState = () => {
         let stateAsString = JSON.stringify(this.state);
-        localStorage.setItem('our state',stateAsString);
+        localStorage.setItem('app-state', stateAsString);
     };
 
     restoreState = () => {
+        axios.get("https://social-network.samuraijs.com/api/1.1/todo-lists",
+            {
+                withCredentials: true,
+                headers: {'API-KEY': 'b4801660-f864-43f9-8acc-579713cc64df'}
+            })
+            .then(res => {
+                let todoLists = res.data;
+                this.props.setTodoLists(todoLists)
+            });
+    };
+
+    _restoreState = () => {
         let state = {
-            tasks: [],
-            filterValue: 'All',
+            todoLists: [],
         };
-        let stateAsString = localStorage.getItem('our state');
+        let stateAsString = localStorage.getItem('app-state');
         if (stateAsString != null) state = JSON.parse(stateAsString);
         this.setState(state);
+        this.state.todoLists.forEach(todoList =>{
+            if (todoList.id >= this.nextTodoListId) this.nextTodoListId = todoList.id+1;
+        })
     };
 
-    onAddTaskClick = (value) => {
-        let newTask = {
-            title: value,
-            isDone: false,
-            priority: 'high',
-            id: this.state.tasks.length ? this.state.tasks.length + 1 : 1,
-        };
-        let newTasks = [...this.state.tasks, newTask];
-        this.setState({tasks: newTasks}, () => this.saveState());
-    };
-
-    changeFilter = (newFilterValue) => {
-        this.setState({
-            filterValue: newFilterValue
-        },  () => this.saveState());
-    };
-
-    changeStatus = (taskId, isDone) => {
-        this.changeTask(taskId, {isDone: isDone});
-    };
-
-    changeTitle = (taskId, title) => {
-         this.changeTask(taskId, {title: title});
-    };
-
-    changeTask = (taskId, object) => {
-        let newTasks = this.state.tasks.map( task => {
-            if (task.id !== taskId) return task;
-            else {
-                return {...task, ...object}
+    addTodoList = (title) => {
+        axios.post("https://social-network.samuraijs.com/api/1.1/todo-lists",
+            {title: title},
+            {
+                withCredentials: true,
+                headers: {'API-KEY': 'b4801660-f864-43f9-8acc-579713cc64df'}
             }
-        });
-        this.setState({tasks: newTasks},  () => this.saveState());
+        )
+            .then(res => {
+                let todoList = res.data.data.item;
+                this.props.addTodoList(todoList)
+            })
+    };
+
+    nextTodoListId = 0;
+
+    _addTodoList = (value) => {
+        let newTodoList = {
+            title: value,
+            id: this.nextTodoListId,
+            tasks: []
+        };
+        this.nextTodoListId++;
+        this.props.setTodoLists(newTodoList)
     };
 
     state = {
-        tasks: [],
-        filterValue: 'All',
+        todoLists: [],
     };
 
     render() {
-        window.store = this.state;
-        let filteredTasks = this.state.tasks.filter(task => {
-            return this.state.filterValue === 'All' ? true :
-            this.state.filterValue === 'Completed' && task.isDone === true ? true :
-            this.state.filterValue === 'Active' && task.isDone === false
-        });
+
+        const TodoLists = this.props.todoLists.map(
+            todoList => <TodoList id={todoList.id} key={todoList.id}
+                                  title={todoList.title} tasks={todoList.tasks}/>);
 
         return (
-            <div className="App">
-                <div className="todoList">
-                    <TodoListHeader onAddTaskClick={this.onAddTaskClick}/>
-                    <TodoListTasks tasks={filteredTasks} changeStatus={this.changeStatus}
-                                   changeTitle={this.changeTitle}/>
-                    <TodoListFooter filterValue={this.state.filterValue} changeFilter={this.changeFilter}/>
+            <>
+                <TodoListTitle title={'Add TodoList'}/>
+                <AddNewItemForm onAddItemClick={this.addTodoList}/>
+                <div className={'App'}>
+                    {TodoLists}
                 </div>
-            </div>
+            </>
         );
     }
 }
 
-export default App;
+const mapStateToProps = (state) => {
+    return {
+        todoLists: state.todoLists
+    }
+};
+
+const mapDispatchToProps = (dispatch) => {
+    return {
+        addTodoList: (newTodoList) => {
+            const action = addTodoListAC(newTodoList);
+            dispatch(action)
+        },
+        setTodoLists : (todoLists) => {
+            const action = setTodoListAC(todoLists);
+            dispatch(action)
+
+        }
+    }
+};
+
+const ConnectedApp = connect(mapStateToProps, mapDispatchToProps)(App);
+
+export default ConnectedApp;
 

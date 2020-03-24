@@ -1,11 +1,12 @@
 .App {
-
+  display: flex;
+  flex-direction: row;
 }
 .filter-active {
   background-color: blue;
 }
 .todoList {
-  width: 500px;
+  width: 300px;
   margin: 0 auto;
 }
 
@@ -21,4 +22,15 @@
 }
 .todoList-task.done {
   opacity: 0.5;
+}
+.close {
+  height: 17px;
+  width: 17px;
+  border: 1px solid black;
+  cursor: pointer;
+  text-align: center;
+}
+.flex {
+  display: flex;
+  align-items: center;
 }
