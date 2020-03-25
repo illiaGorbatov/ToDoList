@@ -5,6 +5,7 @@ export const DELETE_TODO_LIST = 'todolist/redux/reducer/DELETE_TODO_LIST';
 export const DELETE_TASK = 'todolist/redux/reducer/DELETE_TASK';
 export const SET_TODOLISTS = 'todolist/redux/reducer/SET_TODOLISTS';
 export const SET_TASKS = 'todolist/redux/reducer/SET_TASKS';
+export const CHANGE_TODO_LIST_TITLE = 'todolist/redux/reducer/CHANGE_TODO_LIST_TITLE';
 export const CHANGE_FILTER = 'todolist/redux/reducer/CHANGE_FILTER';
 
 const initialState = {
@@ -67,6 +68,15 @@ const reducer = (state = initialState, action) => {
                     } else return list
                 }),
             };
+        case CHANGE_TODO_LIST_TITLE:
+            return {
+                ...state,
+                todoLists: state.todoLists.map(list => {
+                    if (list.id === action.todoListId) {
+                        return {...list, title: action.todoListTitle}
+                    } else return list
+                })
+            };
     }
     return state;
 };
@@ -114,6 +124,13 @@ export const setTasksAC = (tasks, todoListId) => {
         type: SET_TASKS,
         tasks,
         todoListId
+    }
+};
+export const changeTodoListTitleAC = (todoListId, todoListTitle) => {
+    return {
+        type: CHANGE_TODO_LIST_TITLE,
+        todoListId,
+        todoListTitle
     }
 };
 

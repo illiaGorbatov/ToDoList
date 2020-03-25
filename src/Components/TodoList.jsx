@@ -5,8 +5,8 @@ import '../App.css'
 import AddNewItemForm from "./AddNewItemForm";
 import TodoListTitle from "./TodoListTitle";
 import connect from "react-redux/lib/connect/connect";
-import {addTaskAC, changeTaskAC, deleteTodoListAC, setTasksAC} from "../redux/reducer";
-import axios from "axios";
+import {addTaskAC, changeTaskAC, changeTodoListTitleAC, deleteTodoListAC, setTasksAC} from "../redux/reducer";
+import {api} from "./api";
 
 class TodoList extends React.Component {
 
@@ -14,35 +14,17 @@ class TodoList extends React.Component {
         this.restoreState()
     };
 
-    saveState = () => {
-        let stateAsString = JSON.stringify(this.state);
-        localStorage.setItem('our-state-' + this.props.id, stateAsString);
-    };
-
     restoreState = () => {
-        axios.get(`https://social-network.samuraijs.com/api/1.1/todo-lists/${this.props.id}/tasks`,
-            {
-                withCredentials: true,
-                headers: {'API-KEY': 'b4801660-f864-43f9-8acc-579713cc64df'}
-            }
-        )
-            .then(res => {
-                let allTasks = res.data.items;
-                this.props.setTasks(allTasks, this.props.id)
-            })
+        api.restoreTodoListState(this.props.id).then(res => {
+            let allTasks = res.data.items;
+            this.props.setTasks(allTasks, this.props.id)
+        })
     };
 
     onAddTaskClick = (title) => {
-        axios.post(`https://social-network.samuraijs.com/api/1.1/todo-lists/${this.props.id}/tasks`,
-            {title: title},
-            {
-                withCredentials: true,
-                headers: {'API-KEY': 'b4801660-f864-43f9-8acc-579713cc64df'}
-            }
-        )
-            .then(res => {
-                if (res.data.resultCode === 0) this.props.addTask(res.data.data.item, this.props.id)
-            })
+        api.addTask(this.props.id, title).then(res => {
+            if (res.data.resultCode === 0) this.props.addTask(res.data.data.item, this.props.id)
+        })
     };
 
     changeFilter = (newFilterValue) => {
@@ -53,61 +35,52 @@ class TodoList extends React.Component {
 
     changeStatus = (task, status) => {
         let newTask = {...task, status: status};
-        axios.put(`https://social-network.samuraijs.com/api/1.1/todo-lists/${this.props.id}/tasks/${task.id}`,
-            newTask,
-            {
-                withCredentials: true,
-                headers: {'API-KEY': 'b4801660-f864-43f9-8acc-579713cc64df'}
-            }
-        )
-            .then(res => {
-                if (res.data.resultCode === 0) this.props.changeTask(res.data.data.item);
-            })
+        api.changeStatus(this.props.id, task.id, newTask).then(res => {
+            if (res.data.resultCode === 0) this.props.changeTask(res.data.data.item);
+        })
     };
 
     changeTitle = (task, title) => {
         let newTask = {...task, title: title};
-        axios.put(`https://social-network.samuraijs.com/api/1.1/todo-lists/${this.props.id}/tasks/${task.id}`,
-            newTask,
-            {
-                withCredentials: true,
-                headers: {'API-KEY': 'b4801660-f864-43f9-8acc-579713cc64df'}
-            }
-        )
-            .then(res => {
-                if (res.data.resultCode === 0) this.props.changeTask(res.data.data.item);
-            })
-    };
-
-    _changeTitle = (taskId, title) => {
-        this.props.changeTask(taskId, {title: title}, this.props.id);
-    };
-
-    _changingTask = (taskId, object) => {
-        let newTasks = this.state.tasks.map(task => {
-            if (task.id !== taskId) return task;
-            else {
-                return {...task, ...object}
-            }
-        });
-        this.props.changeTask(taskId, newTasks, this.props.id);
+        api.changeTitle(this.props.id, task.id, newTask).then(res => {
+            if (res.data.resultCode === 0) this.props.changeTask(res.data.data.item);
+        })
     };
 
     deleteTodoList = () => {
-        axios.delete(`https://social-network.samuraijs.com/api/1.1/todo-lists/${this.props.id}`,
-            {
-                withCredentials: true,
-                headers: {'API-KEY': 'b4801660-f864-43f9-8acc-579713cc64df'}
-            }
-        )
-            .then(res => {
+        api.deleteTodoList(this.props.id).then(res => {
                 if (res.data.resultCode === 0) this.props.deleteTodoList(this.props.id)
             }
         )
     };
 
+    changeTodoListTitle = () => {
+        api.changeTodoListTitle(this.props.id, this.state.title).then(res => {
+                if (res.data.resultCode === 0) this.props.changeTodoListTitle(this.props.id, this.state.title)
+            }
+        )
+    };
+
     state = {
-        filterValue: 'All',
+        isEditModeActivated: false,
+        title: this.props.title
+    };
+
+    onChangeHandler = (e) => {
+        this.setState({title: e.currentTarget.value})
+    };
+
+    enablingEditMode = () => {
+        this.setState({isEditModeActivated: !this.state.isEditModeActivated});
+    };
+
+    disablingEditMode = () => {
+        this.setState({isEditModeActivated: !this.state.isEditModeActivated});
+        this.changeTodoListTitle()
+    };
+
+    onKeyPressHandler = (e) => {
+        if (e.key === "Enter") this.disablingEditMode();
     };
 
     render() {
@@ -117,7 +90,11 @@ class TodoList extends React.Component {
         return (
             <div className="todoList">
                 <div className="todoList-header">
-                    <TodoListTitle title={this.props.title}/>
+                    {this.state.isEditModeActivated ?
+                        <input value={this.state.title} onBlur={this.disablingEditMode} autoFocus={true}
+                               onKeyPress={this.onKeyPressHandler}
+                               onChange={(e) => this.onChangeHandler(e)}/> :
+                        <TodoListTitle title={this.props.title} onClickHandler={this.enablingEditMode}/>}
                     <AddNewItemForm onAddItemClick={this.onAddTaskClick} todoListName={this.props.todoListName}/>
                     <span className={'close'} onClick={this.deleteTodoList}>
                         X
@@ -149,6 +126,10 @@ const mapDispatchToProps = (dispatch) => {
             const action = setTasksAC(tasks, todoListId);
             dispatch(action)
         },
+        changeTodoListTitle: (todoListId, todoListTitle) => {
+            const action = changeTodoListTitleAC(todoListId, todoListTitle);
+            dispatch(action)
+        }
     }
 };
 
