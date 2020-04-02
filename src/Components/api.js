@@ -13,16 +13,13 @@ export const api = {
     addTodoList: (title) => {
         return instance.post("", {title: title})
     },
-    restoreTodoListState: (todoListId) => {
+    restoreTasks: (todoListId) => {
         return instance.get(`/${todoListId}/tasks`)
     },
-    addTask: (todoListId, title) => {
+    addTask: (title, todoListId) => {
         return instance.post(`/${todoListId}/tasks`, {title: title})
     },
-    changeStatus: (todoListId, taskId, newTask) => {
-        return instance.put(`/${todoListId}/tasks/${taskId}`, newTask)
-    },
-    changeTitle: (todoListId, taskId, newTask) => {
+    changeTask: (todoListId, taskId, newTask) => {
         return instance.put(`/${todoListId}/tasks/${taskId}`, newTask)
     },
     deleteTodoList: (todoListId) => {

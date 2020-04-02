@@ -1,3 +1,5 @@
+import {api} from "../Components/api";
+
 export const ADD_TODOLIST = 'todolist/redux/reducer/ADD_TODOLIST';
 export const ADD_TASK = 'todolist/redux/reducer/ADD_TASK';
 export const CHANGE_TASK = 'todolist/redux/reducer/CHANGE_TASK';
@@ -6,7 +8,6 @@ export const DELETE_TASK = 'todolist/redux/reducer/DELETE_TASK';
 export const SET_TODOLISTS = 'todolist/redux/reducer/SET_TODOLISTS';
 export const SET_TASKS = 'todolist/redux/reducer/SET_TASKS';
 export const CHANGE_TODO_LIST_TITLE = 'todolist/redux/reducer/CHANGE_TODO_LIST_TITLE';
-export const CHANGE_FILTER = 'todolist/redux/reducer/CHANGE_FILTER';
 
 const initialState = {
     todoLists: []
@@ -106,20 +107,20 @@ export const deleteTodoListAC = (todoListId) => {
         todoListId
     }
 };
-export const deleteTaskAC = (taskId, todoListId) => {
+export const deleteTaskAC = (todoListId, taskId) => {
     return {
         type: DELETE_TASK,
         taskId,
         todoListId
     }
 };
-export const setTodoListAC = (todoLists) => {
+const restoreTodoListAC = (todoLists) => {
     return {
         type: SET_TODOLISTS,
         todoLists
     }
 };
-export const setTasksAC = (tasks, todoListId) => {
+export const restoreTasksAC = (tasks, todoListId) => {
     return {
         type: SET_TASKS,
         tasks,
@@ -132,6 +133,47 @@ export const changeTodoListTitleAC = (todoListId, todoListTitle) => {
         todoListId,
         todoListTitle
     }
+};
+
+export const loadTodoListsTC = () => (dispatch) => {
+    api.restoreState().then(res => {
+        dispatch(restoreTodoListAC(res.data))
+    })
+};
+export const addTodoListTC = (title) => (dispatch) => {
+    api.addTodoList(title).then(res => {
+        if (res.data.resultCode === 0) dispatch(addTodoListAC(res.data.data.item))
+    })
+};
+export const addTaskTC = (newTask, todoListId) => (dispatch) => {
+    api.addTask(newTask, todoListId).then(res => {
+        if (res.data.resultCode === 0) dispatch(addTaskAC(res.data.data.item, todoListId))
+    })
+};
+export const changeTaskTC = (todoListId, taskId, newTask) => (dispatch) => {
+    api.changeTask(todoListId, taskId, newTask).then(res => {
+        if (res.data.resultCode === 0) dispatch(changeTaskAC(res.data.data.item))
+    })
+};
+export const deleteTodoListTC = (todoListId) => (dispatch) => {
+    api.deleteTodoList(todoListId).then(res => {
+        if (res.data.resultCode === 0) dispatch(deleteTodoListAC(todoListId))
+    })
+};
+export const deleteTaskTC = (todoListId, taskId) => (dispatch) => {
+    api.deleteTask(todoListId, taskId).then(res => {
+        if (res.data.resultCode === 0) dispatch(deleteTaskAC(todoListId, taskId))
+    })
+};
+export const restoreTasksTC = (todoListId) => (dispatch) => {
+    api.restoreTasks(todoListId).then(res => {
+       dispatch(restoreTasksAC(res.data.items, todoListId))
+    })
+};
+export const changeTodoListTitleTC = (todoListId, todoListTitle) => (dispatch) => {
+    api.changeTodoListTitle(todoListId, todoListTitle).then(res => {
+        if (res.data.resultCode === 0) dispatch(changeTodoListTitleAC(todoListId, todoListTitle))
+    })
 };
 
 export default reducer

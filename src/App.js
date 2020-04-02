@@ -4,8 +4,7 @@ import TodoList from "./Components/TodoList";
 import AddNewItemForm from "./Components/AddNewItemForm";
 import TodoListTitle from "./Components/TodoListTitle";
 import connect from "react-redux/lib/connect/connect";
-import {addTodoListAC, setTodoListAC} from "./redux/reducer";
-import {api} from "./Components/api";
+import {addTodoListTC, loadTodoListsTC} from "./redux/reducer";
 
 class App extends React.Component {
 
@@ -13,23 +12,12 @@ class App extends React.Component {
         this.restoreState()
     };
 
-    saveState = () => {
-        let stateAsString = JSON.stringify(this.state);
-        localStorage.setItem('app-state', stateAsString);
-    };
-
     restoreState = () => {
-        api.restoreState().then(res => {
-            let todoLists = res.data;
-            this.props.setTodoLists(todoLists)
-        });
+        this.props.getTodoLists()
     };
 
     addTodoList = (title) => {
-        api.addTodoList(title).then(res => {
-            let todoList = res.data.data.item;
-            this.props.addTodoList(todoList)
-        })
+        this.props.addTodoList(title)
     };
 
     render() {
@@ -59,14 +47,12 @@ const mapStateToProps = (state) => {
 const mapDispatchToProps = (dispatch) => {
     return {
         addTodoList: (newTodoList) => {
-            const action = addTodoListAC(newTodoList);
-            dispatch(action)
+            dispatch(addTodoListTC(newTodoList))
         },
-        setTodoLists: (todoLists) => {
-            const action = setTodoListAC(todoLists);
-            dispatch(action)
-
+        getTodoLists: () => {
+            dispatch(loadTodoListsTC())
         }
+
     }
 };
 

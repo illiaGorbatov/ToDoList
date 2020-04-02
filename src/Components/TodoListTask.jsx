@@ -1,8 +1,7 @@
 import React from 'react';
 import '../App.css';
 import connect from "react-redux/lib/connect/connect";
-import {deleteTaskAC} from "../redux/reducer";
-import {api} from "./api";
+import {deleteTaskTC} from "../redux/reducer";
 
 class TodoListTask extends React.Component {
 
@@ -33,10 +32,7 @@ class TodoListTask extends React.Component {
     };
 
     deleteTask = () => {
-        api.deleteTask(this.props.todoListId, this.props.task.id).then(res => {
-                if (res.data.resultCode === 0) this.props.deleteTask(this.props.task.id, this.props.todoListId)
-            }
-        )
+        this.props.deleteTask(this.props.todoListId, this.props.task.id)
     };
 
     render() {
@@ -67,9 +63,8 @@ class TodoListTask extends React.Component {
 
 const mapDispatchToProps = (dispatch) => {
     return {
-        deleteTask: (taskId, todoListId) => {
-            const action = deleteTaskAC(taskId, todoListId);
-            dispatch(action)
+        deleteTask: (todoListId, taskId) => {
+            dispatch(deleteTaskTC(todoListId, taskId))
         }
     }
 };
