@@ -1,12 +1,18 @@
-import {useEffect, useState} from "react";
+import {MutableRefObject, useEffect, useRef, useState} from "react";
+import ResizeObserver from 'resize-observer-polyfill';
 
-export const useMedia = (queries: Array<string>, values: Array<number>, defaultValue: number): number => {
-    const match = () => values[queries.findIndex(q => matchMedia(q).matches)] || defaultValue;
-    const [value, set] = useState(match);
-    useEffect(() => {
-        const handler = () => set(match)
-        window.addEventListener('resize', handler)
-        return () => window.removeEventListener('resize',handler)
-    }, []);
-    return value
-}
+type BoundsType = {
+    left: number,
+    top: number,
+    width: number,
+    height: number
+};
+
+
+export const useMeasure = (): [any, BoundsType] => {
+    const ref: MutableRefObject<Element | undefined> = useRef();
+    const [bounds, set] = useState({ left: 0, top: 0, width: 0, height: 0 });
+    const [ro] = useState(() => new ResizeObserver(([entry]) => set(entry.contentRect)));
+    useEffect(() => (ro.observe(ref.current as Element), ro.disconnect), []);
+    return [ {ref} , bounds]
+};

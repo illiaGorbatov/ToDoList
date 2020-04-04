@@ -1,15 +1,14 @@
-import React from "react";
+import React, {useEffect} from "react";
 import TodoList from "./Components/TodoList";
 import AddNewItemForm from "./Components/AddNewItemForm";
 import TodoListTitle from "./Components/TodoListTitle";
 import {addTodoListTC, loadTodoListsTC} from "./redux/reducer";
-import {connect} from 'react-redux';
-import {TodoListType} from "./redux/entities";
+import {useDispatch, useSelector} from 'react-redux';
 import {AppStateType} from "./redux/store";
-import {useEffect} from "react";
-import styled, { createGlobalStyle } from "styled-components/macro";
-import {useMedia} from "./hooks/useMeasure";
-import {useMeasure} from "./hooks/useMedia";
+import styled, {createGlobalStyle} from "styled-components/macro";
+import {useMedia} from "./hooks/useMedia";
+import {useMeasure} from "./hooks/useMeasure";
+import {useTransition, animated} from "react-spring";
 
 const GlobalStyles = createGlobalStyle`
   * {
@@ -24,9 +23,7 @@ const GlobalStyles = createGlobalStyle`
   };
 `;
 
-
 const TodoListsContainer = styled.div`
-  overflow: auto;
   display: flex;
   justify-content: center;
   background: #f0f0f0;
@@ -40,30 +37,48 @@ const AllLists = styled.div`
 `;
 
 
-type PropsType = MapStateToPropsType & MapDispatchToPropsType;
+const App: React.FC = () => {
 
-const App: React.FC<PropsType> = (props) => {
+    const todoLists = useSelector((store: AppStateType) => store.todoList.todoLists);
+    const dispatch = useDispatch();
 
     useEffect(() => {
-        restoreState()
+        dispatch(loadTodoListsTC())
     }, [])
 
-    const restoreState = () => {
-        props.getTodoLists()
-    };
-
     const addTodoList = (title: string) => {
-        props.addTodoList(title)
+        dispatch(addTodoListTC(title))
     };
-
+//adaptive grid
     const columns = useMedia(['(min-width: 1500px)', '(min-width: 1000px)', '(min-width: 600px)'], [5, 4, 3], 2);
-    const [bind, { width }] = useMeasure();
-    let heights = new Array(columns).fill(0)
+    const [bind, {width}] = useMeasure();
+    let heights = new Array(columns).fill(0);
 
+    type GridItemsType = { xy: Array<number>, width: number, height: number }
+    const gridItems: Array<GridItemsType> = [];
+    todoLists.map(
+        () => {
+            const column = heights.indexOf(Math.min(...heights)); // Basic masonry-grid placing, puts tile into the smallest column using Math.min
+            const xy = [(width / columns) * column, (heights[column] += (Math.random() * 100 + 300) / 2) - (Math.random() * 100 + 300) / 2]; // X = container width / number of columns * column index, Y = it's just the height of the current column
+            gridItems.push({xy, width: width / columns, height: (Math.random() * 100 + 300) / 2});
+        });
 
-    const TodoLists = props.todoLists.map(
-        todoList => <TodoList id={todoList.id} key={todoList.id}
-                              title={todoList.title} tasks={todoList.tasks}/>);
+    const TodoLists = todoLists.map(
+        (todoList) => <TodoList id={todoList.id} key={todoList.id}
+                                title={todoList.title} tasks={todoList.tasks}/>
+    );
+    console.log('render')
+    const transitions = useTransition(gridItems, null,{
+        from: ({xy, width, height}) =>
+            ({transform: `translate3d(${xy[0]}px,${xy[1]}px,0)`, width, height, opacity: 0}),
+        enter: ({xy, width, height}) =>
+            ({transform: `translate3d(${xy[0]}px,${xy[1]}px,0)`, width, height, opacity: 1}),
+        update: ({xy, width, height}) =>
+            ({transform: `translate3d(${xy[0]}px,${xy[1]}px,0)`, width, height}),
+        leave: {height: 0, opacity: 0},
+        config: {mass: 5, tension: 500, friction: 100},
+        trail: 25
+    })
 
     return (
         <>
@@ -71,42 +86,18 @@ const App: React.FC<PropsType> = (props) => {
             <TodoListTitle title={'Add TodoList'}/>
             <AddNewItemForm onAddItemClick={addTodoList}/>
             <TodoListsContainer>
-                <AllLists>
-                    {TodoLists}
+                <AllLists {...bind} style={{height: Math.max(...heights)}}>
+                    {transitions.map(({item, props, key}, id) => (
+                        <animated.div key={id}
+                                      style={props}>
+                            {TodoLists[id]}
+                        </animated.div>
+                    ))}
                 </AllLists>
             </TodoListsContainer>
         </>
     );
 }
 
-type MapStateToPropsType = {
-    todoLists: TodoListType[];
-};
-type MapDispatchToPropsType = {
-    addTodoList: (newTodoList: string) => void;
-    getTodoLists: () => void;
-};
-
-
-const mapStateToProps = (state: AppStateType): MapStateToPropsType => {
-    return {
-        todoLists: state.todoList.todoLists
-    }
-};
-
-const mapDispatchToProps = (dispatch: any): MapDispatchToPropsType => {
-    return {
-        addTodoList: (newTodoList) => {
-            dispatch(addTodoListTC(newTodoList))
-        },
-        getTodoLists: () => {
-            dispatch(loadTodoListsTC())
-        }
-
-    }
-};
-
-const ConnectedApp = connect<MapStateToPropsType, MapDispatchToPropsType, null, AppStateType>(mapStateToProps, mapDispatchToProps)(App);
-
-export default ConnectedApp;
+export default App;
 

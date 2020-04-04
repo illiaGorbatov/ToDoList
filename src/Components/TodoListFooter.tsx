@@ -3,12 +3,12 @@ import '../App.css';
 import TodoListFooterButton from "./TodoListFooterButton";
 import {useState} from "react";
 
-type OwnPropsType = {
+type PropsType = {
     filterValue: string;
     changeFilter: (filter: string) => void;
 }
 
-const TodoListFooter: React.FC<OwnPropsType>  = (props) => {
+const TodoListFooter: React.FC<PropsType>  = (props) => {
 
     const [isHidden, setHidden] = useState<boolean>(false)
 

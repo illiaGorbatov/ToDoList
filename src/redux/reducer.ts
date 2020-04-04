@@ -1,7 +1,7 @@
 import {api} from "./api";
 import {TaskType, TodoListType} from "./entities";
 import {ThunkAction, ThunkDispatch} from "redux-thunk";
-import {AppStateType} from "./store";
+import {AppStateType, InferActionTypes} from "./store";
 
 export const ADD_TODOLIST = 'todolist/redux/reducer/ADD_TODOLIST';
 export const ADD_TASK = 'todolist/redux/reducer/ADD_TASK';
@@ -20,7 +20,7 @@ const initialState = {
     todoLists: []
 };
 
-const reducer = (state: InitialStateType = initialState, action: ActionType): InitialStateType => {
+const reducer = (state: InitialStateType = initialState, action: ActionsTypes): InitialStateType => {
     switch (action.type) {
         case SET_TODOLISTS:
             return {
@@ -89,149 +89,69 @@ const reducer = (state: InitialStateType = initialState, action: ActionType): In
     }
 };
 
-type ActionType =
-    AddTodoListActionType
-    | AddTaskActionType
-    | ChangeTaskActionType
-    | DeleteTodoListActionType
-    | DeleteTaskActionType
-    | RestoreTodoListActionType
-    | RestoreTasksActionType
-    | ChangeTodoListTitleActionType
-;
+type ActionsTypes = InferActionTypes<typeof actions>;
 
-type AddTodoListActionType = {
-    type: typeof ADD_TODOLIST,
-    newTodoList: TodoListType;
-};
-type AddTaskActionType = {
-    type: typeof ADD_TASK;
-    newTask: TaskType;
-    todoListId: string;
-};
-type ChangeTaskActionType = {
-    type: typeof CHANGE_TASK;
-    task: TaskType;
-};
-type DeleteTodoListActionType = {
-    type: typeof DELETE_TODO_LIST;
-    todoListId: string;
-};
-type DeleteTaskActionType = {
-    type: typeof DELETE_TASK;
-    taskId: string;
-    todoListId: string;
-};
-type RestoreTodoListActionType = {
-    type: typeof SET_TODOLISTS;
-    todoLists: TodoListType[];
-};
-type RestoreTasksActionType = {
-    type: typeof SET_TASKS;
-    tasks: TaskType[];
-    todoListId: string;
-};
-type ChangeTodoListTitleActionType = {
-    type: typeof CHANGE_TODO_LIST_TITLE;
-    todoListId: string;
-    todoListTitle: string;
-};
+const actions = {
+    addTodoList: (newTodoList: TodoListType) => ({type: ADD_TODOLIST, newTodoList: newTodoList} as const),
+    addTask: (newTask: TaskType, todoListId: string) => ({type: ADD_TASK, newTask, todoListId} as const),
+    changeTask: (task: TaskType) => ({type: CHANGE_TASK, task} as const),
+    deleteTodoList: (todoListId: string) => ({type: DELETE_TODO_LIST, todoListId} as const),
+    deleteTask: (todoListId: string, taskId: string) => ({type: DELETE_TASK, taskId, todoListId} as const),
+    restoreTodoList: (todoLists: TodoListType[]) => ({type: SET_TODOLISTS, todoLists} as const),
+    restoreTasks: (tasks: TaskType[], todoListId: string) => ({
+            type: SET_TASKS,
+            tasks,
+            todoListId
+        } as const),
+    changeTodoListTitle: (todoListId: string, todoListTitle: string) => ({
+            type: CHANGE_TODO_LIST_TITLE,
+            todoListId,
+            todoListTitle
+        } as const)
 
+}
 
-const addTodoListAC = (newTodoList: TodoListType): AddTodoListActionType => {
-    return {
-        type: ADD_TODOLIST,
-        newTodoList: newTodoList
-    }
-};
-const addTaskAC = (newTask: TaskType, todoListId: string): AddTaskActionType => {
-    return {
-        type: ADD_TASK,
-        newTask,
-        todoListId
-    }
-};
-const changeTaskAC = (task: TaskType): ChangeTaskActionType => {
-    return {
-        type: CHANGE_TASK,
-        task
-    }
-};
-const deleteTodoListAC = (todoListId: string): DeleteTodoListActionType => {
-    return {
-        type: DELETE_TODO_LIST,
-        todoListId
-    }
-};
-const deleteTaskAC = (todoListId: string, taskId: string):DeleteTaskActionType => {
-    return {
-        type: DELETE_TASK,
-        taskId,
-        todoListId
-    }
-};
-const restoreTodoListAC = (todoLists: TodoListType[]): RestoreTodoListActionType => {
-    return {
-        type: SET_TODOLISTS,
-        todoLists
-    }
-};
-const restoreTasksAC = (tasks: TaskType[], todoListId: string): RestoreTasksActionType => {
-    return {
-        type: SET_TASKS,
-        tasks,
-        todoListId
-    }
-};
-const changeTodoListTitleAC = (todoListId: string, todoListTitle: string): ChangeTodoListTitleActionType => {
-    return {
-        type: CHANGE_TODO_LIST_TITLE,
-        todoListId,
-        todoListTitle
-    }
-};
-
-type ThunkType = ThunkAction<void, AppStateType, unknown, ActionType>;
-type ThunkActionType = ThunkDispatch<AppStateType, unknown, ActionType>
+type ThunkType = ThunkAction<void, AppStateType, unknown, ActionsTypes>;
+type ThunkActionType = ThunkDispatch<AppStateType, unknown, ActionsTypes>
 
 export const loadTodoListsTC = (): ThunkType => (dispatch: ThunkActionType) => {
     api.restoreState().then(data => {
-        dispatch(restoreTodoListAC(data))
+        dispatch(actions.restoreTodoList(data))
     })
 };
 export const addTodoListTC = (title: string): ThunkType => (dispatch: ThunkActionType) => {
     api.addTodoList(title).then(data => {
-        if (data.resultCode === 0) dispatch(addTodoListAC(data.data.item))
+        if (data.resultCode === 0) dispatch(actions.addTodoList(data.data.item))
     })
 };
 export const addTaskTC = (newTask: string, todoListId: string): ThunkType => (dispatch: ThunkActionType) => {
     api.addTask(newTask, todoListId).then(data => {
-        if (data.resultCode === 0) dispatch(addTaskAC(data.data.item, todoListId))
+        if (data.resultCode === 0) dispatch(actions.addTask(data.data.item, todoListId))
     })
 };
 export const changeTaskTC = (todoListId: string, taskId: string, newTask: TaskType): ThunkType => (dispatch: ThunkActionType) => {
     api.changeTask(todoListId, taskId, newTask).then(data => {
-        if (data.resultCode === 0) dispatch(changeTaskAC(data.data.item))
+        if (data.resultCode === 0) dispatch(actions.changeTask(data.data.item))
     })
 };
 export const deleteTodoListTC = (todoListId: string): ThunkType => (dispatch: ThunkActionType) => {
     api.deleteTodoList(todoListId).then(data => {
-        if (data.resultCode === 0) dispatch(deleteTodoListAC(todoListId))
+        if (data.resultCode === 0) dispatch(actions.deleteTodoList(todoListId))
     })
 };
 export const deleteTaskTC = (todoListId: string, taskId: string): ThunkType => (dispatch: ThunkActionType) => {
     api.deleteTask(todoListId, taskId).then(data => {
-        if (data.resultCode === 0) dispatch(deleteTaskAC(todoListId, taskId))
+        if (data.resultCode === 0) dispatch(actions.deleteTask(todoListId, taskId))
     })
 };
 export const restoreTasksTC = (todoListId: string): ThunkType => (dispatch: ThunkActionType) => {
     api.restoreTasks(todoListId).then(data => {
-       dispatch(restoreTasksAC(data.items, todoListId))
+       dispatch(actions.restoreTasks(data.items, todoListId))
     })
 };
 export const changeTodoListTitleTC = (todoListId: string, todoListTitle: string): ThunkType => (dispatch: ThunkActionType) => {
     api.changeTodoListTitle(todoListId, todoListTitle).then(data => {
-        if (data.resultCode === 0) dispatch(changeTodoListTitleAC(todoListId, todoListTitle))
+        if (data.resultCode === 0) dispatch(actions.changeTodoListTitle(todoListId, todoListTitle))
     })
 };
 

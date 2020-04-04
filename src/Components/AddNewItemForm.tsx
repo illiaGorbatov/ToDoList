@@ -5,12 +5,12 @@ import styled from "styled-components/macro";
 
 
 
-type OwnPropsType = {
+type PropsType = {
     onAddItemClick: (title: string) => void;
     todoListName?: string;
 };
 
-const AddNewItemForm: React.FC<OwnPropsType> = (props) => {
+const AddNewItemForm: React.FC<PropsType> = (props) => {
 
     const [error, setError] = useState<boolean>(false);
     const [title, setTitle] = useState<string>('');

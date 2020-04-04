@@ -1,21 +1,23 @@
-import React from "react";
+import React, {useState} from "react";
 import '../App.css';
-import {connect} from 'react-redux';
+import {useDispatch} from 'react-redux';
 import {deleteTaskTC} from "../redux/reducer";
 import {TaskType} from "../redux/entities";
-import {AppStateType} from "../redux/store";
-import {useState} from 'react';
 
-type OwnPropsType = {
+type PropsType = {
     task: TaskType;
     changeStatus: (task: TaskType, status: number) => void;
     key: string;
     changeTitle: (task: TaskType, title: string) => void;
     todoListId: string;
 }
-type PropsType = MapDispatchToPropsType & OwnPropsType;
 
 const TodoListTask: React.FC<PropsType> = (props) => {
+
+    const dispatch = useDispatch();
+    const onDeleteTask = () => {
+        dispatch(deleteTaskTC(props.todoListId, props.task.id))
+    };
 
     const [isEditModeActivated, setEditMode] = useState<boolean>(false);
     const [title, setTitle] = useState<string>(props.task.title)
@@ -41,11 +43,6 @@ const TodoListTask: React.FC<PropsType> = (props) => {
         if (e.key === "Enter") disablingEditMode();
     };
 
-    const onDeleteTask = () => {
-        props.deleteTask(props.todoListId, props.task.id)
-    };
-
-
     const priority = props.task.priority === 0 ? 'Low' : 1 ? 'Middle' : 2 ?
         'High' : 3 ? 'Urgently' : 'Later';
 
@@ -69,20 +66,5 @@ const TodoListTask: React.FC<PropsType> = (props) => {
     );
 }
 
-type MapDispatchToPropsType = {
-    deleteTask: (todoListId: string, taskId: string) => void;
-};
-
-const mapDispatchToProps = (dispatch: any): MapDispatchToPropsType => {
-    return {
-        deleteTask: (todoListId, taskId) => {
-            dispatch(deleteTaskTC(todoListId, taskId))
-        }
-    }
-};
-
-const ConnectedTodoListTask = connect<void, MapDispatchToPropsType, OwnPropsType, AppStateType>
-(null, mapDispatchToProps)(TodoListTask);
-
-export default ConnectedTodoListTask;
+export default TodoListTask;
 

@@ -1,20 +1,12 @@
-import React from "react";
+import React, {useEffect, useState} from "react";
 import TodoListTasks from './TodoListTasks';
 import TodoListFooter from './TodoListFooter';
 import '../App.css'
 import AddNewItemForm from "./AddNewItemForm";
 import TodoListTitle from "./TodoListTitle";
-import {connect} from 'react-redux';
-import {
-    addTaskTC,
-    changeTaskTC,
-    changeTodoListTitleTC,
-    deleteTodoListTC,
-    restoreTasksTC
-} from "../redux/reducer";
+import {useDispatch} from 'react-redux';
+import {addTaskTC, changeTaskTC, changeTodoListTitleTC, deleteTodoListTC, restoreTasksTC} from "../redux/reducer";
 import {TaskType} from "../redux/entities";
-import {AppStateType} from "../redux/store";
-import {useEffect, useState} from "react";
 import styled from "styled-components/macro";
 
 const TodoListContainer = styled.div` 
@@ -45,69 +37,64 @@ const CloseButton = styled.span`
   text-align: center;
 `;
 
-type OwnPropsType = {
+type PropsType = {
     id: string;
     key: string;
     title: string;
     tasks?: TaskType[];
 };
-type PropsType = OwnPropsType & MapDispatchToPropsType;
 
 const TodoList: React.FC<PropsType> = (props) => {
 
+    const dispatch = useDispatch();
+
     const [isEditModeActivated, setEditMode] = useState<boolean>(false);
     const [title, setTitle] = useState<string>(props.title);
-    const [filterValue, setFilterValue] = useState<string>('All')
+    const [filterValue, setFilterValue] = useState<string>('All');
+
+    //work with forms
+    const onChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setTitle(e.currentTarget.value)
+    };
+    const enablingEditMode = () => {
+        setEditMode(true)
+    };
+    const disablingEditMode = () => {
+        setEditMode(false);
+        changeTodoListTitle()
+    };
+    const onKeyPressHandler = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter") disablingEditMode();
+    };
 
     useEffect(() => {
-        restoreState()
+        dispatch(restoreTasksTC(props.id))
     }, []);
-
-    const restoreState = () => {
-        props.restoreTasks(props.id)
-    };
 
     const changeFilter = (newFilterValue: string) => {
         setFilterValue(newFilterValue)
     };
 
     const onAddTaskClick = (title: string) => {
-        props.addTask(title, props.id)
+        dispatch(addTaskTC(title, props.id))
     };
 
     const changeStatus = (task: TaskType, status: number) => {
         let newTask = {...task, status: status};
-        props.changeTask(props.id, task.id, newTask)
+        dispatch(changeTaskTC(props.id, task.id, newTask))
     };
 
     const changeTitle = (task: TaskType, title: string) => {
         let newTask = {...task, title};
-        props.changeTask(props.id, task.id, newTask)
+        dispatch(changeTaskTC(props.id, task.id, newTask))
     };
 
     const deleteTodoList = () => {
-        props.deleteTodoList(props.id)
+        dispatch(deleteTodoListTC(props.id))
     };
 
     const changeTodoListTitle = () => {
-        props.changeTodoListTitle(props.id, title)
-    };
-
-    const onChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setTitle(e.currentTarget.value)
-    };
-
-    const enablingEditMode = () => {
-        setEditMode(true)
-    };
-
-    const disablingEditMode = () => {
-        setEditMode(false);
-        changeTodoListTitle()
-    };
-
-    const onKeyPressHandler = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter") disablingEditMode();
+        dispatch(changeTodoListTitleTC(props.id, title))
     };
 
 
@@ -146,34 +133,4 @@ const TodoList: React.FC<PropsType> = (props) => {
     );
 }
 
-type MapDispatchToPropsType = {
-    addTask: (newTask: string, todoListId: string) => void;
-    changeTask: (todoListId: string, taskId: string, newTask: TaskType) => void;
-    deleteTodoList: (todoListId: string) => void;
-    restoreTasks: (todoListId: string) => void;
-    changeTodoListTitle: (todoListId: string, todoListTitle: string) => void;
-};
-
-const mapDispatchToProps = (dispatch: any): MapDispatchToPropsType => {
-    return {
-        addTask: (newTask, todoListId) => {
-            dispatch(addTaskTC(newTask, todoListId))
-        },
-        changeTask: (todoListId, taskId, newTask) => {
-            dispatch(changeTaskTC(todoListId, taskId, newTask))
-        },
-        deleteTodoList: (todoListId) => {
-            dispatch(deleteTodoListTC(todoListId))
-        },
-        restoreTasks: (todoListId) => {
-            dispatch(restoreTasksTC(todoListId))
-        },
-        changeTodoListTitle: (todoListId, todoListTitle) => {
-            dispatch(changeTodoListTitleTC(todoListId, todoListTitle))
-        }
-    }
-};
-
-const ConnectedTodoList = connect<void, MapDispatchToPropsType, OwnPropsType, AppStateType>(null, mapDispatchToProps)(TodoList);
-
-export default ConnectedTodoList;
+export default TodoList;
