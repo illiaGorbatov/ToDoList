@@ -1,14 +1,23 @@
-import React from 'react';
+import * as React from 'react';
 import '../App.css';
 
-class AddNewItemForm extends React.Component {
+type StateType ={
+    error: boolean;
+    title: string;
+};
+type OwnPropsType = {
+    onAddItemClick: (title: string) => void;
+    todoListName?: string;
+};
 
-    state = {
+class AddNewItemForm extends React.Component<OwnPropsType> {
+
+    state: StateType = {
         error: false,
         title: ''
     };
 
-    onTitleChanged = (e) => {
+    onTitleChanged = (e: any) => {
         let newValue = e.currentTarget.value;
         this.setState({title: newValue});
         if (this.state.title !== '')
@@ -24,7 +33,7 @@ class AddNewItemForm extends React.Component {
         }
     };
 
-    onKeyPressHandler = (e) => {
+    onKeyPressHandler = (e: any) => {
         if (e.key === "Enter") this.onAddItemClickHandler()
     };
 

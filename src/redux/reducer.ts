@@ -1,5 +1,5 @@
 import {api} from "../Components/api";
-import {TodoListType} from "./entities";
+import {TaskType, TodoListType} from "./entities";
 
 export const ADD_TODOLIST = 'todolist/redux/reducer/ADD_TODOLIST';
 export const ADD_TASK = 'todolist/redux/reducer/ADD_TASK';
@@ -18,7 +18,7 @@ const initialState = {
     todoLists: []
 };
 
-const reducer = (state: InitialStateType = initialState, action) => {
+const reducer = (state: InitialStateType = initialState, action: ActionType): InitialStateType => {
     switch (action.type) {
         case SET_TODOLISTS:
             return {
@@ -83,66 +83,105 @@ const reducer = (state: InitialStateType = initialState, action) => {
                     } else return list
                 })
             };
+        default: return state;
     }
-    return state;
 };
 
-type ActionType = {
+type ActionType =
+    AddTodoListActionType
+    | AddTaskActionType
+    | ChangeTaskActionType
+    | DeleteTodoListActionType
+    | DeleteTaskActionType
+    | RestoreTodoListActionType
+    | RestoreTasksActionType
+    | ChangeTodoListTitleActionType
+;
 
-};
-
-type AddTodoListACType = {
+type AddTodoListActionType = {
     type: typeof ADD_TODOLIST,
     newTodoList: TodoListType;
 };
+type AddTaskActionType = {
+    type: typeof ADD_TASK;
+    newTask: TaskType;
+    todoListId: string;
+};
+type ChangeTaskActionType = {
+    type: typeof CHANGE_TASK;
+    task: TaskType;
+};
+type DeleteTodoListActionType = {
+    type: typeof DELETE_TODO_LIST;
+    todoListId: string;
+};
+type DeleteTaskActionType = {
+    type: typeof DELETE_TASK;
+    taskId: string;
+    todoListId: string;
+};
+type RestoreTodoListActionType = {
+    type: typeof SET_TODOLISTS;
+    todoLists: TodoListType[];
+};
+type RestoreTasksActionType = {
+    type: typeof SET_TASKS;
+    tasks: TaskType[];
+    todoListId: string;
+};
+type ChangeTodoListTitleActionType = {
+    type: typeof CHANGE_TODO_LIST_TITLE;
+    todoListId: string;
+    todoListTitle: string;
+};
 
 
-const addTodoListAC = (newTodoList: TodoListType): AddTodoListACType => {
+const addTodoListAC = (newTodoList: TodoListType): AddTodoListActionType => {
     return {
         type: ADD_TODOLIST,
         newTodoList: newTodoList
     }
 };
-const addTaskAC = (newTask, todoListId) => {
+const addTaskAC = (newTask: TaskType, todoListId: string): AddTaskActionType => {
     return {
         type: ADD_TASK,
         newTask,
         todoListId
     }
 };
-const changeTaskAC = (task) => {
+const changeTaskAC = (task: TaskType): ChangeTaskActionType => {
     return {
         type: CHANGE_TASK,
         task
     }
 };
-const deleteTodoListAC = (todoListId) => {
+const deleteTodoListAC = (todoListId: string): DeleteTodoListActionType => {
     return {
         type: DELETE_TODO_LIST,
         todoListId
     }
 };
-const deleteTaskAC = (todoListId, taskId) => {
+const deleteTaskAC = (todoListId: string, taskId: string):DeleteTaskActionType => {
     return {
         type: DELETE_TASK,
         taskId,
         todoListId
     }
 };
-const restoreTodoListAC = (todoLists) => {
+const restoreTodoListAC = (todoLists: TodoListType[]): RestoreTodoListActionType => {
     return {
         type: SET_TODOLISTS,
         todoLists
     }
 };
-const restoreTasksAC = (tasks, todoListId) => {
+const restoreTasksAC = (tasks: TaskType[], todoListId: string): RestoreTasksActionType => {
     return {
         type: SET_TASKS,
         tasks,
         todoListId
     }
 };
-const changeTodoListTitleAC = (todoListId, todoListTitle) => {
+const changeTodoListTitleAC = (todoListId: string, todoListTitle: string): ChangeTodoListTitleActionType => {
     return {
         type: CHANGE_TODO_LIST_TITLE,
         todoListId,

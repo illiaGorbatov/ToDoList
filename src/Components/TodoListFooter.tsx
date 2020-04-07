@@ -1,10 +1,18 @@
-import React from 'react';
+import * as React from 'react';
 import '../App.css';
 import TodoListFooterButton from "./TodoListFooterButton";
 
-class TodoListFooter extends React.Component {
+type StateType = {
+    isHidden: boolean
+};
+type OwnPropsType = {
+    filterValue: string;
+    changeFilter: (filter: string) => void;
+}
 
-    state = {
+class TodoListFooter extends React.Component<OwnPropsType> {
+
+    state: StateType = {
         isHidden: false
     };
 

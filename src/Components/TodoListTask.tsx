@@ -1,20 +1,35 @@
-import React from 'react';
+import * as React from 'react';
 import '../App.css';
-import connect from "react-redux/lib/connect/connect";
+import {connect} from 'react-redux';
 import {deleteTaskTC} from "../redux/reducer";
+import {TaskType} from "../redux/entities";
+import {AppStateType} from "../redux/store";
 
-class TodoListTask extends React.Component {
+type StateType = {
+    isEditModeActivated: boolean;
+    title: string;
+};
+type OwnPropsType = {
+    task: TaskType;
+    changeStatus: (task: TaskType, status: number) => void;
+    key: string;
+    changeTitle: (task: TaskType, title: string) => void;
+    todoListId: string;
+}
+type PropsType = MapDispatchToPropsType & OwnPropsType;
 
-    state = {
+class TodoListTask extends React.Component<PropsType, StateType> {
+
+    state: StateType = {
         isEditModeActivated: false,
         title: this.props.task.title
     };
 
-    onChangeHandler = (e) => {
+    onChangeHandler = (e: any) => {
         this.setState({title: e.currentTarget.value})
     };
 
-    onIsDoneChanged = (e) => {
+    onIsDoneChanged = (e: any) => {
         this.props.changeStatus(this.props.task, e.currentTarget.checked ? 2 : 0)
     };
 
@@ -27,11 +42,11 @@ class TodoListTask extends React.Component {
         this.props.changeTitle(this.props.task, this.state.title)
     };
 
-    onKeyPressHandler = (e) => {
+    onKeyPressHandler = (e: any) => {
         if (e.key === "Enter") this.disablingEditMode();
     };
 
-    deleteTask = () => {
+    onDeleteTask = () => {
         this.props.deleteTask(this.props.todoListId, this.props.task.id)
     };
 
@@ -53,7 +68,7 @@ class TodoListTask extends React.Component {
                             {this.props.task.title}
                         </span>}
                     , priority: {priority}</span>
-                <span className={'close'} onClick={this.deleteTask}>
+                <span className={'close'} onClick={this.onDeleteTask}>
                     X
                 </span>
             </div>
@@ -61,7 +76,11 @@ class TodoListTask extends React.Component {
     }
 }
 
-const mapDispatchToProps = (dispatch) => {
+type MapDispatchToPropsType = {
+    deleteTask: (todoListId: string, taskId: string) => void;
+};
+
+const mapDispatchToProps = (dispatch: any): MapDispatchToPropsType => {
     return {
         deleteTask: (todoListId, taskId) => {
             dispatch(deleteTaskTC(todoListId, taskId))
@@ -69,7 +88,8 @@ const mapDispatchToProps = (dispatch) => {
     }
 };
 
-const ConnectedTodoListTask = connect(null, mapDispatchToProps)(TodoListTask);
+const ConnectedTodoListTask = connect<void, MapDispatchToPropsType, OwnPropsType, AppStateType>
+(null, mapDispatchToProps)(TodoListTask);
 
 export default ConnectedTodoListTask;
 

@@ -1,12 +1,16 @@
-import React from 'react';
+import * as React from 'react';
 import './App.css';
 import TodoList from "./Components/TodoList";
 import AddNewItemForm from "./Components/AddNewItemForm";
 import TodoListTitle from "./Components/TodoListTitle";
-import connect from "react-redux/lib/connect/connect";
 import {addTodoListTC, loadTodoListsTC} from "./redux/reducer";
+import {connect} from 'react-redux';
+import {TodoListType} from "./redux/entities";
+import {AppStateType} from "./redux/store";
 
-class App extends React.Component {
+type PropsType = MapStateToPropsType & MapDispatchToPropsType;
+
+class App extends React.Component<PropsType> {
 
     componentDidMount() {
         this.restoreState()
@@ -16,7 +20,7 @@ class App extends React.Component {
         this.props.getTodoLists()
     };
 
-    addTodoList = (title) => {
+    addTodoList = (title: string) => {
         this.props.addTodoList(title)
     };
 
@@ -38,13 +42,22 @@ class App extends React.Component {
     }
 }
 
-const mapStateToProps = (state) => {
+type MapStateToPropsType = {
+    todoLists: TodoListType[];
+};
+type MapDispatchToPropsType = {
+    addTodoList: (newTodoList: string) => void;
+    getTodoLists: () => void;
+};
+
+
+const mapStateToProps = (state: AppStateType): MapStateToPropsType => {
     return {
         todoLists: state.todoList.todoLists
     }
 };
 
-const mapDispatchToProps = (dispatch) => {
+const mapDispatchToProps = (dispatch: any): MapDispatchToPropsType => {
     return {
         addTodoList: (newTodoList) => {
             dispatch(addTodoListTC(newTodoList))
@@ -56,7 +69,7 @@ const mapDispatchToProps = (dispatch) => {
     }
 };
 
-const ConnectedApp = connect(mapStateToProps, mapDispatchToProps)(App);
+const ConnectedApp = connect<MapStateToPropsType, MapDispatchToPropsType, null, AppStateType>(mapStateToProps, mapDispatchToProps)(App);
 
 export default ConnectedApp;
 

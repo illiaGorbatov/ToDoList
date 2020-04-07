@@ -1,7 +1,13 @@
-import React from 'react';
+import * as React from 'react';
 import '../App.css';
 
-class TodoListFooterButton extends React.Component {
+type OwnPropsType = {
+    className: string;
+    value: string;
+    changeFilter: () => void;
+}
+
+class TodoListFooterButton extends React.Component<OwnPropsType> {
     render() {
         return (
             <button className={this.props.className} onClick={this.props.changeFilter}>

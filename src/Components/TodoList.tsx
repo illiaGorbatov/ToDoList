@@ -1,10 +1,10 @@
-import React from 'react';
-import TodoListTasks from './TodoListTasks.jsx';
-import TodoListFooter from './TodoListFooter.jsx';
+import * as React from 'react';
+import TodoListTasks from './TodoListTasks';
+import TodoListFooter from './TodoListFooter';
 import '../App.css'
 import AddNewItemForm from "./AddNewItemForm";
 import TodoListTitle from "./TodoListTitle";
-import connect from "react-redux/lib/connect/connect";
+import {connect} from 'react-redux';
 import {
     addTaskTC,
     changeTaskTC,
@@ -12,10 +12,25 @@ import {
     deleteTodoListTC,
     restoreTasksTC
 } from "../redux/reducer";
+import {TaskType} from "../redux/entities";
+import {AppStateType} from "../redux/store";
 
-class TodoList extends React.Component {
+type StateType = {
+    isEditModeActivated: boolean;
+    title: string;
+    filterValue: string;
+};
+type OwnPropsType = {
+    id: string;
+    key: string;
+    title: string;
+    tasks?: TaskType[];
+};
+type PropsType = OwnPropsType & MapDispatchToPropsType;
 
-    state = {
+class TodoList extends React.Component<PropsType, StateType> {
+
+    state: StateType = {
         isEditModeActivated: false,
         title: this.props.title,
         filterValue: "All"
@@ -29,22 +44,22 @@ class TodoList extends React.Component {
         this.props.restoreTasks(this.props.id)
     };
 
-    changeFilter = (newFilterValue) => {
+    changeFilter = (newFilterValue: string) => {
         this.setState({
             filterValue: newFilterValue
         });
     };
 
-    onAddTaskClick = (title) => {
+    onAddTaskClick = (title: string) => {
         this.props.addTask(title, this.props.id)
     };
 
-    changeStatus = (task, status) => {
+    changeStatus = (task: TaskType, status: number) => {
         let newTask = {...task, status: status};
         this.props.changeTask(this.props.id, task.id, newTask)
     };
 
-    changeTitle = (task, title) => {
+    changeTitle = (task: TaskType, title: string) => {
         let newTask = {...task, title: title};
         this.props.changeTask(this.props.id, task.id, newTask)
     };
@@ -57,7 +72,7 @@ class TodoList extends React.Component {
         this.props.changeTodoListTitle(this.props.id, this.state.title)
     };
 
-    onChangeHandler = (e) => {
+    onChangeHandler = (e: any) => {
         this.setState({title: e.currentTarget.value})
     };
 
@@ -70,7 +85,7 @@ class TodoList extends React.Component {
         this.changeTodoListTitle()
     };
 
-    onKeyPressHandler = (e) => {
+    onKeyPressHandler = (e: any) => {
         if (e.key === "Enter") this.disablingEditMode();
     };
 
@@ -86,7 +101,7 @@ class TodoList extends React.Component {
                                onKeyPress={this.onKeyPressHandler}
                                onChange={(e) => this.onChangeHandler(e)}/> :
                         <TodoListTitle title={this.props.title} onClickHandler={this.enablingEditMode}/>}
-                    <AddNewItemForm onAddItemClick={this.onAddTaskClick} todoListName={this.props.todoListName}/>
+                    <AddNewItemForm onAddItemClick={this.onAddTaskClick} todoListName={this.props.title}/>
                     <span className={'close'} onClick={this.deleteTodoList}>
                         X
                     </span>
@@ -110,7 +125,15 @@ class TodoList extends React.Component {
     }
 }
 
-const mapDispatchToProps = (dispatch) => {
+type MapDispatchToPropsType = {
+    addTask: (newTask: string, todoListId: string) => void;
+    changeTask: (todoListId: string, taskId: string, newTask: TaskType) => void;
+    deleteTodoList: (todoListId: string) => void;
+    restoreTasks: (todoListId: string) => void;
+    changeTodoListTitle: (todoListId: string, todoListTitle: string) => void;
+};
+
+const mapDispatchToProps = (dispatch: any): MapDispatchToPropsType => {
     return {
         addTask: (newTask, todoListId) => {
             dispatch(addTaskTC(newTask, todoListId))
@@ -130,6 +153,6 @@ const mapDispatchToProps = (dispatch) => {
     }
 };
 
-const ConnectedTodoList = connect(null, mapDispatchToProps)(TodoList);
+const ConnectedTodoList = connect<void, MapDispatchToPropsType, OwnPropsType, AppStateType>(null, mapDispatchToProps)(TodoList);
 
 export default ConnectedTodoList;
