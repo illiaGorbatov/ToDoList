@@ -1,4 +1,5 @@
 import {api} from "../Components/api";
+import {TodoListType} from "./entities";
 
 export const ADD_TODOLIST = 'todolist/redux/reducer/ADD_TODOLIST';
 export const ADD_TASK = 'todolist/redux/reducer/ADD_TASK';
@@ -9,11 +10,15 @@ export const SET_TODOLISTS = 'todolist/redux/reducer/SET_TODOLISTS';
 export const SET_TASKS = 'todolist/redux/reducer/SET_TASKS';
 export const CHANGE_TODO_LIST_TITLE = 'todolist/redux/reducer/CHANGE_TODO_LIST_TITLE';
 
+type InitialStateType = {
+    todoLists: TodoListType[]
+};
+
 const initialState = {
     todoLists: []
 };
 
-const reducer = (state = initialState, action) => {
+const reducer = (state: InitialStateType = initialState, action) => {
     switch (action.type) {
         case SET_TODOLISTS:
             return {
@@ -82,32 +87,42 @@ const reducer = (state = initialState, action) => {
     return state;
 };
 
-export const addTodoListAC = (newTodoList) => {
+type ActionType = {
+
+};
+
+type AddTodoListACType = {
+    type: typeof ADD_TODOLIST,
+    newTodoList: TodoListType;
+};
+
+
+const addTodoListAC = (newTodoList: TodoListType): AddTodoListACType => {
     return {
         type: ADD_TODOLIST,
         newTodoList: newTodoList
     }
 };
-export const addTaskAC = (newTask, todoListId) => {
+const addTaskAC = (newTask, todoListId) => {
     return {
         type: ADD_TASK,
         newTask,
         todoListId
     }
 };
-export const changeTaskAC = (task) => {
+const changeTaskAC = (task) => {
     return {
         type: CHANGE_TASK,
         task
     }
 };
-export const deleteTodoListAC = (todoListId) => {
+const deleteTodoListAC = (todoListId) => {
     return {
         type: DELETE_TODO_LIST,
         todoListId
     }
 };
-export const deleteTaskAC = (todoListId, taskId) => {
+const deleteTaskAC = (todoListId, taskId) => {
     return {
         type: DELETE_TASK,
         taskId,
@@ -120,20 +135,21 @@ const restoreTodoListAC = (todoLists) => {
         todoLists
     }
 };
-export const restoreTasksAC = (tasks, todoListId) => {
+const restoreTasksAC = (tasks, todoListId) => {
     return {
         type: SET_TASKS,
         tasks,
         todoListId
     }
 };
-export const changeTodoListTitleAC = (todoListId, todoListTitle) => {
+const changeTodoListTitleAC = (todoListId, todoListTitle) => {
     return {
         type: CHANGE_TODO_LIST_TITLE,
         todoListId,
         todoListTitle
     }
 };
+
 
 export const loadTodoListsTC = () => (dispatch) => {
     api.restoreState().then(res => {
