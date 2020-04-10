@@ -7,17 +7,10 @@ const instance = axios.create({
     headers: {'API-KEY': 'b4801660-f864-43f9-8acc-579713cc64df'}
 });
 
-
-type RestoreStateResponseType = {
-    id: string;
-    addedDate: string;
-    order: number;
-    title: string;
-};
 type AddTodoListResponseType = {
-    resultCode: string;
+    resultCode: number;
     messages: string[];
-    data: TodoListType;
+    data: {item: TodoListType};
 };
 type RestoreTasksResponseType = {
     items: TaskType[];
@@ -27,12 +20,12 @@ type RestoreTasksResponseType = {
 type AddTaskResponseType = {
     resultCode: number;
     messages: string[];
-    data: TaskType;
+    data: {item: TaskType};
 };
 type ChangeTaskResponseType = {
     resultCode: number;
     messages: string[];
-    data: TaskType;
+    data: {item: TaskType};
 };
 type DeleteTodoListResponseType = {
     resultCode: number;
@@ -42,12 +35,12 @@ type DeleteTodoListResponseType = {
 type DeleteTaskResponseType = {
     resultCode: number;
     messages: string[];
-    data: {};
+    data: {item: TaskType};
 };
 
 export const api = {
     restoreState: () => {
-        return instance.get<RestoreStateResponseType>('')
+        return instance.get<TodoListType[]>('')
     },
     addTodoList: (title: string) => {
         return instance.post<AddTodoListResponseType>("", {title: title})

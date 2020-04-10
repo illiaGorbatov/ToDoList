@@ -1,9 +1,9 @@
-export  type TodoListType = {
+export type TodoListType = {
     id: string;
     addedDate: string;
     order: number;
     title: string;
-    tasks?: TaskType[]
+    tasks: TaskType[]
 };
 
 export type TaskType = {
