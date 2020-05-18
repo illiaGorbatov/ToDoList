@@ -4,11 +4,8 @@ import {connect} from 'react-redux';
 import {deleteTaskTC} from "../redux/reducer";
 import {TaskType} from "../redux/entities";
 import {AppStateType} from "../redux/store";
+import {useState} from 'react';
 
-type StateType = {
-    isEditModeActivated: boolean;
-    title: string;
-};
 type OwnPropsType = {
     task: TaskType;
     changeStatus: (task: TaskType, status: number) => void;
@@ -18,62 +15,58 @@ type OwnPropsType = {
 }
 type PropsType = MapDispatchToPropsType & OwnPropsType;
 
-class TodoListTask extends React.Component<PropsType, StateType> {
+const TodoListTask: React.FC<PropsType> = (props) => {
 
-    state: StateType = {
-        isEditModeActivated: false,
-        title: this.props.task.title
+    const [isEditModeActivated, setEditMode] = useState<boolean>(false);
+    const [title, setTitle] = useState<string>(props.task.title)
+
+    const onChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setTitle(e.currentTarget.value)
     };
 
-    onChangeHandler = (e: any) => {
-        this.setState({title: e.currentTarget.value})
+    const onIsDoneChanged = (e:  React.ChangeEvent<HTMLInputElement>) => {
+        props.changeStatus(props.task, e.currentTarget.checked ? 2 : 0)
     };
 
-    onIsDoneChanged = (e: any) => {
-        this.props.changeStatus(this.props.task, e.currentTarget.checked ? 2 : 0)
+    const enablingEditMode = () => {
+        setEditMode(true);
     };
 
-    enablingEditMode = () => {
-        this.setState({isEditModeActivated: !this.state.isEditModeActivated});
+    const disablingEditMode = () => {
+        setEditMode(false);
+        props.changeTitle(props.task, title)
     };
 
-    disablingEditMode = () => {
-        this.setState({isEditModeActivated: !this.state.isEditModeActivated});
-        this.props.changeTitle(this.props.task, this.state.title)
+    const onKeyPressHandler = (e:  React.KeyboardEvent) => {
+        if (e.key === "Enter") disablingEditMode();
     };
 
-    onKeyPressHandler = (e: any) => {
-        if (e.key === "Enter") this.disablingEditMode();
+    const onDeleteTask = () => {
+        props.deleteTask(props.todoListId, props.task.id)
     };
 
-    onDeleteTask = () => {
-        this.props.deleteTask(this.props.todoListId, this.props.task.id)
-    };
 
-    render() {
+    const priority = props.task.priority === 0 ? 'Low' : 1 ? 'Middle' : 2 ?
+        'High' : 3 ? 'Urgently' : 'Later';
 
-        let priority = this.props.task.priority === 0 ? 'Low' : 1 ? 'Middle' : 2 ?
-            'High' : 3 ? 'Urgently' : 'Later';
-
-        return (
-            <div className={this.props.task.status === 2 ? 'todoList-task done' : 'todoList-task'}>
-                <input type="checkbox" checked={this.props.task.status === 2}
-                       onChange={(e) => this.onIsDoneChanged(e)}/>
-                <span>
-                    {this.state.isEditModeActivated ?
-                        <input value={this.state.title} onBlur={this.disablingEditMode} autoFocus={true}
-                               onKeyPress={this.onKeyPressHandler}
-                               onChange={(e) => this.onChangeHandler(e)}/> :
-                        <span onClick={this.enablingEditMode}>
-                            {this.props.task.title}
-                        </span>}
-                    , priority: {priority}</span>
-                <span className={'close'} onClick={this.onDeleteTask}>
-                    X
-                </span>
-            </div>
-        );
-    }
+    return (
+        <div className={props.task.status === 2 ? 'todoList-task done' : 'todoList-task'}>
+            <input type="checkbox" checked={props.task.status === 2}
+                   onChange={(e) => onIsDoneChanged(e)}/>
+            <span>
+                {isEditModeActivated ?
+                    <input value={title} onBlur={disablingEditMode} autoFocus={true}
+                           onKeyPress={onKeyPressHandler}
+                           onChange={(e) => onChangeHandler(e)}/> :
+                    <span onClick={enablingEditMode}>
+                        {props.task.title}
+                    </span>}
+                , priority: {priority}</span>
+            <span className={'close'} onClick={onDeleteTask}>
+                X
+            </span>
+        </div>
+    );
 }
 
 type MapDispatchToPropsType = {

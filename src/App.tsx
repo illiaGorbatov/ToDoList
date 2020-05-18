@@ -7,39 +7,38 @@ import {addTodoListTC, loadTodoListsTC} from "./redux/reducer";
 import {connect} from 'react-redux';
 import {TodoListType} from "./redux/entities";
 import {AppStateType} from "./redux/store";
+import {useEffect} from "react";
 
 type PropsType = MapStateToPropsType & MapDispatchToPropsType;
 
-class App extends React.Component<PropsType> {
+const App: React.FC<PropsType> = (props) => {
 
-    componentDidMount() {
-        this.restoreState()
+    useEffect(() => {
+        restoreState()
+    }, [])
+
+    const restoreState = () => {
+        props.getTodoLists()
     };
 
-    restoreState = () => {
-        this.props.getTodoLists()
+    const addTodoList = (title: string) => {
+        props.addTodoList(title)
     };
 
-    addTodoList = (title: string) => {
-        this.props.addTodoList(title)
-    };
 
-    render() {
+    const TodoLists = props.todoLists.map(
+        todoList => <TodoList id={todoList.id} key={todoList.id}
+                              title={todoList.title} tasks={todoList.tasks}/>);
 
-        const TodoLists = this.props.todoLists.map(
-            todoList => <TodoList id={todoList.id} key={todoList.id}
-                                  title={todoList.title} tasks={todoList.tasks}/>);
-
-        return (
-            <>
-                <TodoListTitle title={'Add TodoList'}/>
-                <AddNewItemForm onAddItemClick={this.addTodoList}/>
-                <div className={'App'}>
-                    {TodoLists}
-                </div>
-            </>
-        );
-    }
+    return (
+        <>
+            <TodoListTitle title={'Add TodoList'}/>
+            <AddNewItemForm onAddItemClick={addTodoList}/>
+            <div className={'App'}>
+                {TodoLists}
+            </div>
+        </>
+    );
 }
 
 type MapStateToPropsType = {

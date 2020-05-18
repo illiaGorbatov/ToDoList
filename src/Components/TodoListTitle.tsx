@@ -6,12 +6,10 @@ type OwnPropsType = {
     onClickHandler?: () => void;
 };
 
-class TodoListTitle extends React.Component<OwnPropsType> {
-    render() {
-        return (
-            <h3 className="todoList-header__title" onClick={this.props.onClickHandler}>{this.props.title}</h3>
-        );
-    }
+const TodoListTitle: React.FC<OwnPropsType> = (props) => {
+    return (
+        <h3 className="todoList-header__title" onClick={props.onClickHandler}>{props.title}</h3>
+    );
 }
 
 export default TodoListTitle;

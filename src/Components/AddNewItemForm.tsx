@@ -1,53 +1,46 @@
 import * as React from 'react';
 import '../App.css';
+import {useState} from "react";
 
-type StateType ={
-    error: boolean;
-    title: string;
-};
 type OwnPropsType = {
     onAddItemClick: (title: string) => void;
     todoListName?: string;
 };
 
-class AddNewItemForm extends React.Component<OwnPropsType> {
+const AddNewItemForm: React.FC<OwnPropsType> = (props) => {
 
-    state: StateType = {
-        error: false,
-        title: ''
-    };
+    const [error, setError] = useState<boolean>(false);
+    const [title, setTitle] = useState<string>('');
 
-    onTitleChanged = (e: any) => {
+    const onTitleChanged = (e: React.ChangeEvent<HTMLInputElement>) => {
         let newValue = e.currentTarget.value;
-        this.setState({title: newValue});
-        if (this.state.title !== '')
-            this.setState({error: false})
+        setTitle(newValue);
+        if (title !== '') setError(false)
     };
 
-    onAddItemClickHandler = () => {
-        if (this.state.title === '') {
-            this.setState({error: true})
+    const onAddItemClickHandler = () => {
+        if (title === '') {
+            setError(true)
         } else {
-            this.props.onAddItemClick(this.state.title);
-            this.setState({error: false, title: ''})
+            props.onAddItemClick(title);
+            setError(false);
+            setTitle('')
         }
     };
 
-    onKeyPressHandler = (e: any) => {
-        if (e.key === "Enter") this.onAddItemClickHandler()
+    const onKeyPressHandler = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter") onAddItemClickHandler()
     };
 
-    render() {
-        return (
-            <div className="todoList-newTaskForm">
-                <input type="text" className={this.state.error ? 'error' : ''}
-                       placeholder="New item name" value={this.state.title}
-                       onChange={this.onTitleChanged} onKeyPress={this.onKeyPressHandler}
-                />
-                <button onClick={this.onAddItemClickHandler}>Add</button>
-            </div>
-        );
-    }
+    return (
+        <div className="todoList-newTaskForm">
+            <input type="text" className={error ? 'error' : ''}
+                   placeholder="New item name" value={title}
+                   onChange={onTitleChanged} onKeyPress={onKeyPressHandler}
+            />
+            <button onClick={onAddItemClickHandler}>Add</button>
+        </div>
+    );
 }
 
 export default AddNewItemForm;

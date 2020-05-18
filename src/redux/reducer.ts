@@ -1,4 +1,4 @@
-import {api} from "../Components/api";
+import {api} from "./api";
 import {TaskType, TodoListType} from "./entities";
 import {ThunkAction, ThunkDispatch} from "redux-thunk";
 import {AppStateType} from "./store";
@@ -195,43 +195,43 @@ type ThunkType = ThunkAction<void, AppStateType, unknown, ActionType>;
 type ThunkActionType = ThunkDispatch<AppStateType, unknown, ActionType>
 
 export const loadTodoListsTC = (): ThunkType => (dispatch: ThunkActionType) => {
-    api.restoreState().then(res => {
-        dispatch(restoreTodoListAC(res.data))
+    api.restoreState().then(data => {
+        dispatch(restoreTodoListAC(data))
     })
 };
-export const addTodoListTC = (title: string) => (dispatch: ThunkActionType) => {
-    api.addTodoList(title).then(res => {
-        if (res.data.resultCode === 0) dispatch(addTodoListAC(res.data.data.item))
+export const addTodoListTC = (title: string): ThunkType => (dispatch: ThunkActionType) => {
+    api.addTodoList(title).then(data => {
+        if (data.resultCode === 0) dispatch(addTodoListAC(data.data.item))
     })
 };
-export const addTaskTC = (newTask: string, todoListId: string) => (dispatch: ThunkActionType) => {
-    api.addTask(newTask, todoListId).then(res => {
-        if (res.data.resultCode === 0) dispatch(addTaskAC(res.data.data.item, todoListId))
+export const addTaskTC = (newTask: string, todoListId: string): ThunkType => (dispatch: ThunkActionType) => {
+    api.addTask(newTask, todoListId).then(data => {
+        if (data.resultCode === 0) dispatch(addTaskAC(data.data.item, todoListId))
     })
 };
-export const changeTaskTC = (todoListId: string, taskId: string, newTask: TaskType) => (dispatch: ThunkActionType) => {
-    api.changeTask(todoListId, taskId, newTask).then(res => {
-        if (res.data.resultCode === 0) dispatch(changeTaskAC(res.data.data.item))
+export const changeTaskTC = (todoListId: string, taskId: string, newTask: TaskType): ThunkType => (dispatch: ThunkActionType) => {
+    api.changeTask(todoListId, taskId, newTask).then(data => {
+        if (data.resultCode === 0) dispatch(changeTaskAC(data.data.item))
     })
 };
-export const deleteTodoListTC = (todoListId: string) => (dispatch: ThunkActionType) => {
-    api.deleteTodoList(todoListId).then(res => {
-        if (res.data.resultCode === 0) dispatch(deleteTodoListAC(todoListId))
+export const deleteTodoListTC = (todoListId: string): ThunkType => (dispatch: ThunkActionType) => {
+    api.deleteTodoList(todoListId).then(data => {
+        if (data.resultCode === 0) dispatch(deleteTodoListAC(todoListId))
     })
 };
-export const deleteTaskTC = (todoListId: string, taskId: string) => (dispatch: ThunkActionType) => {
-    api.deleteTask(todoListId, taskId).then(res => {
-        if (res.data.resultCode === 0) dispatch(deleteTaskAC(todoListId, taskId))
+export const deleteTaskTC = (todoListId: string, taskId: string): ThunkType => (dispatch: ThunkActionType) => {
+    api.deleteTask(todoListId, taskId).then(data => {
+        if (data.resultCode === 0) dispatch(deleteTaskAC(todoListId, taskId))
     })
 };
-export const restoreTasksTC = (todoListId: string) => (dispatch: ThunkActionType) => {
-    api.restoreTasks(todoListId).then(res => {
-       dispatch(restoreTasksAC(res.data.items, todoListId))
+export const restoreTasksTC = (todoListId: string): ThunkType => (dispatch: ThunkActionType) => {
+    api.restoreTasks(todoListId).then(data => {
+       dispatch(restoreTasksAC(data.items, todoListId))
     })
 };
-export const changeTodoListTitleTC = (todoListId: string, todoListTitle: string) => (dispatch: ThunkActionType) => {
-    api.changeTodoListTitle(todoListId, todoListTitle).then(res => {
-        if (res.data.resultCode === 0) dispatch(changeTodoListTitleAC(todoListId, todoListTitle))
+export const changeTodoListTitleTC = (todoListId: string, todoListTitle: string): ThunkType => (dispatch: ThunkActionType) => {
+    api.changeTodoListTitle(todoListId, todoListTitle).then(data => {
+        if (data.resultCode === 0) dispatch(changeTodoListTitleAC(todoListId, todoListTitle))
     })
 };
 

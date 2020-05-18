@@ -7,14 +7,12 @@ type OwnPropsType = {
     changeFilter: () => void;
 }
 
-class TodoListFooterButton extends React.Component<OwnPropsType> {
-    render() {
-        return (
-            <button className={this.props.className} onClick={this.props.changeFilter}>
-                {this.props.value}
-            </button>
-        );
-    }
+const TodoListFooterButton: React.FC<OwnPropsType> = (props) => {
+    return (
+        <button className={props.className} onClick={props.changeFilter}>
+            {props.value}
+        </button>
+    );
 }
 
 export default TodoListFooterButton;

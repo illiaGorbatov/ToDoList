@@ -14,12 +14,8 @@ import {
 } from "../redux/reducer";
 import {TaskType} from "../redux/entities";
 import {AppStateType} from "../redux/store";
+import {useEffect, useState} from "react";
 
-type StateType = {
-    isEditModeActivated: boolean;
-    title: string;
-    filterValue: string;
-};
 type OwnPropsType = {
     id: string;
     key: string;
@@ -28,101 +24,95 @@ type OwnPropsType = {
 };
 type PropsType = OwnPropsType & MapDispatchToPropsType;
 
-class TodoList extends React.Component<PropsType, StateType> {
+const TodoList: React.FC<PropsType> = (props) => {
 
-    state: StateType = {
-        isEditModeActivated: false,
-        title: this.props.title,
-        filterValue: "All"
+    const [isEditModeActivated, setEditMode] = useState<boolean>(false);
+    const [title, setTitle] = useState<string>(props.title);
+    const [filterValue, setFilterValue] = useState<string>('All')
+
+    useEffect(() => {
+        restoreState()
+    }, []);
+
+    const restoreState = () => {
+        props.restoreTasks(props.id)
     };
 
-    componentDidMount() {
-        this.restoreState()
+    const changeFilter = (newFilterValue: string) => {
+        setFilterValue(newFilterValue)
     };
 
-    restoreState = () => {
-        this.props.restoreTasks(this.props.id)
+    const onAddTaskClick = (title: string) => {
+        props.addTask(title, props.id)
     };
 
-    changeFilter = (newFilterValue: string) => {
-        this.setState({
-            filterValue: newFilterValue
-        });
-    };
-
-    onAddTaskClick = (title: string) => {
-        this.props.addTask(title, this.props.id)
-    };
-
-    changeStatus = (task: TaskType, status: number) => {
+    const changeStatus = (task: TaskType, status: number) => {
         let newTask = {...task, status: status};
-        this.props.changeTask(this.props.id, task.id, newTask)
+        props.changeTask(props.id, task.id, newTask)
     };
 
-    changeTitle = (task: TaskType, title: string) => {
-        let newTask = {...task, title: title};
-        this.props.changeTask(this.props.id, task.id, newTask)
+    const changeTitle = (task: TaskType, title: string) => {
+        let newTask = {...task, title};
+        props.changeTask(props.id, task.id, newTask)
     };
 
-    deleteTodoList = () => {
-        this.props.deleteTodoList(this.props.id)
+    const deleteTodoList = () => {
+        props.deleteTodoList(props.id)
     };
 
-    changeTodoListTitle = () => {
-        this.props.changeTodoListTitle(this.props.id, this.state.title)
+    const changeTodoListTitle = () => {
+        props.changeTodoListTitle(props.id, title)
     };
 
-    onChangeHandler = (e: any) => {
-        this.setState({title: e.currentTarget.value})
+    const onChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setTitle(e.currentTarget.value)
     };
 
-    enablingEditMode = () => {
-        this.setState({isEditModeActivated: !this.state.isEditModeActivated});
+    const enablingEditMode = () => {
+        setEditMode(true)
     };
 
-    disablingEditMode = () => {
-        this.setState({isEditModeActivated: !this.state.isEditModeActivated});
-        this.changeTodoListTitle()
+    const disablingEditMode = () => {
+        setEditMode(false);
+        changeTodoListTitle()
     };
 
-    onKeyPressHandler = (e: any) => {
-        if (e.key === "Enter") this.disablingEditMode();
+    const onKeyPressHandler = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter") disablingEditMode();
     };
 
-    render() {
 
-        let {tasks = []} = this.props;
+    let {tasks = []} = props;
 
-        return (
-            <div className="todoList">
-                <div className="todoList-header">
-                    {this.state.isEditModeActivated ?
-                        <input value={this.state.title} onBlur={this.disablingEditMode} autoFocus={true}
-                               onKeyPress={this.onKeyPressHandler}
-                               onChange={(e) => this.onChangeHandler(e)}/> :
-                        <TodoListTitle title={this.props.title} onClickHandler={this.enablingEditMode}/>}
-                    <AddNewItemForm onAddItemClick={this.onAddTaskClick} todoListName={this.props.title}/>
-                    <span className={'close'} onClick={this.deleteTodoList}>
-                        X
-                    </span>
-                </div>
-                <TodoListTasks changeStatus={this.changeStatus}
-                               changeTitle={this.changeTitle} todoListId={this.props.id}
-                               tasks={tasks.filter(t => {
-                                   if (this.state.filterValue === "All") {
-                                       return true;
-                                   }
-                                   if (this.state.filterValue === "Active") {
-                                       return t.status === 0;
-                                   }
-                                   if (this.state.filterValue === "Completed") {
-                                       return t.status === 2;
-                                   }
-                               })}/>
-                <TodoListFooter filterValue={this.state.filterValue} changeFilter={this.changeFilter}/>
+    return (
+        <div className="todoList">
+            <div className="todoList-header">
+                {isEditModeActivated ?
+                    <input value={title} onBlur={disablingEditMode} autoFocus={true}
+                           onKeyPress={onKeyPressHandler}
+                           onChange={(e) => onChangeHandler(e)}/> :
+                    <TodoListTitle title={props.title} onClickHandler={enablingEditMode}/>}
+                <AddNewItemForm onAddItemClick={onAddTaskClick} todoListName={props.title}/>
+                <span className={'close'} onClick={deleteTodoList}>
+                    X
+                </span>
             </div>
-        );
-    }
+            <TodoListTasks changeStatus={changeStatus}
+                           changeTitle={changeTitle} todoListId={props.id}
+                           tasks={tasks.filter(t => {
+                               if (filterValue === "All") {
+                                   return true;
+                               }
+                               if (filterValue === "Active") {
+                                   return t.status === 0;
+                               }
+                               if (filterValue === "Completed") {
+                                   return t.status === 2;
+                               }
+                           })}/>
+            <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>
+        </div>
+    );
 }
 
 type MapDispatchToPropsType = {
