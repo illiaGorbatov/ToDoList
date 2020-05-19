@@ -1,6 +1,9 @@
-import * as React from 'react';
+import React from "react";
 import '../App.css';
 import {useState} from "react";
+import styled from "styled-components/macro";
+
+
 
 type OwnPropsType = {
     onAddItemClick: (title: string) => void;

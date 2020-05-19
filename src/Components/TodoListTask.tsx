@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React from "react";
 import '../App.css';
 import {connect} from 'react-redux';
 import {deleteTaskTC} from "../redux/reducer";

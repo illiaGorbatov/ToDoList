@@ -18,6 +18,8 @@
     "react-use-gesture": "^7.0.15",
     "redux": "^4.0.5",
     "redux-thunk": "^2.3.0",
+    "reselect": "^4.0.0",
+    "resize-observer-polyfill": "^1.5.1",
     "styled-components": "^5.1.0",
     "typescript": "^3.8.3"
   },

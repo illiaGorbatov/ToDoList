@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React from "react";
 import TodoListTasks from './TodoListTasks';
 import TodoListFooter from './TodoListFooter';
 import '../App.css'
@@ -15,6 +15,35 @@ import {
 import {TaskType} from "../redux/entities";
 import {AppStateType} from "../redux/store";
 import {useEffect, useState} from "react";
+import styled from "styled-components/macro";
+
+const TodoListContainer = styled.div` 
+  position: absolute;
+  will-change: transform, width, height, opacity;
+  padding: 15px;
+`;
+
+const SingleList = styled.div`
+  position: relative;
+  background-size: cover;
+  background-position: center center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  text-transform: uppercase;
+  font-size: 10px;
+  line-height: 10px;
+  border-radius: 4px;
+  box-shadow: 0px 10px 50px -10px rgba(0, 0, 0, 0.2);
+`;
+
+const CloseButton = styled.span`
+  height: 17px;
+  width: 17px;
+  border: 1px solid black;
+  cursor: pointer;
+  text-align: center;
+`;
 
 type OwnPropsType = {
     id: string;
@@ -85,33 +114,35 @@ const TodoList: React.FC<PropsType> = (props) => {
     let {tasks = []} = props;
 
     return (
-        <div className="todoList">
-            <div className="todoList-header">
-                {isEditModeActivated ?
-                    <input value={title} onBlur={disablingEditMode} autoFocus={true}
-                           onKeyPress={onKeyPressHandler}
-                           onChange={(e) => onChangeHandler(e)}/> :
-                    <TodoListTitle title={props.title} onClickHandler={enablingEditMode}/>}
-                <AddNewItemForm onAddItemClick={onAddTaskClick} todoListName={props.title}/>
-                <span className={'close'} onClick={deleteTodoList}>
-                    X
-                </span>
-            </div>
-            <TodoListTasks changeStatus={changeStatus}
-                           changeTitle={changeTitle} todoListId={props.id}
-                           tasks={tasks.filter(t => {
-                               if (filterValue === "All") {
-                                   return true;
-                               }
-                               if (filterValue === "Active") {
-                                   return t.status === 0;
-                               }
-                               if (filterValue === "Completed") {
-                                   return t.status === 2;
-                               }
-                           })}/>
-            <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>
-        </div>
+        <TodoListContainer>
+            <SingleList>
+                <div>
+                    {isEditModeActivated ?
+                        <input value={title} onBlur={disablingEditMode} autoFocus={true}
+                               onKeyPress={onKeyPressHandler}
+                               onChange={(e) => onChangeHandler(e)}/> :
+                        <TodoListTitle title={props.title} onClickHandler={enablingEditMode}/>}
+                    <AddNewItemForm onAddItemClick={onAddTaskClick} todoListName={props.title}/>
+                    <CloseButton onClick={deleteTodoList}>
+                        X
+                    </CloseButton>
+                </div>
+                <TodoListTasks changeStatus={changeStatus}
+                               changeTitle={changeTitle} todoListId={props.id}
+                               tasks={tasks.filter(t => {
+                                   if (filterValue === "All") {
+                                       return true;
+                                   }
+                                   if (filterValue === "Active") {
+                                       return t.status === 0;
+                                   }
+                                   if (filterValue === "Completed") {
+                                       return t.status === 2;
+                                   }
+                               })}/>
+                <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>
+            </SingleList>
+        </TodoListContainer>
     );
 }
 
