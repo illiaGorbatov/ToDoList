@@ -56,9 +56,9 @@ const App: React.FC<PropsType> = (props) => {
         props.addTodoList(title)
     };
 
-    const columns = useMedia(['(min-width: 1500px)', '(min-width: 1000px)', '(min-width: 600px)'], [5, 4, 3], 2)
-    // Hook2: Measure the width of the container element
-    const [bind, { width }] = useMeasure()
+    const columns = useMedia(['(min-width: 1500px)', '(min-width: 1000px)', '(min-width: 600px)'], [5, 4, 3], 2);
+    const [bind, { width }] = useMeasure();
+    let heights = new Array(columns).fill(0)
 
 
     const TodoLists = props.todoLists.map(
