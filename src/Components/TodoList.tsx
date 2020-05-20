@@ -9,12 +9,6 @@ import {addTaskTC, changeTaskTC, changeTodoListTitleTC, deleteTodoListTC, restor
 import {TaskType} from "../redux/entities";
 import styled from "styled-components/macro";
 
-const TodoListContainer = styled.div` 
-  position: absolute;
-  will-change: transform, width, height, opacity;
-  padding: 15px;
-`;
-
 const SingleList = styled.div`
   position: relative;
   background-size: cover;
@@ -26,7 +20,7 @@ const SingleList = styled.div`
   font-size: 10px;
   line-height: 10px;
   border-radius: 4px;
-  box-shadow: 0px 10px 50px -10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 50px -10px rgba(0, 0, 0, 0.2);
 `;
 
 const CloseButton = styled.span`
@@ -101,7 +95,7 @@ const TodoList: React.FC<PropsType> = (props) => {
     let {tasks = []} = props;
 
     return (
-        <TodoListContainer>
+        <>
             <SingleList>
                 <div>
                     {isEditModeActivated ?
@@ -129,7 +123,7 @@ const TodoList: React.FC<PropsType> = (props) => {
                                })}/>
                 <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>
             </SingleList>
-        </TodoListContainer>
+        </>
     );
 }
 

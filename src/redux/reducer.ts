@@ -37,13 +37,13 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                 }),
             };
         case ADD_TODOLIST:
-            return {...state, todoLists: [...state.todoLists, action.newTodoList]};
+            return {...state, todoLists: [action.newTodoList, ...state.todoLists]};
         case ADD_TASK:
             return {
                 ...state,
                 todoLists: state.todoLists.map(list => {
                     if (list.id === action.todoListId) {
-                        return {...list, tasks: [...list.tasks, action.newTask]}
+                        return {...list, tasks: [action.newTask, ...list.tasks]}
                     } else return list
                 }),
             };

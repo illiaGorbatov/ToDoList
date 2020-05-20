@@ -1,4 +1,4 @@
-import React, {useEffect} from "react";
+import React, {useEffect, useMemo, useRef} from "react";
 import TodoList from "./Components/TodoList";
 import AddNewItemForm from "./Components/AddNewItemForm";
 import TodoListTitle from "./Components/TodoListTitle";
@@ -8,7 +8,10 @@ import {AppStateType} from "./redux/store";
 import styled, {createGlobalStyle} from "styled-components/macro";
 import {useMedia} from "./hooks/useMedia";
 import {useMeasure} from "./hooks/useMeasure";
-import {useTransition, animated} from "react-spring";
+import {useTransition, animated, useSprings} from "react-spring";
+import {useDrag} from "react-use-gesture";
+import clamp from 'lodash-es/clamp'
+import {swap} from "./hooks/swap";
 
 const GlobalStyles = createGlobalStyle`
   * {
@@ -33,11 +36,21 @@ const TodoListsContainer = styled.div`
 const AllLists = styled.div`
   position: relative;
   width: 100%;
-  height: 100%;
 `;
 
+const TodoListContainer = styled(animated.div)` 
+  position: absolute;
+  will-change: transform, width, height, opacity;
+  padding: 15px;
+`;
 
-const App: React.FC = () => {
+type GridItemsType = { x: number, y: number, width: number, height: number, id: string };
+type UseMemoType = {
+    gridItems: Array<GridItemsType>,
+    heights: Array<number>};
+
+
+const App = () => {
 
     const todoLists = useSelector((store: AppStateType) => store.todoList.todoLists);
     const dispatch = useDispatch();
@@ -49,36 +62,64 @@ const App: React.FC = () => {
     const addTodoList = (title: string) => {
         dispatch(addTodoListTC(title))
     };
-//adaptive grid
-    const columns = useMedia(['(min-width: 1500px)', '(min-width: 1000px)', '(min-width: 600px)'], [5, 4, 3], 2);
-    const [bind, {width}] = useMeasure();
-    let heights = new Array(columns).fill(0);
 
-    type GridItemsType = { xy: Array<number>, width: number, height: number }
-    const gridItems: Array<GridItemsType> = [];
-    todoLists.map(
-        () => {
-            const column = heights.indexOf(Math.min(...heights)); // Basic masonry-grid placing, puts tile into the smallest column using Math.min
-            const xy = [(width / columns) * column, (heights[column] += (Math.random() * 100 + 300) / 2) - (Math.random() * 100 + 300) / 2]; // X = container width / number of columns * column index, Y = it's just the height of the current column
-            gridItems.push({xy, width: width / columns, height: (Math.random() * 100 + 300) / 2});
-        });
 
     const TodoLists = todoLists.map(
         (todoList) => <TodoList id={todoList.id} key={todoList.id}
                                 title={todoList.title} tasks={todoList.tasks}/>
     );
-    console.log('render')
-    const transitions = useTransition(gridItems, null,{
-        from: ({xy, width, height}) =>
-            ({transform: `translate3d(${xy[0]}px,${xy[1]}px,0)`, width, height, opacity: 0}),
-        enter: ({xy, width, height}) =>
-            ({transform: `translate3d(${xy[0]}px,${xy[1]}px,0)`, width, height, opacity: 1}),
-        update: ({xy, width, height}) =>
-            ({transform: `translate3d(${xy[0]}px,${xy[1]}px,0)`, width, height}),
+
+//adaptive grid with transitions
+    const columns = useMedia(['(min-width: 1500px)', '(min-width: 1000px)', '(min-width: 600px)'], [5, 4, 3], 2);
+    const [bind, {width}] = useMeasure();
+
+
+    const {gridItems, heights}: UseMemoType = useMemo(() => {
+        let gridItems: Array<GridItemsType> = [];
+        let heights = new Array(columns).fill(0);
+        todoLists.map(
+            (item) => {
+                const height = 175 + (item.tasks ? item.tasks.length * 20 : 0);
+                const column = heights.indexOf(Math.min(...heights));
+                const x = (width / columns) * column;
+                const y = (heights[column] += height) - height
+                gridItems.push({x, y, width: width / columns, height: height, id: item.id});
+            });
+        return {gridItems, heights}
+    }, [todoLists]);
+
+
+    const transitions = useTransition(gridItems, item => item.id,{
+        from: ({x, y, width, height}) =>
+            ({transform: `translate3d(${x}px,${y}px,0)`, width, height, opacity: 0}),
+        enter: ({x, y, width, height}) =>
+            ({transform: `translate3d(${x}px,${y}px,0)`, width, height, opacity: 1}),
+        update: ({x, y, width, height}) =>
+            ({transform: `translate3d(${x}px,${y}px,0)`, width, height}),
         leave: {height: 0, opacity: 0},
         config: {mass: 5, tension: 500, friction: 100},
         trail: 25
-    })
+    });
+
+    //drag and drop
+    const fn = (order, down, originalIndex, curIndex, y) => index =>
+        down && index === originalIndex
+            ? { y: curIndex * 100 + y, scale: 1.1, zIndex: '1', shadow: 15, immediate: n => n === 'y' || n === 'zIndex' }
+            : { y: order.indexOf(index) * 100, scale: 1, zIndex: '0', shadow: 1, immediate: false }
+
+    function DraggableList({ items }) {
+        const order = useRef(items.map((_, index) => index)) // Store indicies as a local ref, this represents the item order
+        const [springs, setSprings] = useSprings(items.length, fn(order.current)) // Create springs, each corresponds to an item, controlling its transform, scale, etc.
+        const bind = useDrag(({ args: [originalIndex], down, movement: [, y] }) => {
+            const curIndex = order.current.indexOf(originalIndex)
+            const curRow = clamp(Math.round((curIndex * 100 + y) / 100), 0, items.length - 1)
+            const newOrder = swap(order.current, curIndex, curRow)
+            setSprings(fn(newOrder, down, originalIndex, curIndex, y)) // Feed springs new style data, they'll animate the view without causing a single render
+            if (!down) order.current = newOrder
+        }
+    }
+
+    console.log(heights)
 
     return (
         <>
@@ -88,10 +129,10 @@ const App: React.FC = () => {
             <TodoListsContainer>
                 <AllLists {...bind} style={{height: Math.max(...heights)}}>
                     {transitions.map(({item, props, key}, id) => (
-                        <animated.div key={id}
+                        <TodoListContainer key={item.id}
                                       style={props}>
                             {TodoLists[id]}
-                        </animated.div>
+                        </TodoListContainer>
                     ))}
                 </AllLists>
             </TodoListsContainer>
