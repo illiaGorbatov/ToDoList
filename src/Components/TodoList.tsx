@@ -8,6 +8,7 @@ import {useDispatch} from 'react-redux';
 import {addTaskTC, changeTaskTC, changeTodoListTitleTC, deleteTodoListTC, restoreTasksTC} from "../redux/reducer";
 import {TaskType} from "../redux/entities";
 import styled from "styled-components/macro";
+import store from "../redux/store";
 
 const SingleList = styled.div`
   position: relative;
@@ -64,6 +65,9 @@ const TodoList: React.FC<PropsType> = (props) => {
     useEffect(() => {
         dispatch(restoreTasksTC(props.id))
     }, []);
+
+    // @ts-ignore
+    window.abc = store.getState().todoList
 
     const changeFilter = (newFilterValue: string) => {
         setFilterValue(newFilterValue)
