@@ -112,7 +112,7 @@ const actions = {
 }
 
 type ThunkType = ThunkAction<void, AppStateType, unknown, ActionsTypes>;
-type ThunkActionType = ThunkDispatch<AppStateType, unknown, ActionsTypes>
+type ThunkActionType = ThunkDispatch<AppStateType, unknown, ActionsTypes>;
 
 export const loadTodoListsTC = (): ThunkType => (dispatch: ThunkActionType) => {
     api.restoreState().then(data => {

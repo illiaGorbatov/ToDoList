@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef} from "react";
+import React, {useEffect, useMemo} from "react";
 import TodoList from "./Components/TodoList";
 import AddNewItemForm from "./Components/AddNewItemForm";
 import TodoListTitle from "./Components/TodoListTitle";
@@ -8,10 +8,7 @@ import {AppStateType} from "./redux/store";
 import styled, {createGlobalStyle} from "styled-components/macro";
 import {useMedia} from "./hooks/useMedia";
 import {useMeasure} from "./hooks/useMeasure";
-import {useTransition, animated, useSprings} from "react-spring";
-import {useDrag} from "react-use-gesture";
-import clamp from 'lodash-es/clamp'
-import {swap} from "./hooks/swap";
+import {animated, useTransition} from "react-spring";
 
 const GlobalStyles = createGlobalStyle`
   * {
@@ -66,12 +63,12 @@ const App = () => {
 
 
     const TodoLists = useMemo(() => {
-        console.log('render')
         return todoLists.map(
             (todoList) => <TodoList id={todoList.id} key={todoList.id}
                                     title={todoList.title} tasks={todoList.tasks}/>
         )
-    }, [todoLists])
+    }, [todoLists]);
+
 //adaptive grid with transitions
     const columns = useMedia(['(min-width: 1500px)', '(min-width: 1000px)', '(min-width: 600px)'], [5, 4, 3], 2);
     const [bind, {width}] = useMeasure();
@@ -90,7 +87,6 @@ const App = () => {
         return {gridItems, heights}
     }, [todoLists]);
 
-
     const transitions = useTransition(gridItems, {
         from: ({x, y, width, height}: GridItemsType) =>
             ({transform: `translate3d(${x}px,${y}px,0)`, width, height, opacity: 0}),
@@ -100,13 +96,14 @@ const App = () => {
             ({transform: `translate3d(${x}px,${y}px,0)`, width, height}),
         leave: {height: 0, opacity: 0},
         config: {mass: 5, tension: 500, friction: 100},
-        trail: 25
+        trail: 25,
+        keys: (gridItems: GridItemsType) => gridItems.id
     });
-    const fragment = transitions((style, item, t, i) => (
+    const fragment = transitions((style, item, t, i) =>
         <TodoListContainer style={style}>
             {TodoLists[i]}
         </TodoListContainer>
-    ))
+    );
 
     //drag and drop
 

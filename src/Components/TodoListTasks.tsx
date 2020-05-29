@@ -1,4 +1,4 @@
-import React, {useRef} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import '../App.css';
 import TodoListTask from "./TodoListTask";
 import {TaskType} from "../redux/entities";
@@ -7,6 +7,7 @@ import {useDrag} from "react-use-gesture";
 import {swap} from "../hooks/swap";
 import clamp from "lodash-es/clamp";
 import styled from "styled-components/macro";
+import store from "../redux/store";
 
 const TasksWrapper = styled.div`
   user-select: none;
@@ -16,6 +17,7 @@ const TasksWrapper = styled.div`
   align-items: center;
   background: #f0f0f0;
   position: relative;
+  height: 100%;
 `;
 
 const TaskWrapper = styled(animated.div)`
@@ -67,7 +69,7 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
             ? {
                 zIndex: '1',
                 boxShadow: `rgba(0, 0, 0, 0.15) 0px ${15}px ${2 * 15}px 0px`,
-                transform: `translate3d(0,${(curIndex || 0) * 100 + (y || 0)}px,0) scale(${1.1})`,
+                transform: `translate3d(0,${(curIndex!) * 100 + (y || 0)}px,0) scale(${1.1})`,
                 immediate: false
             }
             : {
@@ -78,29 +80,35 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
             }
     )
 
-    const order = useRef(props.tasks.map((_, index) => index))
-    const [springs, setSprings] = useSprings(props.tasks.length, fn(order.current))
-    const gesture = useDrag(({args: [originalIndex], down, movement: [, y]}) => {
-        const curIndex = order.current.indexOf(originalIndex)
-        const curRow = clamp(Math.round((curIndex * 100 + y) / 100), 0, props.tasks.length - 1)
-        const newOrder = swap(order.current, curIndex, curRow)
-        // @ts-ignore
-        setSprings(fn(newOrder, down, originalIndex, curIndex, y))
-        if (!down) order.current = newOrder
-    });
+    const [order, setOrder] = useState<Array<number>>(props.tasks.map((_, index) => index));
+    useEffect(() => {
+        setOrder(props.tasks.map((_, index) => index));
+        setSprings(fn(order))
+    }, [props.tasks]);
 
+    const order0 = useMemo(() => props.tasks.map((_, index) => index), [props.tasks]);
+    const [springs, setSprings] = useSprings(props.tasks.length, fn(order));
+    const gesture = useDrag(({args: [originalIndex], down, movement: [, y]}) => {
+        const curIndex = order.indexOf(originalIndex);
+        const curRow = clamp(Math.round((curIndex * 100 + y) / 100), 0, props.tasks.length - 1);
+        const newOrder = swap(order, curIndex, curRow);
+        setSprings(fn(newOrder, down, originalIndex, curIndex, y));
+        if (!down) setOrder(newOrder)
+    });
     const tasksElements = props.tasks.map(task =>
         <TodoListTask task={task} changeStatus={props.changeStatus} key={task.id}
                       changeTitle={props.changeTitle} todoListId={props.todoListId}/>
     );
+    const fragment = springs.map((props, i) =>
+        <TaskWrapper {...gesture(i)} key={i} style={props}>
+            {tasksElements[i]}
+        </TaskWrapper>
+    );
+    // @ts-ignore
 
     return (
         <TasksWrapper>
-            {springs.map((props, i) =>
-                <TaskWrapper {...gesture(i)} key={i} style={props}>
-                    {tasksElements[i]}
-                </TaskWrapper>
-            )}
+            {fragment}
         </TasksWrapper>
     );
 }
