@@ -1,11 +1,18 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import TodoListTasks from './TodoListTasks';
 import TodoListFooter from './TodoListFooter';
 import '../App.css'
 import AddNewItemForm from "./AddNewItemForm";
 import TodoListTitle from "./TodoListTitle";
 import {useDispatch} from 'react-redux';
-import {addTaskTC, changeTaskTC, changeTodoListTitleTC, deleteTodoListTC, restoreTasksTC} from "../redux/reducer";
+import {
+    actions,
+    addTaskTC,
+    changeTaskTC,
+    changeTodoListTitleTC,
+    deleteTodoListTC,
+    restoreTasksTC
+} from "../redux/reducer";
 import {TaskType} from "../redux/entities";
 import styled from "styled-components/macro";
 
@@ -30,10 +37,8 @@ const SingleList = styled.div`
   position: relative;
   width: 100%;
   height: 100%;
-  overflow: hidden;
   text-transform: uppercase;
   font-size: 10px;
-  line-height: 10px;
   border-radius: 4px;
   box-shadow: 0 10px 50px -10px rgba(0, 0, 0, 0.2);
 `;
@@ -54,6 +59,20 @@ type PropsType = {
 };
 
 const TodoList: React.FC<PropsType> = (props) => {
+
+    const [backgroundColor] = useState<string>(colors[Math.ceil(Math.random() * colors.length)]);
+
+    const ref = useRef<HTMLDivElement>(null);
+    const [height, setHeight] = useState(0);
+    useEffect(() => {
+        if (ref.current) {
+            let newHeight = ref.current.offsetHeight;
+            if (height !== newHeight) {
+                setHeight(newHeight)
+                dispatch(actions.setListHeight(newHeight, props.id))
+            }
+        }
+    })
 
     const dispatch = useDispatch();
 
@@ -107,10 +126,20 @@ const TodoList: React.FC<PropsType> = (props) => {
         dispatch(changeTodoListTitleTC(props.id, title))
     };
 
-    const {tasks = []} = props;
+    const tasks = props.tasks ? props.tasks.filter(t => {
+        if (filterValue === "All") {
+            return true;
+        }
+        if (filterValue === "Active") {
+            return t.status === 0;
+        }
+        if (filterValue === "Completed") {
+            return t.status === 2;
+        }
+    }) : [];
 
     return (
-        <SingleList style={{backgroundImage: colors[Math.ceil(Math.random() * colors.length)]}}>
+        <SingleList style={{backgroundImage: backgroundColor}} ref={ref}>
             <div>
                 {isEditModeActivated ?
                     <input value={title} onBlur={disablingEditMode} autoFocus={true}
@@ -124,20 +153,10 @@ const TodoList: React.FC<PropsType> = (props) => {
             </div>
             <TodoListTasks changeStatus={changeStatus}
                            changeTitle={changeTitle} todoListId={props.id}
-                           tasks={tasks.filter(t => {
-                               if (filterValue === "All") {
-                                   return true;
-                               }
-                               if (filterValue === "Active") {
-                                   return t.status === 0;
-                               }
-                               if (filterValue === "Completed") {
-                                   return t.status === 2;
-                               }
-                           })}/>
+                           tasks={tasks}/>
             <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>
         </SingleList>
     );
 }
 
-export default TodoList;
+export default React.memo(TodoList);

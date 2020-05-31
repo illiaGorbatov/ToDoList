@@ -1,7 +1,6 @@
-import React, {useState} from "react";
-import '../App.css';
+import React, {useEffect, useRef, useState} from "react";
 import {useDispatch} from 'react-redux';
-import {deleteTaskTC} from "../redux/reducer";
+import {actions, deleteTaskTC} from "../redux/reducer";
 import {TaskType} from "../redux/entities";
 
 type PropsType = {
@@ -13,6 +12,18 @@ type PropsType = {
 }
 
 const TodoListTask: React.FC<PropsType> = (props) => {
+
+    const ref = useRef<HTMLDivElement>(null);
+    const [height, setHeight] = useState<number>(0);
+    useEffect(() => {
+        if (ref.current) {
+            let newHeight = ref.current.offsetHeight;
+            if (height !== newHeight) {
+                setHeight(newHeight)
+                dispatch(actions.setTaskHeight(newHeight, props.task.id, props.todoListId))
+            }
+        }
+    });
 
     const dispatch = useDispatch();
     const onDeleteTask = () => {
@@ -47,7 +58,7 @@ const TodoListTask: React.FC<PropsType> = (props) => {
         'High' : 3 ? 'Urgently' : 'Later';
 
     return (
-        <div className={props.task.status === 2 ? 'todoList-task done' : 'todoList-task'}>
+        <div className={props.task.status === 2 ? 'todoList-task done' : 'todoList-task'} ref={ref}>
             <input type="checkbox" checked={props.task.status === 2}
                    onChange={(e) => onIsDoneChanged(e)}/>
             <span>
@@ -66,5 +77,5 @@ const TodoListTask: React.FC<PropsType> = (props) => {
     );
 }
 
-export default TodoListTask;
+export default React.memo(TodoListTask);
 

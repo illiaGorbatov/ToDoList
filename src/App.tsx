@@ -13,6 +13,8 @@ import {animated, useTransition} from "react-spring";
 const GlobalStyles = createGlobalStyle`
   * {
       box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     };
   body {
     background-color: white;
@@ -41,7 +43,7 @@ const TodoListContainer = styled(animated.div)`
   padding: 15px;
 `;
 
-type GridItemsType = { x: number, y: number, width: number, height: number, id: string };
+type GridItemsType = { x: number, y: number, width: number, height?: number, id: string };
 type UseMemoType = {
     gridItems: Array<GridItemsType>,
     heights: Array<number>
@@ -78,22 +80,22 @@ const App = () => {
         let heights = new Array(columns).fill(0);
         let gridItems: Array<GridItemsType> = todoLists.map(
             (item) => {
-                const height = 175 + (item.tasks ? item.tasks.length * 100 : 0);
+                const height = item.height || 0;
                 const column = heights.indexOf(Math.min(...heights));
                 const x = (width / columns) * column;
-                const y = (heights[column] += height) - height
+                const y = (heights[column] += height) - height!;
                 return ({x, y, width: width / columns, height: height, id: item.id});
             });
         return {gridItems, heights}
     }, [todoLists]);
 
     const transitions = useTransition(gridItems, {
-        from: ({x, y, width, height}: GridItemsType) =>
-            ({transform: `translate3d(${x}px,${y}px,0)`, width, height, opacity: 0}),
-        enter: ({x, y, width, height}: GridItemsType) =>
-            ({transform: `translate3d(${x}px,${y}px,0)`, width, height, opacity: 1}),
-        update: ({x, y, width, height}: GridItemsType) =>
-            ({transform: `translate3d(${x}px,${y}px,0)`, width, height}),
+        from: ({x, y, width}: GridItemsType) =>
+            ({transform: `translate3d(${x}px,${y}px,0)`, width, opacity: 0}),
+        enter: ({x, y, width}: GridItemsType) =>
+            ({transform: `translate3d(${x}px,${y}px,0)`, width, opacity: 1}),
+        update: ({x, y, width}: GridItemsType) =>
+            ({transform: `translate3d(${x}px,${y}px,0)`, width}),
         leave: {height: 0, opacity: 0},
         config: {mass: 5, tension: 500, friction: 100},
         trail: 25,
@@ -113,7 +115,7 @@ const App = () => {
             <TodoListTitle title={'Add TodoList'}/>
             <AddNewItemForm onAddItemClick={addTodoList}/>
             <TodoListsContainer>
-                <AllLists {...bind} style={{height: Math.max(...heights)}}>
+                <AllLists {...bind} style={{height: (Math.max(...heights) || 0)}}>
                     {fragment}
                 </AllLists>
             </TodoListsContainer>

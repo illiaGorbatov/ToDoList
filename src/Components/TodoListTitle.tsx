@@ -1,5 +1,13 @@
 import React from "react";
 import '../App.css';
+import styled from "styled-components/macro";
+
+const ListTitle = styled.div`
+  font-family: 'DINNextLTPro-Bold';
+  font-size: 20px;
+  text-align: center;
+  padding: 5px 0;
+`;
 
 type PropsType = {
     title: string;
@@ -8,9 +16,11 @@ type PropsType = {
 
 const TodoListTitle: React.FC<PropsType> = (props) => {
     return (
-        <h3 className="todoList-header__title" onClick={props.onClickHandler}>{props.title}</h3>
+        <ListTitle className="todoList-header__title" onClick={props.onClickHandler}>
+            {props.title}
+        </ListTitle>
     );
 }
 
-export default TodoListTitle;
+export default React.memo(TodoListTitle);
 
