@@ -55,62 +55,50 @@ type PropsType = {
 };
 
 const TodoListTasks: React.FC<PropsType> = (props) => {
+
     const settings = (order: Array<number>, down?: boolean, originalIndex?: number, curIndex?: number, y?: number): any =>
-        (index: number): SpringType => {
-            const calculateY = (index: number): number => {
-                let x = 0;
-                initialY.map((item, i) => {
-                    if (i <= index) x += item
-                });
-                return x
-            }
-            return down && index === originalIndex
+        (index: number) => (
+            down && index === originalIndex
                 ? {
                     zIndex: '1',
                     boxShadow: `rgba(0, 0, 0, 0.15) 0px 15px 30px 0px`,
-                    transform: `translate3d(0,${(calculateY(curIndex!) || 0) + (y || 0)}px,0) scale(1.1)`,
-                    immediate: (n: string): boolean => n === 'zIndex'
+                    scale: 1.1,
+                    y: calculateY(curIndex!) + (y || 0),
+                    immediate: (n: string): boolean => n === 'zIndex',
                 }
                 : {
                     boxShadow: `rgba(0, 0, 0, 0.15) 0px 1px 2px 0px`,
-                    transform: `translate3d(0,${(calculateY(order.indexOf(index)) || 0)}px,0) scale(1)`,
+                    scale: 1,
+                    y: calculateY(order.indexOf(index)) || 0,
                     zIndex: '0',
                     immediate: false
                 }
-        }
+        );
 
-    /*const settings = (order: Array<number>, down?: boolean, originalIndex?: number, curIndex?: number, y?: number): any =>
-        (index: number): SpringType => {
-        return down && index === originalIndex
-            ? {
-                zIndex: '1',
-                boxShadow: `rgba(0, 0, 0, 0.15) 0px 15px 30px 0px`,
-                transform: `translate3d(0,${(curIndex!) * (props.tasks[curIndex!].height || 0) + (y || 0)}px,0) scale(1.1)`,
-                immediate: (n: string): boolean => n === 'zIndex'
+    const calculateY = (index: number): number => {
+        const y = initialY.length !== 0 ? initialY.reduce((total, item, i) => {
+            if (i !== 0 && i <= index) {
+                 total += initialY[i-1]
             }
-            : {
-                boxShadow: `rgba(0, 0, 0, 0.15) 0px 1px 2px 0px`,
-                transform: `translate3d(0,${order.indexOf(index) * (props.tasks[index].height || 0)}px,0) scale(1)`,
-                zIndex: '0',
-                immediate: false
-            }
-    }*/
+            return total
+        }, 0) : 0;
+        console.log(y, index, initialY)
+        return y
+    }
 
     const [order, setOrder] = useState<Array<number>>([]);
     const [initialY, setY] = useState<Array<number>>([]);
     useEffect(() => {
         setOrder(props.tasks.map((_, index) => index));
-        setY(props.tasks.map((task, index) => {
-            if (index === 0) return 0;
-            return task.height! + props.tasks[index - 1].height!
-        }));
-    }, [props.tasks]);
-    useEffect(() => {
+        setY(props.tasks.map(task => task.height!));
         setSprings(settings(order))
-    })
+    }, [props.tasks]);
+    /*useEffect(() => {
+        setSprings(settings(order))
+    });*/
 
     const tasksWrapperHeight = props.tasks.length !== 0 ? props.tasks.map(task => task.height || 0)
-        .reduce((prevHeight, nextHeight) => (prevHeight || 0) + (nextHeight || 0)) : 0;
+        .reduce((prevHeight, nextHeight) => prevHeight + nextHeight) : 0;
 
     const [springs, setSprings] = useSprings(props.tasks.length, settings(order));
     const gesture = useDrag(({args: [originalIndex], down, movement: [, y]}) => {
@@ -132,8 +120,10 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
         <TodoListTask task={task} changeStatus={props.changeStatus} key={task.id}
                       changeTitle={props.changeTitle} todoListId={props.todoListId}/>
     );
-    const fragment = springs.map((styles, i) =>
-        <TaskWrapper {...gesture(i)} key={i} style={styles}>
+    const fragment = springs.map(({...styles}, i) =>
+        <TaskWrapper {...gesture(i)} key={i} style={{
+            ...styles
+        }}>
             {tasksElements[i]}
         </TaskWrapper>
     );
