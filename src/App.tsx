@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef} from "react";
+import React, {useEffect, useMemo} from "react";
 import TodoList from "./Components/TodoList";
 import AddNewItemForm from "./Components/AddNewItemForm";
 import TodoListTitle from "./Components/TodoListTitle";
@@ -8,14 +8,13 @@ import {AppStateType} from "./redux/store";
 import styled, {createGlobalStyle} from "styled-components/macro";
 import {useMedia} from "./hooks/useMedia";
 import {useMeasure} from "./hooks/useMeasure";
-import {useTransition, animated, useSprings} from "react-spring";
-import {useDrag} from "react-use-gesture";
-import clamp from 'lodash-es/clamp'
-import {swap} from "./hooks/swap";
+import {animated, useTransition} from "react-spring";
 
 const GlobalStyles = createGlobalStyle`
   * {
       box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     };
   body {
     background-color: white;
@@ -44,7 +43,7 @@ const TodoListContainer = styled(animated.div)`
   padding: 15px;
 `;
 
-type GridItemsType = { x: number, y: number, width: number, height: number, id: string };
+type GridItemsType = { x: number, y: number, width: number, height?: number, id: string };
 type UseMemoType = {
     gridItems: Array<GridItemsType>,
     heights: Array<number>
@@ -66,12 +65,12 @@ const App = () => {
 
 
     const TodoLists = useMemo(() => {
-        console.log('render')
         return todoLists.map(
             (todoList) => <TodoList id={todoList.id} key={todoList.id}
                                     title={todoList.title} tasks={todoList.tasks}/>
         )
-    }, [todoLists])
+    }, [todoLists]);
+
 //adaptive grid with transitions
     const columns = useMedia(['(min-width: 1500px)', '(min-width: 1000px)', '(min-width: 600px)'], [5, 4, 3], 2);
     const [bind, {width}] = useMeasure();
@@ -81,33 +80,32 @@ const App = () => {
         let heights = new Array(columns).fill(0);
         let gridItems: Array<GridItemsType> = todoLists.map(
             (item) => {
-                const height = 175 + (item.tasks ? item.tasks.length * 100 : 0);
+                const height = item.height || 0;
                 const column = heights.indexOf(Math.min(...heights));
                 const x = (width / columns) * column;
-                const y = (heights[column] += height) - height
+                const y = (heights[column] += height) - height!;
                 return ({x, y, width: width / columns, height: height, id: item.id});
             });
         return {gridItems, heights}
     }, [todoLists]);
 
-
     const transitions = useTransition(gridItems, {
-        from: ({x, y, width, height}: GridItemsType) =>
-            ({transform: `translate3d(${x}px,${y}px,0)`, width, height, opacity: 0}),
-        enter: ({x, y, width, height}: GridItemsType) =>
-            ({transform: `translate3d(${x}px,${y}px,0)`, width, height, opacity: 1}),
-        update: ({x, y, width, height}: GridItemsType) =>
-            ({transform: `translate3d(${x}px,${y}px,0)`, width, height}),
+        from: ({x, y, width}: GridItemsType) =>
+            ({transform: `translate3d(${x}px,${y}px,0)`, width, opacity: 0}),
+        enter: ({x, y, width}: GridItemsType) =>
+            ({transform: `translate3d(${x}px,${y}px,0)`, width, opacity: 1}),
+        update: ({x, y, width}: GridItemsType) =>
+            ({transform: `translate3d(${x}px,${y}px,0)`, width}),
         leave: {height: 0, opacity: 0},
         config: {mass: 5, tension: 500, friction: 100},
-        keys: (item: GridItemsType ) => item.id,
-        trail: 25
+        trail: 25,
+        keys: (gridItems: GridItemsType) => gridItems.id
     });
-    const fragment = transitions((style, item, t, i) => (
+    const fragment = transitions((style, item, t, i) =>
         <TodoListContainer style={style}>
             {TodoLists[i]}
         </TodoListContainer>
-    ))
+    );
 
     //drag and drop
 
@@ -117,7 +115,7 @@ const App = () => {
             <TodoListTitle title={'Add TodoList'}/>
             <AddNewItemForm onAddItemClick={addTodoList}/>
             <TodoListsContainer>
-                <AllLists {...bind} style={{height: Math.max(...heights)}}>
+                <AllLists {...bind} style={{height: (Math.max(...heights) || 0)}}>
                     {fragment}
                 </AllLists>
             </TodoListsContainer>

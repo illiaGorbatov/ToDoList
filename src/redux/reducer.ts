@@ -11,6 +11,8 @@ export const DELETE_TASK = 'todolist/redux/reducer/DELETE_TASK';
 export const SET_TODOLISTS = 'todolist/redux/reducer/SET_TODOLISTS';
 export const SET_TASKS = 'todolist/redux/reducer/SET_TASKS';
 export const CHANGE_TODO_LIST_TITLE = 'todolist/redux/reducer/CHANGE_TODO_LIST_TITLE';
+export const CHANGE_TASK_HEIGHT = 'todolist/redux/reducer/CHANGE_TASK_HEIGHT';
+export const CHANGE_LIST_HEIGHT = 'todolist/redux/reducer/CHANGE_LIST_HEIGHT';
 
 type InitialStateType = {
     todoLists: TodoListType[]
@@ -85,13 +87,38 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                     } else return list
                 })
             };
-        default: return state;
+        case CHANGE_TASK_HEIGHT:
+            return {
+                ...state,
+                todoLists: state.todoLists.map(list => {
+                    if (list.id === action.todoListId) {
+                        return {
+                            ...list, tasks: list.tasks.map(task => {
+                                if (task.id === action.id) {
+                                    return {...task, height: action.height}
+                                } else return task;
+                            })
+                        }
+                    } else return list
+                }),
+            };
+        case CHANGE_LIST_HEIGHT:
+            return {
+                ...state,
+                todoLists: state.todoLists.map(list => {
+                    if (list.id === action.todoListId) {
+                        return {...list, height: action.height}
+                    } else return list
+                })
+            };
+        default:
+            return state;
     }
 };
 
 type ActionsTypes = InferActionTypes<typeof actions>;
 
-const actions = {
+export const actions = {
     addTodoList: (newTodoList: TodoListType) => ({type: ADD_TODOLIST, newTodoList: newTodoList} as const),
     addTask: (newTask: TaskType, todoListId: string) => ({type: ADD_TASK, newTask, todoListId} as const),
     changeTask: (task: TaskType) => ({type: CHANGE_TASK, task} as const),
@@ -99,20 +126,27 @@ const actions = {
     deleteTask: (todoListId: string, taskId: string) => ({type: DELETE_TASK, taskId, todoListId} as const),
     restoreTodoList: (todoLists: TodoListType[]) => ({type: SET_TODOLISTS, todoLists} as const),
     restoreTasks: (tasks: TaskType[], todoListId: string) => ({
-            type: SET_TASKS,
-            tasks,
-            todoListId
-        } as const),
+        type: SET_TASKS,
+        tasks,
+        todoListId
+    } as const),
     changeTodoListTitle: (todoListId: string, todoListTitle: string) => ({
-            type: CHANGE_TODO_LIST_TITLE,
-            todoListId,
-            todoListTitle
-        } as const)
-
+        type: CHANGE_TODO_LIST_TITLE,
+        todoListId,
+        todoListTitle
+    } as const),
+    setTaskHeight: (height: number, id: string, todoListId: string) => ({
+        type: CHANGE_TASK_HEIGHT,
+        height, id, todoListId
+    } as const),
+    setListHeight: (height: number, todoListId: string) => ({
+        type: CHANGE_LIST_HEIGHT,
+        height, todoListId
+    } as const),
 }
 
 type ThunkType = ThunkAction<void, AppStateType, unknown, ActionsTypes>;
-type ThunkActionType = ThunkDispatch<AppStateType, unknown, ActionsTypes>
+type ThunkActionType = ThunkDispatch<AppStateType, unknown, ActionsTypes>;
 
 export const loadTodoListsTC = (): ThunkType => (dispatch: ThunkActionType) => {
     api.restoreState().then(data => {
@@ -146,7 +180,7 @@ export const deleteTaskTC = (todoListId: string, taskId: string): ThunkType => (
 };
 export const restoreTasksTC = (todoListId: string): ThunkType => (dispatch: ThunkActionType) => {
     api.restoreTasks(todoListId).then(data => {
-       dispatch(actions.restoreTasks(data.items, todoListId))
+        dispatch(actions.restoreTasks(data.items, todoListId))
     })
 };
 export const changeTodoListTitleTC = (todoListId: string, todoListTitle: string): ThunkType => (dispatch: ThunkActionType) => {

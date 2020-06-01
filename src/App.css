@@ -1,36 +1,27 @@
-.App {
-  display: flex;
-  flex-direction: row;
-}
-.filter-active {
-  background-color: blue;
-}
-.todoList {
-  width: 300px;
-  margin: 0 auto;
+@font-face {
+  font-family: 'DINNextLTPro-Regular';
+  src: url('fonts/DINNextLTPro-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
 }
 
-.todoList > div {
-  padding: 10px;
+@font-face {
+  font-family: 'DINNextLTPro-Medium';
+  src: url('fonts/DINNextLTPro-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
 }
 
-.todoList-task {
+@font-face {
+  font-family: 'DINNextLTPro-Bold';
+  src: url('fonts/DINNextLTPro-Bold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+}
 
-}
-.error {
-  border-color: red;
-}
-.todoList-task.done {
-  opacity: 0.5;
-}
-.close {
-  height: 17px;
-  width: 17px;
-  border: 1px solid black;
-  cursor: pointer;
-  text-align: center;
-}
-.flex {
-  display: flex;
-  align-items: center;
+@font-face {
+  font-family: 'DINNextLTPro-Light';
+  src: url('fonts/DINNextLTPro-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
 }

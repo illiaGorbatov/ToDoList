@@ -1,25 +1,44 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import TodoListTasks from './TodoListTasks';
 import TodoListFooter from './TodoListFooter';
 import '../App.css'
 import AddNewItemForm from "./AddNewItemForm";
 import TodoListTitle from "./TodoListTitle";
 import {useDispatch} from 'react-redux';
-import {addTaskTC, changeTaskTC, changeTodoListTitleTC, deleteTodoListTC, restoreTasksTC} from "../redux/reducer";
+import {
+    actions,
+    addTaskTC,
+    changeTaskTC,
+    changeTodoListTitleTC,
+    deleteTodoListTC,
+    restoreTasksTC
+} from "../redux/reducer";
 import {TaskType} from "../redux/entities";
 import styled from "styled-components/macro";
-import store from "../redux/store";
+
+const colors = [
+    `linear-gradient(to top, #a8edea 0%, #fed6e3 100%)`,
+    `linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)`,
+    `linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%)`,
+    `linear-gradient(120deg, #f093fb 0%, #f5576c 100%)`,
+    `linear-gradient(-225deg, #E3FDF5 0%, #FFE6FA 100%)`,
+    `linear-gradient(to top, #5ee7df 0%, #b490ca 100%)`,
+    `linear-gradient(to top, #d299c2 0%, #fef9d7 100%)`,
+    `linear-gradient(to top, #ebc0fd 0%, #d9ded8 100%)`,
+    `linear-gradient(120deg, #f6d365 0%, #fda085 100%)`,
+    `linear-gradient(to top, #96fbc4 0%, #f9f586 100%)`,
+    `linear-gradient(-225deg, #FFFEFF 0%, #D7FFFE 100%)`,
+    `linear-gradient(to top, #fff1eb 0%, #ace0f9 100%)`,
+    `linear-gradient(to top, #c1dfc4 0%, #deecdd 100%)`,
+    `linear-gradient(-20deg, #ddd6f3 0%, #faaca8 100%, #faaca8 100%)`
+];
 
 const SingleList = styled.div`
   position: relative;
-  background-size: cover;
-  background-position: center center;
   width: 100%;
   height: 100%;
-  overflow: hidden;
   text-transform: uppercase;
   font-size: 10px;
-  line-height: 10px;
   border-radius: 4px;
   box-shadow: 0 10px 50px -10px rgba(0, 0, 0, 0.2);
 `;
@@ -40,6 +59,20 @@ type PropsType = {
 };
 
 const TodoList: React.FC<PropsType> = (props) => {
+
+    const [backgroundColor] = useState<string>(colors[Math.ceil(Math.random() * colors.length)]);
+
+    const ref = useRef<HTMLDivElement>(null);
+    const [height, setHeight] = useState(0);
+    useEffect(() => {
+        if (ref.current) {
+            let newHeight = ref.current.offsetHeight;
+            if (height !== newHeight) {
+                setHeight(newHeight)
+                dispatch(actions.setListHeight(newHeight, props.id))
+            }
+        }
+    })
 
     const dispatch = useDispatch();
 
@@ -66,8 +99,6 @@ const TodoList: React.FC<PropsType> = (props) => {
         dispatch(restoreTasksTC(props.id))
     }, []);
 
-    // @ts-ignore
-    window.abc = store.getState().todoList
 
     const changeFilter = (newFilterValue: string) => {
         setFilterValue(newFilterValue)
@@ -95,40 +126,37 @@ const TodoList: React.FC<PropsType> = (props) => {
         dispatch(changeTodoListTitleTC(props.id, title))
     };
 
-
-    let {tasks = []} = props;
+    const tasks = props.tasks ? props.tasks.filter(t => {
+        if (filterValue === "All") {
+            return true;
+        }
+        if (filterValue === "Active") {
+            return t.status === 0;
+        }
+        if (filterValue === "Completed") {
+            return t.status === 2;
+        }
+    }) : [];
 
     return (
-        <>
-            <SingleList>
-                <div>
-                    {isEditModeActivated ?
-                        <input value={title} onBlur={disablingEditMode} autoFocus={true}
-                               onKeyPress={onKeyPressHandler}
-                               onChange={(e) => onChangeHandler(e)}/> :
-                        <TodoListTitle title={props.title} onClickHandler={enablingEditMode}/>}
-                    <AddNewItemForm onAddItemClick={onAddTaskClick} todoListName={props.title}/>
-                    <CloseButton onClick={deleteTodoList}>
-                        X
-                    </CloseButton>
-                </div>
-                <TodoListTasks changeStatus={changeStatus}
-                               changeTitle={changeTitle} todoListId={props.id}
-                               tasks={tasks.filter(t => {
-                                   if (filterValue === "All") {
-                                       return true;
-                                   }
-                                   if (filterValue === "Active") {
-                                       return t.status === 0;
-                                   }
-                                   if (filterValue === "Completed") {
-                                       return t.status === 2;
-                                   }
-                               })}/>
-                <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>
-            </SingleList>
-        </>
+        <SingleList style={{backgroundImage: backgroundColor}} ref={ref}>
+            <div>
+                {isEditModeActivated ?
+                    <input value={title} onBlur={disablingEditMode} autoFocus={true}
+                           onKeyPress={onKeyPressHandler}
+                           onChange={(e) => onChangeHandler(e)}/> :
+                    <TodoListTitle title={props.title} onClickHandler={enablingEditMode}/>}
+                <AddNewItemForm onAddItemClick={onAddTaskClick} todoListName={props.title}/>
+                <CloseButton onClick={deleteTodoList}>
+                    X
+                </CloseButton>
+            </div>
+            <TodoListTasks changeStatus={changeStatus}
+                           changeTitle={changeTitle} todoListId={props.id}
+                           tasks={tasks}/>
+            <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>
+        </SingleList>
     );
 }
 
-export default TodoList;
+export default React.memo(TodoList);
