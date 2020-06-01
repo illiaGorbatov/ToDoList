@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import TodoListTask from "./TodoListTask";
 import {TaskType} from "../redux/entities";
 import {animated, useSprings} from "react-spring";
@@ -63,48 +63,88 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
                     zIndex: '1',
                     boxShadow: `rgba(0, 0, 0, 0.15) 0px 15px 30px 0px`,
                     scale: 1.1,
-                    y: calculateY(curIndex!) + (y || 0),
-                    immediate: (n: string): boolean => n === 'zIndex',
+                    y: initialY.current[curIndex!] + (y || 0),
+                    immediate: (n: string): boolean => n === 'zIndex' || n === 'y',
                 }
                 : {
                     boxShadow: `rgba(0, 0, 0, 0.15) 0px 1px 2px 0px`,
                     scale: 1,
-                    y: calculateY(order.indexOf(index)) || 0,
+                    y: initialY.current[order.indexOf(index)] || 0,
                     zIndex: '0',
                     immediate: false
                 }
         );
 
-    const calculateY = (index: number): number => {
-        const y = initialY.length !== 0 ? initialY.reduce((total, item, i) => {
-            if (i !== 0 && i <= index) {
-                total += initialY[i - 1]
-            }
-            return total
-        }, 0) : 0;
-        console.log(y, index, initialY)
-        return y
-    }
-
-    const [order, setOrder] = useState<Array<number>>([]);
+    /*const [order, setOrder] = useState<Array<number>>([]);
     const [initialY, setY] = useState<Array<number>>([]);
     useEffect(() => {
         setOrder(props.tasks.map((_, index) => index));
-        setY(props.tasks.map(task => task.height!));
+        const heights = props.tasks.map(task => task.height!);
+        const posY = heights.map((height, index) => {
+            return heights.reduce((total, item, i) => {
+                if (i !== 0 && i <= index) {
+                    total += heights[i - 1]
+                }
+                return total
+            }, 0)
+        });
+        setY(posY);
+        console.log(heights, posY)
         setSprings(settings(order))
+    }, [props.tasks]);*/
+
+    const order = useRef<Array<number>>([]);
+    const initialY = useRef<Array<number>>([]);
+    const heights = useRef<Array<number>>([]);
+    const curIndex = useRef<number>(0)
+    useEffect(() => {
+        order.current = props.tasks.map((_, index) => index);
+        heights.current = props.tasks.map(task => task.height!);
+        initialY.current = heights.current.map((height, index) => {
+            return heights.current.reduce((total, item, i) => {
+                if (i !== 0 && i <= index) {
+                    total += heights.current[i - 1]
+                }
+                return total
+            }, 0)
+        });
+        setSprings(settings(order.current))
     }, [props.tasks]);
 
     const tasksWrapperHeight = props.tasks.length !== 0 ? props.tasks.map(task => task.height || 0)
         .reduce((prevHeight, nextHeight) => prevHeight + nextHeight) : 0;
 
-    const [springs, setSprings] = useSprings(props.tasks.length, settings(order));
+    const getNewIndex = (index: number, y: number) => {//тут фейл
+        if (y > 0 && y > heights.current[index+1] / 2) {
+            return index+1;
+        }
+        if (y < 0 && Math.abs(y) > heights.current[index-1] / 2) {
+            return index-1;
+        }
+        return index
+    }
+
+    const [springs, setSprings] = useSprings(props.tasks.length, settings(order.current));
     const gesture = useDrag(({args: [originalIndex], down, movement: [, y]}) => {
-        const curIndex = order.indexOf(originalIndex);//индекс
-        const positionY = calculateY(curIndex) || 0;//индекс в массиве order
-        const curRow = clamp(Math.round((positionY + y) / positionY), 0, props.tasks.length - 1);
-        const newOrder = swap(order, curIndex, curRow);
-        setSprings(settings(newOrder, down, originalIndex, curIndex, y));
-        if (!down) setOrder(newOrder)
+        const curIndex = order.current.indexOf(originalIndex);//начальный индекс
+        const curRow = clamp(getNewIndex(curIndex, y)!, 0, props.tasks.length - 1);//текущий новый индекс
+        order.current = swap(order.current, curIndex, curRow);// новый порядок
+        heights.current = swap(heights.current, curIndex, curRow);//новый массив высот
+        initialY.current = heights.current.map((height, index) => {//новый массив У координат
+            return heights.current.reduce((total, item, i) => {
+                if (i !== 0 && i <= index) {
+                    total += heights.current[i - 1]
+                }
+                return total
+            }, 0)
+        });
+        setSprings(settings(order.current, down, originalIndex, curIndex, y));
+        console.log(curRow, heights.current, initialY.current)
+        /*if (!down) {
+            order.current = newOrder;
+            initialY.current = newInitialY;
+            heights.current = newHeights
+        }*/
     }, /*{
         filterTaps: true, bounds: { top: 0 , bottom: tasksWrapperHeight}, rubberband: true
     }*/);
