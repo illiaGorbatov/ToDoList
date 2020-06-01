@@ -56,8 +56,8 @@ const App = () => {
     const dispatch = useDispatch();
 
     useEffect(() => {
-        dispatch(loadTodoListsTC())
-    }, [])
+        if (todoLists.length === 0 ) dispatch(loadTodoListsTC())
+    }, [todoLists])
 
     const addTodoList = (title: string) => {
         dispatch(addTodoListTC(title))
@@ -67,7 +67,7 @@ const App = () => {
     const TodoLists = useMemo(() => {
         return todoLists.map(
             (todoList) => <TodoList id={todoList.id} key={todoList.id}
-                                    title={todoList.title} tasks={todoList.tasks}/>
+                                    listTitle={todoList.title} listTasks={todoList.tasks}/>
         )
     }, [todoLists]);
 

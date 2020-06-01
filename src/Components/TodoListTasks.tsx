@@ -78,7 +78,7 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
     const calculateY = (index: number): number => {
         const y = initialY.length !== 0 ? initialY.reduce((total, item, i) => {
             if (i !== 0 && i <= index) {
-                 total += initialY[i-1]
+                total += initialY[i - 1]
             }
             return total
         }, 0) : 0;
@@ -93,29 +93,22 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
         setY(props.tasks.map(task => task.height!));
         setSprings(settings(order))
     }, [props.tasks]);
-    /*useEffect(() => {
-        setSprings(settings(order))
-    });*/
 
     const tasksWrapperHeight = props.tasks.length !== 0 ? props.tasks.map(task => task.height || 0)
         .reduce((prevHeight, nextHeight) => prevHeight + nextHeight) : 0;
 
     const [springs, setSprings] = useSprings(props.tasks.length, settings(order));
     const gesture = useDrag(({args: [originalIndex], down, movement: [, y]}) => {
-        const calculateY = (index: number): number => {
-            let y = 0;
-            initialY.map((item, i) => {
-                if (i <= index) y += item
-            });
-            return y
-        }
-        const curIndex = order.indexOf(originalIndex);
-        const positionY = calculateY(curIndex) || 0;
+        const curIndex = order.indexOf(originalIndex);//индекс
+        const positionY = calculateY(curIndex) || 0;//индекс в массиве order
         const curRow = clamp(Math.round((positionY + y) / positionY), 0, props.tasks.length - 1);
         const newOrder = swap(order, curIndex, curRow);
         setSprings(settings(newOrder, down, originalIndex, curIndex, y));
         if (!down) setOrder(newOrder)
-    });
+    }, /*{
+        filterTaps: true, bounds: { top: 0 , bottom: tasksWrapperHeight}, rubberband: true
+    }*/);
+
     const tasksElements = props.tasks.map(task =>
         <TodoListTask task={task} changeStatus={props.changeStatus} key={task.id}
                       changeTitle={props.changeTitle} todoListId={props.todoListId}/>

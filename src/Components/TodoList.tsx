@@ -54,11 +54,11 @@ const CloseButton = styled.span`
 type PropsType = {
     id: string;
     key: string;
-    title: string;
-    tasks?: TaskType[];
+    listTitle: string;
+    listTasks?: TaskType[];
 };
 
-const TodoList: React.FC<PropsType> = (props) => {
+const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks}) => {
 
     const [backgroundColor] = useState<string>(colors[Math.ceil(Math.random() * colors.length)]);
 
@@ -69,7 +69,7 @@ const TodoList: React.FC<PropsType> = (props) => {
             let newHeight = ref.current.offsetHeight;
             if (height !== newHeight) {
                 setHeight(newHeight)
-                dispatch(actions.setListHeight(newHeight, props.id))
+                dispatch(actions.setListHeight(newHeight, id))
             }
         }
     })
@@ -77,7 +77,7 @@ const TodoList: React.FC<PropsType> = (props) => {
     const dispatch = useDispatch();
 
     const [isEditModeActivated, setEditMode] = useState<boolean>(false);
-    const [title, setTitle] = useState<string>(props.title);
+    const [title, setTitle] = useState<string>(listTitle);
     const [filterValue, setFilterValue] = useState<string>('All');
 
     //work with forms
@@ -96,8 +96,8 @@ const TodoList: React.FC<PropsType> = (props) => {
     };
 
     useEffect(() => {
-        dispatch(restoreTasksTC(props.id))
-    }, []);
+        if (!listTasks) dispatch(restoreTasksTC(id))
+    }, [listTasks]);
 
 
     const changeFilter = (newFilterValue: string) => {
@@ -105,28 +105,28 @@ const TodoList: React.FC<PropsType> = (props) => {
     };
 
     const onAddTaskClick = (title: string) => {
-        dispatch(addTaskTC(title, props.id))
+        dispatch(addTaskTC(title, id))
     };
 
     const changeStatus = (task: TaskType, status: number) => {
         let newTask = {...task, status: status};
-        dispatch(changeTaskTC(props.id, task.id, newTask))
+        dispatch(changeTaskTC(id, task.id, newTask))
     };
 
     const changeTitle = (task: TaskType, title: string) => {
         let newTask = {...task, title};
-        dispatch(changeTaskTC(props.id, task.id, newTask))
+        dispatch(changeTaskTC(id, task.id, newTask))
     };
 
     const deleteTodoList = () => {
-        dispatch(deleteTodoListTC(props.id))
+        dispatch(deleteTodoListTC(id))
     };
 
     const changeTodoListTitle = () => {
-        dispatch(changeTodoListTitleTC(props.id, title))
+        dispatch(changeTodoListTitleTC(id, title))
     };
 
-    const tasks = props.tasks ? props.tasks.filter(t => {
+    const tasks = listTasks ? listTasks.filter(t => {
         if (filterValue === "All") {
             return true;
         }
@@ -145,14 +145,14 @@ const TodoList: React.FC<PropsType> = (props) => {
                     <input value={title} onBlur={disablingEditMode} autoFocus={true}
                            onKeyPress={onKeyPressHandler}
                            onChange={(e) => onChangeHandler(e)}/> :
-                    <TodoListTitle title={props.title} onClickHandler={enablingEditMode}/>}
-                <AddNewItemForm onAddItemClick={onAddTaskClick} todoListName={props.title}/>
+                    <TodoListTitle title={listTitle} onClickHandler={enablingEditMode}/>}
+                <AddNewItemForm onAddItemClick={onAddTaskClick} todoListName={listTitle}/>
                 <CloseButton onClick={deleteTodoList}>
                     X
                 </CloseButton>
             </div>
             <TodoListTasks changeStatus={changeStatus}
-                           changeTitle={changeTitle} todoListId={props.id}
+                           changeTitle={changeTitle} todoListId={id}
                            tasks={tasks}/>
             <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>
         </SingleList>
