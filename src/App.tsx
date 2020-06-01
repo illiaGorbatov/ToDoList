@@ -100,6 +100,7 @@ const App = () => {
             ({transform: `translate3d(${x}px,${y}px,0)`, width, height}),
         leave: {height: 0, opacity: 0},
         config: {mass: 5, tension: 500, friction: 100},
+        keys: (item: GridItemsType ) => item.id,
         trail: 25
     });
     const fragment = transitions((style, item, t, i) => (
