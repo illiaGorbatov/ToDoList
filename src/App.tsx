@@ -8,7 +8,7 @@ import {AppStateType} from "./redux/store";
 import styled, {createGlobalStyle} from "styled-components/macro";
 import {useMedia} from "./hooks/useMedia";
 import {useMeasure} from "./hooks/useMeasure";
-import {animated, useTransition} from "react-spring";
+import {animated, useTransition, useSprings} from "react-spring";
 
 const GlobalStyles = createGlobalStyle`
   * {
@@ -91,7 +91,7 @@ const App = () => {
 
     const transitions = useTransition(gridItems, {
         from: ({x, y, width}: GridItemsType) =>
-            ({transform: `translate3d(${x}px,${y}px,0)`, width, opacity: 0}),
+            ({transform: `translate3d(${x}px,0,0)`, width, opacity: 0}),
         enter: ({x, y, width}: GridItemsType) =>
             ({transform: `translate3d(${x}px,${y}px,0)`, width, opacity: 1}),
         update: ({x, y, width}: GridItemsType) =>
@@ -99,7 +99,7 @@ const App = () => {
         leave: {height: 0, opacity: 0},
         config: {mass: 5, tension: 500, friction: 100},
         trail: 25,
-        keys: (gridItems: GridItemsType) => gridItems.id
+        keys: (gridItems: GridItemsType) => gridItems.id,
     });
     const fragment = transitions((style, item, t, i) =>
         <TodoListContainer style={style}>
@@ -108,6 +108,29 @@ const App = () => {
     );
 
     //drag and drop
+    const [springs, setSprings] = useSprings(gridItems.length, i => ({
+        from: {
+            transform: `translate3d(${gridItems[i].x}px,0,0)`,
+            width: gridItems[i].width,
+            opacity: 0},
+        to: {
+            transform: `translate3d(${gridItems[i].x}px,${gridItems[i].y}px,0)`,
+            width: gridItems[i].width,
+            opacity: 1},
+        update: {
+            transform: `translate3d(${gridItems[i].x}px,${gridItems[i].y}px,0)`,
+            width: gridItems[i].width
+        },
+        leave: {height: 0, opacity: 0},
+        config: {mass: 5, tension: 500, friction: 100},
+        trail: 25,
+        keys: (gridItems: GridItemsType) => gridItems.id
+    }));
+    const fragment2 = springs.map((style, i) =>
+        <TodoListContainer style={style}>
+            {TodoLists[i]}
+        </TodoListContainer>
+    );
 
     return (
         <>

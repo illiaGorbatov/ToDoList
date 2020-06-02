@@ -39,14 +39,6 @@ const TaskWrapper = styled(animated.div)`
     }
 `;
 
-
-type SpringType = {
-    transform: string,
-    zIndex: string,
-    boxShadow: string,
-    immediate: ((type: string) => void) | boolean
-};
-
 type PropsType = {
     changeStatus: (task: TaskType, status: number) => void;
     changeTitle: (task: TaskType, title: string) => void;
@@ -63,7 +55,7 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
                     zIndex: '1',
                     boxShadow: `rgba(0, 0, 0, 0.15) 0px 15px 30px 0px`,
                     scale: 1.1,
-                    y: initialY.current[curIndex!] + (y || 0),
+                    y: (initialYofDragged.current || 0) + (y || 0),
                     immediate: (n: string): boolean => n === 'zIndex' || n === 'y',
                 }
                 : {
@@ -96,7 +88,8 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
     const order = useRef<Array<number>>([]);
     const initialY = useRef<Array<number>>([]);
     const heights = useRef<Array<number>>([]);
-    const curIndex = useRef<number>(0)
+    const initialYofDragged = useRef<number | null>(null);
+
     useEffect(() => {
         order.current = props.tasks.map((_, index) => index);
         heights.current = props.tasks.map(task => task.height!);
@@ -114,12 +107,24 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
     const tasksWrapperHeight = props.tasks.length !== 0 ? props.tasks.map(task => task.height || 0)
         .reduce((prevHeight, nextHeight) => prevHeight + nextHeight) : 0;
 
-    const getNewIndex = (index: number, y: number) => {//тут фейл
-        if (y > 0 && y > heights.current[index+1] / 2) {
-            return index+1;
+    const getNewIndex = (index: number, y: number) => {
+        if (y > 0) {
+            let newIndex = index;
+            let height = 0;
+            while (y > height + heights.current[index+1] / 2) {
+                newIndex += 1;
+                height += heights.current[index+1];
+            }
+            return newIndex > heights.current.length-1 ? heights.current.length-1 : newIndex;
         }
-        if (y < 0 && Math.abs(y) > heights.current[index-1] / 2) {
-            return index-1;
+        if (y < 0) {
+            let newIndex = index;
+            let height = 0;
+            while (Math.abs(y) > height + heights.current[index-1] / 2) {
+                newIndex -= 1;
+                height += heights.current[index-1];
+            }
+            return newIndex < 0 ? 0 : newIndex;
         }
         return index
     }
@@ -127,24 +132,24 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
     const [springs, setSprings] = useSprings(props.tasks.length, settings(order.current));
     const gesture = useDrag(({args: [originalIndex], down, movement: [, y]}) => {
         const curIndex = order.current.indexOf(originalIndex);//начальный индекс
+        if (!initialYofDragged.current) initialYofDragged.current = initialY.current[curIndex];
         const curRow = clamp(getNewIndex(curIndex, y)!, 0, props.tasks.length - 1);//текущий новый индекс
-        order.current = swap(order.current, curIndex, curRow);// новый порядок
-        heights.current = swap(heights.current, curIndex, curRow);//новый массив высот
-        initialY.current = heights.current.map((height, index) => {//новый массив У координат
+        const newOrder = swap(order.current, curIndex, curRow);// новый порядок
+        const newHeights = swap(heights.current, curIndex, curRow);//новый массив высот
+        initialY.current = newHeights.map((height, index) => {//новый массив У координат
             return heights.current.reduce((total, item, i) => {
                 if (i !== 0 && i <= index) {
-                    total += heights.current[i - 1]
+                    total += newHeights[i - 1]
                 }
                 return total
             }, 0)
-        });
-        setSprings(settings(order.current, down, originalIndex, curIndex, y));
-        console.log(curRow, heights.current, initialY.current)
-        /*if (!down) {
+        })
+        setSprings(settings(newOrder, down, originalIndex, curIndex, y));
+        if (!down) {
             order.current = newOrder;
-            initialY.current = newInitialY;
-            heights.current = newHeights
-        }*/
+            heights.current = newHeights;
+            initialYofDragged.current = null
+        }
     }, /*{
         filterTaps: true, bounds: { top: 0 , bottom: tasksWrapperHeight}, rubberband: true
     }*/);
