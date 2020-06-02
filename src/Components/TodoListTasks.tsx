@@ -67,24 +67,6 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
                 }
         );
 
-    /*const [order, setOrder] = useState<Array<number>>([]);
-    const [initialY, setY] = useState<Array<number>>([]);
-    useEffect(() => {
-        setOrder(props.tasks.map((_, index) => index));
-        const heights = props.tasks.map(task => task.height!);
-        const posY = heights.map((height, index) => {
-            return heights.reduce((total, item, i) => {
-                if (i !== 0 && i <= index) {
-                    total += heights[i - 1]
-                }
-                return total
-            }, 0)
-        });
-        setY(posY);
-        console.log(heights, posY)
-        setSprings(settings(order))
-    }, [props.tasks]);*/
-
     const order = useRef<Array<number>>([]);
     const initialY = useRef<Array<number>>([]);
     const heights = useRef<Array<number>>([]);
@@ -150,7 +132,7 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
             heights.current = newHeights;
             initialYofDragged.current = null
         }
-    }, /*{
+    },{filterTaps: true} /*{
         filterTaps: true, bounds: { top: 0 , bottom: tasksWrapperHeight}, rubberband: true
     }*/);
 

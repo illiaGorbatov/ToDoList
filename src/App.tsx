@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import TodoList from "./Components/TodoList";
 import AddNewItemForm from "./Components/AddNewItemForm";
 import TodoListTitle from "./Components/TodoListTitle";
@@ -8,7 +8,8 @@ import {AppStateType} from "./redux/store";
 import styled, {createGlobalStyle} from "styled-components/macro";
 import {useMedia} from "./hooks/useMedia";
 import {useMeasure} from "./hooks/useMeasure";
-import {animated, useTransition, useSprings} from "react-spring";
+import {animated, useTransition, useSprings, useSpring} from "react-spring";
+import {useDrag} from "react-use-gesture";
 
 const GlobalStyles = createGlobalStyle`
   * {
@@ -90,44 +91,58 @@ const App = () => {
     }, [todoLists]);
 
     const transitions = useTransition(gridItems, {
-        from: ({x, y, width}: GridItemsType) =>
-            ({transform: `translate3d(${x}px,0,0)`, width, opacity: 0}),
+        from: ({x, width}: GridItemsType) =>
+            ({x, width, opacity: 0}),
         enter: ({x, y, width}: GridItemsType) =>
-            ({transform: `translate3d(${x}px,${y}px,0)`, width, opacity: 1}),
+            ({x, y, width, opacity: 1}),
         update: ({x, y, width}: GridItemsType) =>
-            ({transform: `translate3d(${x}px,${y}px,0)`, width}),
+            ({x, y, width}),
         leave: {height: 0, opacity: 0},
         config: {mass: 5, tension: 500, friction: 100},
         trail: 25,
         keys: (gridItems: GridItemsType) => gridItems.id,
     });
-    const fragment = transitions((style, item, t, i) =>
-        <TodoListContainer style={style}>
-            {TodoLists[i]}
-        </TodoListContainer>
-    );
 
-    //drag and drop
-    const [springs, setSprings] = useSprings(gridItems.length, i => ({
-        from: {
-            transform: `translate3d(${gridItems[i].x}px,0,0)`,
-            width: gridItems[i].width,
-            opacity: 0},
-        to: {
-            transform: `translate3d(${gridItems[i].x}px,${gridItems[i].y}px,0)`,
-            width: gridItems[i].width,
-            opacity: 1},
-        update: {
-            transform: `translate3d(${gridItems[i].x}px,${gridItems[i].y}px,0)`,
-            width: gridItems[i].width
-        },
-        leave: {height: 0, opacity: 0},
-        config: {mass: 5, tension: 500, friction: 100},
-        trail: 25,
-        keys: (gridItems: GridItemsType) => gridItems.id
+    const draggedList = useRef<number>(0);
+    const [isListDragged, dragList] = useState<boolean>(false);
+    const [spring, setSpring] = useSpring(() => ({
+        x: 0,
+        y: 0,
+        width: 0,
+        zIndex: 1
     }));
-    const fragment2 = springs.map((style, i) =>
-        <TodoListContainer style={style}>
+    const gesture = useDrag(({args: [originalIndex], down, movement: [x, y]}) => {
+        if (!isListDragged) {
+            draggedList.current = originalIndex;
+            setSpring({
+                x: gridItems[draggedList.current].x,
+                y: gridItems[draggedList.current].y,
+                width: gridItems[draggedList.current].width,
+                zIndex: 3,
+                immediate: true,
+                onRest: () =>  dragList(true)
+            });
+            return
+        }
+        setSpring({
+            x: gridItems[draggedList.current].x + x,
+            y: gridItems[draggedList.current].y + y,
+            immediate: false
+        });
+        if (!down) {
+            setSpring({
+                x: gridItems[draggedList.current].x ,
+                y: gridItems[draggedList.current].y,
+                width: gridItems[draggedList.current].width,
+                zIndex: 1,
+                onRest: () => dragList(false),
+                immediate: false
+            });
+        }
+    }, {filterTaps: true});
+
+    const fragment = transitions((style, item, t, i) =>
+        <TodoListContainer style={isListDragged && draggedList.current === i ? spring : style} {...gesture(i)}>
             {TodoLists[i]}
         </TodoListContainer>
     );
