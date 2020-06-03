@@ -10,6 +10,7 @@ import {useMedia} from "./hooks/useMedia";
 import {useMeasure} from "./hooks/useMeasure";
 import {animated, useTransition, useSprings, useSpring} from "react-spring";
 import {useDrag} from "react-use-gesture";
+import {swap} from "./hooks/swap";
 
 const GlobalStyles = createGlobalStyle`
   * {
@@ -44,10 +45,11 @@ const TodoListContainer = styled(animated.div)`
   padding: 15px;
 `;
 
-type GridItemsType = { x: number, y: number, width: number, height?: number, id: string };
+type GridItemsType = { x: number, y: number, width: number, height?: number, id: string, itemIndex: number };
+type DiapasonType = {fromX: number, toX: number, fromY: number, toY: number};
 type UseMemoType = {
-    gridItems: Array<GridItemsType>,
-    heights: Array<number>
+    memoizedGrid: Array<GridItemsType>,
+    diapason: Array<DiapasonType>
 };
 
 
@@ -58,7 +60,7 @@ const App = () => {
 
     useEffect(() => {
         if (todoLists.length === 0) dispatch(loadTodoListsTC());
-        if (todoLists.length !== 0) setGrid(newGrid)
+        if (todoLists.length !== 0) setGrid(memoizedGrid)
     }, [todoLists]);
 
     const addTodoList = (title: string) => {
@@ -79,43 +81,73 @@ const App = () => {
 
     const heights = useRef<Array<number>>([]);
     const [gridItems, setGrid] = useState<Array<GridItemsType>>([]);
-    const newGrid = useMemo(() => {
+    const {memoizedGrid, diapason}: UseMemoType = useMemo(() => {
         let newHeights = new Array(columns).fill(0);
-        let grid =  todoLists.map(
-            item => {
+        let memoizedGrid =  todoLists.map(
+            (item, i) => {
                 const height = item.height || 0;
-                const column = newHeights.indexOf(Math.min(...newHeights));
+                const column = i % columns;
                 const x = (width / columns) * column;
                 const y = (newHeights[column] += height) - height;
-                return ({x, y, width: width / columns, height: height, id: item.id})
+                return ({x, y, width: width / columns, height, id: item.id, itemIndex: i})
             });
+        let diapason = memoizedGrid.map(
+            (item, i) => {
+                const fromX = item.x;
+                const toX = fromX + width / columns;
+                const fromY = item.y;
+                const toY = fromY + item.height;
+                return {fromX, toX, fromY, toY}
+            }
+        )
         heights.current = newHeights;
-        return grid
+        return {memoizedGrid, diapason}
     }, [todoLists]);
 
-    /* const {gridItems, heights}: UseMemoType = useMemo(() => {
-         let heights = new Array(columns).fill(0);
-         let gridItems: Array<GridItemsType> = todoLists.map(
-             (item) => {
-                 const height = item.height || 0;
-                 const column = heights.indexOf(Math.min(...heights));
-                 const x = (width / columns) * column;
-                 const y = (heights[column] += height) - height!;
-                 return ({x, y, width: width / columns, height: height, id: item.id});
-             });
-         return {gridItems, heights}
-     }, [todoLists]);*/
-
-    const calculatePositions = (x: number, y: number) => {
-        if (x > 0) {
-            if (x > width) {
-
+    const xCurr = useRef<number>(0);
+    const yCurr = useRef<number>(0);
+    const calculatePositions = (x: number, y: number, index: number) => {
+        xCurr.current += x;
+        yCurr.current += y;
+        if (x > 0 && y === 0) {
+            if (xCurr.current > width) {
+                const grid = swap(memoizedGrid, index, index+1);
+                xCurr.current = 0;
+                setGrid(grid)
             }
+            return
         }
-        if (x < 0) {
-            if (Math.abs(x) > width) {
+        if (x < 0 && y === 0) {
+            if (Math.abs(xCurr.current) > width) {
+                const grid = swap(memoizedGrid, index, index-1);
+                xCurr.current = 0;
+                setGrid(grid)
+            }
+            return
+        }
+        if (y > 0 && x === 0) {
+            if (y > heights.current[index]) {
 
             }
+            return
+        }
+        if (y < 0 && x === 0) {
+            if (Math.abs(x) > heights.current[index]) {
+
+            }
+            return
+        }
+        if (x > 0 && y > 0) {
+
+        }
+        if (x < 0 && y < 0) {
+
+        }
+        if (x < 0 && y > 0) {
+
+        }
+        if (x > 0 && y < 0) {
+
         }
     }
 
@@ -140,7 +172,7 @@ const App = () => {
         width: 0,
         zIndex: 1
     }));
-    const gesture = useDrag(({args: [originalIndex], down, movement: [x, y]}) => {
+    const gesture = useDrag(({args: [originalIndex], down, movement: [x, y], xy: [ofX, ofY]}) => {
         if (!isListDragged) {
             draggedList.current = originalIndex;
             setSpring({
@@ -153,6 +185,7 @@ const App = () => {
             });
             return
         }
+        console.log(ofX ,ofY)
         setSpring({
             x: gridItems[draggedList.current].x + x,
             y: gridItems[draggedList.current].y + y,
@@ -173,10 +206,9 @@ const App = () => {
 
     const fragment = transitions((style, item, t, i) =>
         <TodoListContainer style={isListDragged && draggedList.current === i ? spring : style} {...gesture(i)}>
-            {TodoLists[i]}
+            {TodoLists[item.itemIndex]}
         </TodoListContainer>
     );
-    console.log(heights)
 
     return (
         <>
@@ -189,7 +221,7 @@ const App = () => {
                 </AllLists>
             </TodoListsContainer>
             <div style={{width: 20, height: 20, backgroundColor: 'black', position: "absolute", left: 200, top: 0}}
-                 onClick={() => console.log(heights)}/>
+                 onClick={() => console.log(diapason)}/>
         </>
     );
 }
