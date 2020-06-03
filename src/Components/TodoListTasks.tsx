@@ -89,7 +89,7 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
     const tasksWrapperHeight = props.tasks.length !== 0 ? props.tasks.map(task => task.height || 0)
         .reduce((prevHeight, nextHeight) => prevHeight + nextHeight) : 0;
 
-    const getNewIndex = (index: number, y: number) => {
+    const getNewIndex = (index: number, y: number) => {//useCallback!!!11
         if (y > 0) {
             let newIndex = index;
             let height = 0;
@@ -140,10 +140,8 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
         <TodoListTask task={task} changeStatus={props.changeStatus} key={task.id}
                       changeTitle={props.changeTitle} todoListId={props.todoListId}/>
     );
-    const fragment = springs.map(({...styles}, i) =>
-        <TaskWrapper {...gesture(i)} key={i} style={{
-            ...styles
-        }}>
+    const fragment = springs.map((styles, i) =>
+        <TaskWrapper {...gesture(i)} key={i} style={styles}>
             {tasksElements[i]}
         </TaskWrapper>
     );

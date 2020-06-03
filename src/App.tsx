@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import TodoList from "./Components/TodoList";
 import AddNewItemForm from "./Components/AddNewItemForm";
 import TodoListTitle from "./Components/TodoListTitle";
@@ -57,11 +57,12 @@ const App = () => {
     const dispatch = useDispatch();
 
     useEffect(() => {
-        if (todoLists.length === 0 ) dispatch(loadTodoListsTC())
-    }, [todoLists])
+        if (todoLists.length === 0) dispatch(loadTodoListsTC());
+        if (todoLists.length !== 0) setGrid(newGrid)
+    }, [todoLists]);
 
     const addTodoList = (title: string) => {
-        dispatch(addTodoListTC(title))
+        dispatch(addTodoListTC(title));
     };
 
 
@@ -76,23 +77,51 @@ const App = () => {
     const columns = useMedia(['(min-width: 1500px)', '(min-width: 1000px)', '(min-width: 600px)'], [5, 4, 3], 2);
     const [bind, {width}] = useMeasure();
 
-
-    const {gridItems, heights}: UseMemoType = useMemo(() => {
-        let heights = new Array(columns).fill(0);
-        let gridItems: Array<GridItemsType> = todoLists.map(
-            (item) => {
+    const heights = useRef<Array<number>>([]);
+    const [gridItems, setGrid] = useState<Array<GridItemsType>>([]);
+    const newGrid = useMemo(() => {
+        let newHeights = new Array(columns).fill(0);
+        let grid =  todoLists.map(
+            item => {
                 const height = item.height || 0;
-                const column = heights.indexOf(Math.min(...heights));
+                const column = newHeights.indexOf(Math.min(...newHeights));
                 const x = (width / columns) * column;
-                const y = (heights[column] += height) - height!;
-                return ({x, y, width: width / columns, height: height, id: item.id});
+                const y = (newHeights[column] += height) - height;
+                return ({x, y, width: width / columns, height: height, id: item.id})
             });
-        return {gridItems, heights}
+        heights.current = newHeights;
+        return grid
     }, [todoLists]);
+
+    /* const {gridItems, heights}: UseMemoType = useMemo(() => {
+         let heights = new Array(columns).fill(0);
+         let gridItems: Array<GridItemsType> = todoLists.map(
+             (item) => {
+                 const height = item.height || 0;
+                 const column = heights.indexOf(Math.min(...heights));
+                 const x = (width / columns) * column;
+                 const y = (heights[column] += height) - height!;
+                 return ({x, y, width: width / columns, height: height, id: item.id});
+             });
+         return {gridItems, heights}
+     }, [todoLists]);*/
+
+    const calculatePositions = (x: number, y: number) => {
+        if (x > 0) {
+            if (x > width) {
+
+            }
+        }
+        if (x < 0) {
+            if (Math.abs(x) > width) {
+
+            }
+        }
+    }
 
     const transitions = useTransition(gridItems, {
         from: ({x, width}: GridItemsType) =>
-            ({x, width, opacity: 0}),
+            ({x, y: 0, width, opacity: 0}),
         enter: ({x, y, width}: GridItemsType) =>
             ({x, y, width, opacity: 1}),
         update: ({x, y, width}: GridItemsType) =>
@@ -120,7 +149,7 @@ const App = () => {
                 width: gridItems[draggedList.current].width,
                 zIndex: 3,
                 immediate: true,
-                onRest: () =>  dragList(true)
+                onRest: () => dragList(true)
             });
             return
         }
@@ -129,9 +158,10 @@ const App = () => {
             y: gridItems[draggedList.current].y + y,
             immediate: false
         });
+
         if (!down) {
             setSpring({
-                x: gridItems[draggedList.current].x ,
+                x: gridItems[draggedList.current].x,
                 y: gridItems[draggedList.current].y,
                 width: gridItems[draggedList.current].width,
                 zIndex: 1,
@@ -146,6 +176,7 @@ const App = () => {
             {TodoLists[i]}
         </TodoListContainer>
     );
+    console.log(heights)
 
     return (
         <>
@@ -153,10 +184,12 @@ const App = () => {
             <TodoListTitle title={'Add TodoList'}/>
             <AddNewItemForm onAddItemClick={addTodoList}/>
             <TodoListsContainer>
-                <AllLists {...bind} style={{height: (Math.max(...heights) || 0)}}>
+                <AllLists {...bind} style={{height: (Math.max(...heights.current) || 0)}}>
                     {fragment}
                 </AllLists>
             </TodoListsContainer>
+            <div style={{width: 20, height: 20, backgroundColor: 'black', position: "absolute", left: 200, top: 0}}
+                 onClick={() => console.log(heights)}/>
         </>
     );
 }
