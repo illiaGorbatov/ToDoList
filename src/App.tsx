@@ -11,6 +11,7 @@ import {useMeasure} from "./hooks/useMeasure";
 import {animated, useTransition, useSprings, useSpring} from "react-spring";
 import {useDrag} from "react-use-gesture";
 import {swap} from "./hooks/swap";
+import {TodoListType} from "./redux/entities";
 
 const GlobalStyles = createGlobalStyle`
   * {
@@ -45,14 +46,6 @@ const TodoListContainer = styled(animated.div)`
   padding: 15px;
 `;
 
-type GridItemsType = { x: number, y: number, width: number, height: number, id: string, itemIndex: number };
-type DiapasonType = {fromX: number, toX: number, fromY: number, toY: number};
-type UseMemoType = {
-    memoizedGrid: Array<GridItemsType>,
-    diapason: Array<DiapasonType>
-};
-
-
 const App = () => {
 
     const todoLists = useSelector((store: AppStateType) => store.todoList.todoLists);
@@ -60,80 +53,118 @@ const App = () => {
 
     useEffect(() => {
         if (todoLists.length === 0) dispatch(loadTodoListsTC());
-        if (todoLists.length !== 0) setGrid(memoizedGrid)
-    }, [todoLists]);
+    }, []);
 
     const addTodoList = (title: string) => {
         dispatch(addTodoListTC(title));
     };
 
+    const [swappableTodoLists, setNewList] = useState<Array<TodoListType>>([]);
+    useEffect(() => {
+        setNewList(todoLists)
+    }, [todoLists]);
 
     const TodoLists = useMemo(() => {
-        return todoLists.map(
+        return swappableTodoLists.map(
             (todoList) => <TodoList id={todoList.id} key={todoList.id}
                                     listTitle={todoList.title} listTasks={todoList.tasks}/>
         )
-    }, [todoLists]);
+    }, [swappableTodoLists]);
 
 //adaptive grid with transitions
     const columns = useMedia(['(min-width: 1500px)', '(min-width: 1000px)', '(min-width: 600px)'], [5, 4, 3], 2);
     const [bind, {width}] = useMeasure();
 
     const heights = useRef<Array<number>>([]);
-    const [gridItems, setGrid] = useState<Array<GridItemsType>>([]);
-    const {memoizedGrid, diapason}: UseMemoType = useMemo(() => {
+    const {gridItems, diapason} = useMemo(() => {
         let newHeights = new Array(columns).fill(0);
-        let memoizedGrid =  todoLists.map(
+        let gridItems =  swappableTodoLists.map(
             (item, i) => {
                 const height = item.height || 0;
                 const column = i % columns;
                 const x = (width / columns) * column;
                 const y = (newHeights[column] += height) - height;
-                return ({x, y, width: width / columns, height, id: item.id, itemIndex: i})
+                return {x, y, width: width / columns, height, id: item.id, itemIndex: i}
             });
-        let diapason = memoizedGrid.map(
-            (item, i) => {
-                const fromX = item.x;
-                const toX = fromX + width / columns;
-                const fromY = item.y;
-                const toY = fromY + item.height;
-                return {fromX, toX, fromY, toY}
+        let diapason = gridItems.map(
+            (item) => {
+                const leftX = item.x;
+                const rightX = leftX + width / columns;
+                const topY = item.y;
+                const botY = topY + item.height;
+                const horizontalCenter = item.x + width/2;
+                const verticalCenter = item.y + item.height/2;
+                return {leftX, rightX, topY, botY, horizontalCenter, verticalCenter}
             }
         )
         heights.current = newHeights;
-        return {memoizedGrid, diapason}
-    }, [todoLists]);
+        return {gridItems, diapason};
+    }, [swappableTodoLists]);
 
-    const calculatePositions = (x: number, y: number, index: number, vx: number, vy: number) => {
+    const calculatePositions = (x: number, y: number, vx: number, vy: number) => {
+        let verticalBorder = 0;
+        let horizontalBorder = 0;
+        if (vx === 0) {
+            horizontalBorder = currX.current + x + width/2
+        }
+        if (vy === 0) {
+            verticalBorder = currY.current + y + currHeight.current/2;
+        }
         if (vx > 0) {
-            const calcRight = gridItems[draggedList.current].x + x + width;
+            horizontalBorder = currX.current + x + width;
         }
         if (vx < 0) {
-            const calcLeft = gridItems[draggedList.current].x + x;
+            horizontalBorder = currX.current + x;
         }
         if (vy > 0) {
-            const calcTop = gridItems[draggedList.current].y + y;
+            verticalBorder = currY.current + y + currHeight.current;
         }
         if (vy < 0) {
-            const calcBottom = gridItems[draggedList.current].y + y + gridItems[draggedList.current].height;
+            verticalBorder = currY.current + y;
         }
-
+        let i = diapason.findIndex(item => {
+            let horBord = false;
+            let verBord = false;
+            if (vx === 0 && horizontalBorder > item.leftX && horizontalBorder < item.rightX) {
+                horBord = true
+            }
+            if (vy === 0 && verticalBorder > item.topY && verticalBorder < item.botY) {
+                verBord = true;
+            }
+            if (vx > 0 && horizontalBorder > item.leftX && horizontalBorder < item.horizontalCenter) {
+                horBord = true;
+            }
+            if (vx < 0 && horizontalBorder < item.rightX && horizontalBorder > item.horizontalCenter) {
+                horBord = true;
+            }
+            if (vy > 0 && verticalBorder > item.topY && verticalBorder < item.horizontalCenter) {
+                verBord = true;
+            }
+            if (vy < 0 && verticalBorder < item.botY && verticalBorder > item.horizontalCenter) {
+                verBord = true;
+            }
+            if (horBord && verBord) return true
+        })
+        return i < swappableTodoLists.length-1 && i > 0 ? i : null;
     }
 
     const transitions = useTransition(gridItems, {
-        from: ({x, width}: GridItemsType) =>
+        from: ({x, width}) =>
             ({x, y: 0, width, opacity: 0}),
-        enter: ({x, y, width}: GridItemsType) =>
+        enter: ({x, y, width}) =>
             ({x, y, width, opacity: 1}),
-        update: ({x, y, width}: GridItemsType) =>
+        update: ({x, y, width}) =>
             ({x, y, width}),
         leave: {height: 0, opacity: 0},
         config: {mass: 5, tension: 500, friction: 100},
         trail: 25,
-        keys: (gridItems: GridItemsType) => gridItems.id,
+        key: item => item.id,
     });
 
     const draggedList = useRef<number>(0);
+    const currX = useRef<number>(0);
+    const currY = useRef<number>(0);
+    const currHeight = useRef<number>(0);
     const [isListDragged, dragList] = useState<boolean>(false);
     const [spring, setSpring] = useSpring(() => ({
         x: 0,
@@ -142,12 +173,15 @@ const App = () => {
         zIndex: 1
     }));
     const gesture = useDrag(({args: [originalIndex], down, movement: [x, y],
-                                vxvy: [vx, vy]}) => {
+                                vxvy: [vx, vy], delta:[dx, dy]}) => {
         if (!isListDragged) {
             draggedList.current = originalIndex;
+            currX.current = gridItems[draggedList.current].x;
+            currY.current = gridItems[draggedList.current].y;
+            currHeight.current = gridItems[draggedList.current].height;
             setSpring({
-                x: gridItems[draggedList.current].x,
-                y: gridItems[draggedList.current].y,
+                x: currX.current,
+                y: currY.current,
                 width: gridItems[draggedList.current].width,
                 zIndex: 3,
                 immediate: true,
@@ -155,13 +189,19 @@ const App = () => {
             });
             return
         }
-        console.log()
         setSpring({
-            x: gridItems[draggedList.current].x + x,
-            y: gridItems[draggedList.current].y + y,
+            x: currX.current + x,
+            y: currY.current + y,
             immediate: false
         });
-
+        const newIndex = calculatePositions(x, y, vx, vy);
+        console.log(currY.current + y + currHeight.current )
+        /*if (new Index && newIndex !== draggedList.current) {
+            let newList = swap(swappableTodoLists, draggedList.current, newIndex);
+            console.log(newList)
+            setNewList(newList);
+            draggedList.current = newIndex
+        }*/
         if (!down) {
             setSpring({
                 x: gridItems[draggedList.current].x,
@@ -191,7 +231,7 @@ const App = () => {
                 </AllLists>
             </TodoListsContainer>
             <div style={{width: 20, height: 20, backgroundColor: 'black', position: "absolute", left: 200, top: 0}}
-                 onClick={() => console.log(diapason)}/>
+                 onClick={() => console.log()}/>
         </>
     );
 }
