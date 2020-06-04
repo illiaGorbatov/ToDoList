@@ -45,7 +45,7 @@ const TodoListContainer = styled(animated.div)`
   padding: 15px;
 `;
 
-type GridItemsType = { x: number, y: number, width: number, height?: number, id: string, itemIndex: number };
+type GridItemsType = { x: number, y: number, width: number, height: number, id: string, itemIndex: number };
 type DiapasonType = {fromX: number, toX: number, fromY: number, toY: number};
 type UseMemoType = {
     memoizedGrid: Array<GridItemsType>,
@@ -104,51 +104,20 @@ const App = () => {
         return {memoizedGrid, diapason}
     }, [todoLists]);
 
-    const xCurr = useRef<number>(0);
-    const yCurr = useRef<number>(0);
-    const calculatePositions = (x: number, y: number, index: number) => {
-        xCurr.current += x;
-        yCurr.current += y;
-        if (x > 0 && y === 0) {
-            if (xCurr.current > width) {
-                const grid = swap(memoizedGrid, index, index+1);
-                xCurr.current = 0;
-                setGrid(grid)
-            }
-            return
+    const calculatePositions = (x: number, y: number, index: number, vx: number, vy: number) => {
+        if (vx > 0) {
+            const calcRight = gridItems[draggedList.current].x + x + width;
         }
-        if (x < 0 && y === 0) {
-            if (Math.abs(xCurr.current) > width) {
-                const grid = swap(memoizedGrid, index, index-1);
-                xCurr.current = 0;
-                setGrid(grid)
-            }
-            return
+        if (vx < 0) {
+            const calcLeft = gridItems[draggedList.current].x + x;
         }
-        if (y > 0 && x === 0) {
-            if (y > heights.current[index]) {
+        if (vy > 0) {
+            const calcTop = gridItems[draggedList.current].y + y;
+        }
+        if (vy < 0) {
+            const calcBottom = gridItems[draggedList.current].y + y + gridItems[draggedList.current].height;
+        }
 
-            }
-            return
-        }
-        if (y < 0 && x === 0) {
-            if (Math.abs(x) > heights.current[index]) {
-
-            }
-            return
-        }
-        if (x > 0 && y > 0) {
-
-        }
-        if (x < 0 && y < 0) {
-
-        }
-        if (x < 0 && y > 0) {
-
-        }
-        if (x > 0 && y < 0) {
-
-        }
     }
 
     const transitions = useTransition(gridItems, {
@@ -172,7 +141,8 @@ const App = () => {
         width: 0,
         zIndex: 1
     }));
-    const gesture = useDrag(({args: [originalIndex], down, movement: [x, y], xy: [ofX, ofY]}) => {
+    const gesture = useDrag(({args: [originalIndex], down, movement: [x, y],
+                                vxvy: [vx, vy]}) => {
         if (!isListDragged) {
             draggedList.current = originalIndex;
             setSpring({
@@ -185,7 +155,7 @@ const App = () => {
             });
             return
         }
-        console.log(ofX ,ofY)
+        console.log()
         setSpring({
             x: gridItems[draggedList.current].x + x,
             y: gridItems[draggedList.current].y + y,
