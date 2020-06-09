@@ -1,17 +1,22 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import TodoList from "./Components/TodoList";
-import AddNewItemForm from "./Components/AddNewItemForm";
-import TodoListTitle from "./Components/TodoListTitle";
-import {addTodoListTC, loadTodoListsTC} from "./redux/reducer";
+import React, {useEffect, useMemo, useRef, useState} from "react";
+import TodoList from "./Components/todolists/TodoList";
+import AddNewTask from "./Components/tasks/AddNewTask";
+import {actions, loadTodoListsTC, submitAllChanges} from "./redux/reducer";
 import {useDispatch, useSelector} from 'react-redux';
 import {AppStateType} from "./redux/store";
 import styled, {createGlobalStyle} from "styled-components/macro";
 import {useMedia} from "./hooks/useMedia";
 import {useMeasure} from "./hooks/useMeasure";
-import {animated, useTransition, useSprings, useSpring} from "react-spring";
+import {animated, useSpring, useTransition} from "react-spring";
 import {useDrag} from "react-use-gesture";
-import {swap} from "./hooks/swap";
 import {TodoListType} from "./redux/entities";
+import {swap} from "./hooks/swap";
+import {library} from "@fortawesome/fontawesome-svg-core";
+import {far} from "@fortawesome/free-regular-svg-icons";
+import {fas} from "@fortawesome/free-solid-svg-icons";
+import ModalWrapper from "./Components/modalWrapper";
+
+library.add(far, fas);
 
 const GlobalStyles = createGlobalStyle`
   * {
@@ -29,26 +34,34 @@ const GlobalStyles = createGlobalStyle`
 `;
 
 const TodoListsContainer = styled.div`
-  display: flex;
-  justify-content: center;
+  position: relative;
   background: #f0f0f0;
-  padding: 15px;
 `;
 
-const AllLists = styled.div`
-  position: relative;
+const AllLists = styled(animated.div)`
+  position: absolute;
+  transform-style: preserve-3d;
   width: 100%;
 `;
 
 const TodoListContainer = styled(animated.div)` 
+  transform-style: preserve-3d;
   position: absolute;
-  will-change: transform, width, height, opacity;
-  padding: 15px;
+  /*will-change: transform, width, height, opacity;*/
 `;
+
+const Addddd = styled(animated.div)`
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: darkred;
+  z-index: 20;
+`;
+
 
 const App = () => {
 
-    const todoLists = useSelector((store: AppStateType) => store.todoList.todoLists);
+    const {todoLists, editable, errorsNumber, isModalOpened} = useSelector((store: AppStateType) => store.todoList);
     const dispatch = useDispatch();
 
     useEffect(() => {
@@ -56,96 +69,114 @@ const App = () => {
     }, []);
 
     const addTodoList = (title: string) => {
-        dispatch(addTodoListTC(title));
+        const id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+            .replace(/[xy]/g,(c,r)=>('x'== c?(r=Math.random()*16|0):(r&0x3|0x8)).toString(16));
+        const newList = {
+            id,
+            title,
+            tasks: []
+        }
+        dispatch(actions.addTodoList(newList));
     };
+
+    const switchEditMode = () => dispatch(actions.enableEditMode());
+    const submitAll = () => dispatch(submitAllChanges());
 
     const [swappableTodoLists, setNewList] = useState<Array<TodoListType>>([]);
     useEffect(() => {
         setNewList(todoLists)
     }, [todoLists]);
 
-    const TodoLists = useMemo(() => {
-        return swappableTodoLists.map(
-            (todoList) => <TodoList id={todoList.id} key={todoList.id}
-                                    listTitle={todoList.title} listTasks={todoList.tasks}/>
-        )
-    }, [swappableTodoLists]);
-
+    const wrapperAnimation = useSpring({
+        x: editable ?  0: -15,
+        y: editable ? 0 : 275,
+        rotateX: editable ? 0 :45,
+        rotateZ: editable ? 0 :45
+    })
 //adaptive grid with transitions
-    const columns = useMedia(['(min-width: 1500px)', '(min-width: 1000px)', '(min-width: 600px)'], [5, 4, 3], 2);
+    const columns = useMedia(['(min-width: 1500px)', '(min-width: 1000px)', '(min-width: 600px)'], [4, 3, 2], 1);
     const [bind, {width}] = useMeasure();
 
     const heights = useRef<Array<number>>([]);
     const {gridItems, diapason} = useMemo(() => {
-        let newHeights = new Array(columns).fill(0);
-        let gridItems =  swappableTodoLists.map(
+        const newHeights = new Array(columns).fill(0);
+        const gridItems =  swappableTodoLists.map(
             (item, i) => {
                 const height = item.height || 0;
                 const column = i % columns;
                 const x = (width / columns) * column;
-                const y = (newHeights[column] += height) - height;
-                return {x, y, width: width / columns, height, id: item.id, itemIndex: i}
+                const y = (newHeights[column] += height) - height
+                const todoList = <TodoList id={item.id} key={item.id}
+                                           listTitle={item.title} listTasks={item.tasks}/>
+                return {x, y, width: width / columns, height, id: item.id, todoList}
             });
-        let diapason = gridItems.map(
+        const diapason = gridItems.map(
             (item) => {
                 const leftX = item.x;
                 const rightX = leftX + width / columns;
-                const topY = item.y;
-                const botY = topY + item.height;
-                const horizontalCenter = item.x + width/2;
+                const botY = item.y;
+                const topY = botY + item.height;
+                const horizontalCenter = item.x + width/columns/2;
                 const verticalCenter = item.y + item.height/2;
                 return {leftX, rightX, topY, botY, horizontalCenter, verticalCenter}
             }
         )
         heights.current = newHeights;
         return {gridItems, diapason};
-    }, [swappableTodoLists]);
+    }, [swappableTodoLists, width]);
 
+    const [debugAn, setAn] = useSpring(() => ({x: 0, y: 0, immediate: true}));
+
+    const verticalBorder = useRef<number>(0);
+    const horizontalBorder = useRef<number>(0);
+    const prevVelocity = useRef<Array<number>>([0, 0]);
     const calculatePositions = (x: number, y: number, vx: number, vy: number) => {
-        let verticalBorder = 0;
-        let horizontalBorder = 0;
-        if (vx === 0) {
-            horizontalBorder = currX.current + x + width/2
+        if (vx === 0 && vy) {
+            horizontalBorder.current = currX.current + x + width/columns/2
         }
-        if (vy === 0) {
-            verticalBorder = currY.current + y + currHeight.current/2;
+        if (vy === 0 && vx) {
+            verticalBorder.current = currY.current + y + currHeight.current/2;
         }
         if (vx > 0) {
-            horizontalBorder = currX.current + x + width;
+            horizontalBorder.current = currX.current + x + width/columns;
         }
         if (vx < 0) {
-            horizontalBorder = currX.current + x;
+            horizontalBorder.current = currX.current + x;
         }
         if (vy > 0) {
-            verticalBorder = currY.current + y + currHeight.current;
+            verticalBorder.current = currY.current + y + currHeight.current;
         }
         if (vy < 0) {
-            verticalBorder = currY.current + y;
+            verticalBorder.current = currY.current + y;
         }
+        setAn({x: horizontalBorder.current, y: verticalBorder.current, immediate: true})
         let i = diapason.findIndex(item => {
             let horBord = false;
             let verBord = false;
-            if (vx === 0 && horizontalBorder > item.leftX && horizontalBorder < item.rightX) {
+            if (vx === 0 && horizontalBorder.current > item.leftX && horizontalBorder.current < item.rightX
+                && prevVelocity.current[0] && vy !== 0) {
                 horBord = true
             }
-            if (vy === 0 && verticalBorder > item.topY && verticalBorder < item.botY) {
+            if (vy === 0 && verticalBorder.current > item.botY && verticalBorder.current < item.topY
+                && prevVelocity.current[1] && vx !== 0) {
                 verBord = true;
             }
-            if (vx > 0 && horizontalBorder > item.leftX && horizontalBorder < item.horizontalCenter) {
+            if (vx > 0 && horizontalBorder.current > item.horizontalCenter && horizontalBorder.current < item.rightX) {
                 horBord = true;
             }
-            if (vx < 0 && horizontalBorder < item.rightX && horizontalBorder > item.horizontalCenter) {
+            if (vx < 0 && horizontalBorder.current > item.leftX && horizontalBorder .current < item.horizontalCenter) {
                 horBord = true;
             }
-            if (vy > 0 && verticalBorder > item.topY && verticalBorder < item.horizontalCenter) {
+            if (vy > 0 && verticalBorder.current < item.topY && verticalBorder.current > item.horizontalCenter) {
                 verBord = true;
             }
-            if (vy < 0 && verticalBorder < item.botY && verticalBorder > item.horizontalCenter) {
+            if (vy < 0 && verticalBorder.current > item.botY && verticalBorder.current < item.horizontalCenter) {
                 verBord = true;
             }
             if (horBord && verBord) return true
-        })
-        return i < swappableTodoLists.length-1 && i > 0 ? i : null;
+        });
+        prevVelocity.current = [vx, vy];
+        return i < swappableTodoLists.length && i >= 0 ? i : null;
     }
 
     const transitions = useTransition(gridItems, {
@@ -165,17 +196,18 @@ const App = () => {
     const currX = useRef<number>(0);
     const currY = useRef<number>(0);
     const currHeight = useRef<number>(0);
-    const [isListDragged, dragList] = useState<boolean>(false);
+    const [draggedListId, dragList] = useState<null | string>(null);
     const [spring, setSpring] = useSpring(() => ({
         x: 0,
         y: 0,
         width: 0,
         zIndex: 1
     }));
-    const gesture = useDrag(({args: [originalIndex], down, movement: [x, y],
+    const gesture = useDrag(({args: [id], down, movement: [x, y],
                                 vxvy: [vx, vy], delta:[dx, dy]}) => {
-        if (!isListDragged) {
-            draggedList.current = originalIndex;
+        if (!editable || isModalOpened) return;
+        draggedList.current = gridItems.findIndex(item => item.id === id);
+        if (!draggedListId) {
             currX.current = gridItems[draggedList.current].x;
             currY.current = gridItems[draggedList.current].y;
             currHeight.current = gridItems[draggedList.current].height;
@@ -185,7 +217,7 @@ const App = () => {
                 width: gridItems[draggedList.current].width,
                 zIndex: 3,
                 immediate: true,
-                onRest: () => dragList(true)
+                onRest: () => dragList(id)
             });
             return
         }
@@ -195,43 +227,46 @@ const App = () => {
             immediate: false
         });
         const newIndex = calculatePositions(x, y, vx, vy);
-        console.log(currY.current + y + currHeight.current )
-        /*if (new Index && newIndex !== draggedList.current) {
+        if (newIndex !== null && newIndex !== draggedList.current) {
             let newList = swap(swappableTodoLists, draggedList.current, newIndex);
-            console.log(newList)
             setNewList(newList);
-            draggedList.current = newIndex
-        }*/
+        }
         if (!down) {
             setSpring({
                 x: gridItems[draggedList.current].x,
                 y: gridItems[draggedList.current].y,
                 width: gridItems[draggedList.current].width,
                 zIndex: 1,
-                onRest: () => dragList(false),
+                onRest: () => dragList(null),
                 immediate: false
             });
         }
     }, {filterTaps: true});
 
     const fragment = transitions((style, item, t, i) =>
-        <TodoListContainer style={isListDragged && draggedList.current === i ? spring : style} {...gesture(i)}>
-            {TodoLists[item.itemIndex]}
+        <TodoListContainer style={draggedListId && draggedListId === item.id ? spring : style} {...gesture(item.id)}>
+            {item.todoList}
         </TodoListContainer>
     );
 
     return (
         <>
             <GlobalStyles/>
-            <TodoListTitle title={'Add TodoList'}/>
-            <AddNewItemForm onAddItemClick={addTodoList}/>
+            {/*<AddNewTask onAddItemClick={addTodoList} itemType={'todoList'}/>*/}
+
             <TodoListsContainer>
-                <AllLists {...bind} style={{height: (Math.max(...heights.current) || 0)}}>
+                <AllLists {...bind} style={{height: (Math.max(...heights.current) || 0), ...wrapperAnimation}}>
+                    <Addddd style={debugAn}/>
                     {fragment}
                 </AllLists>
             </TodoListsContainer>
-            <div style={{width: 20, height: 20, backgroundColor: 'black', position: "absolute", left: 200, top: 0}}
-                 onClick={() => console.log()}/>
+            <div style={{width: 20, height: 20, backgroundColor: 'black', position: "absolute", left: 100, top:700}}
+                 onClick={switchEditMode}/>
+            <div style={{width: 20, height: 20, backgroundColor: 'yellow', position: "absolute", left: 200, top: 700}}
+                 onClick={submitAll}/>
+            <div style={{width: 30, height: 30, backgroundColor: 'white', position: "absolute", left: 300, top: 700}}>
+                {errorsNumber}
+            </div>
         </>
     );
 }

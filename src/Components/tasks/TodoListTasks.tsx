@@ -1,11 +1,13 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useRef} from "react";
 import TodoListTask from "./TodoListTask";
-import {TaskType} from "../redux/entities";
+import {TaskType} from "../../redux/entities";
 import {animated, useSprings} from "react-spring";
 import {useDrag} from "react-use-gesture";
-import {swap} from "../hooks/swap";
+import {movePos} from "../../hooks/movePos";
 import clamp from "lodash-es/clamp";
 import styled from "styled-components/macro";
+import {useSelector} from "react-redux";
+import {AppStateType} from "../../redux/store";
 
 const TasksWrapper = styled.div`
   user-select: none;
@@ -40,19 +42,19 @@ const TaskWrapper = styled(animated.div)`
 `;
 
 type PropsType = {
-    changeStatus: (task: TaskType, status: number) => void;
-    changeTitle: (task: TaskType, title: string) => void;
     todoListId: string;
     tasks: TaskType[]
 };
 
 const TodoListTasks: React.FC<PropsType> = (props) => {
 
+    const editable = useSelector((state: AppStateType) => state.todoList.editable);
+
     const settings = (order: Array<number>, down?: boolean, originalIndex?: number, curIndex?: number, y?: number): any =>
         (index: number) => (
             down && index === originalIndex
                 ? {
-                    zIndex: '1',
+                    zIndex: 1,
                     boxShadow: `rgba(0, 0, 0, 0.15) 0px 15px 30px 0px`,
                     scale: 1.1,
                     y: (initialYofDragged.current || 0) + (y || 0),
@@ -61,8 +63,8 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
                 : {
                     boxShadow: `rgba(0, 0, 0, 0.15) 0px 1px 2px 0px`,
                     scale: 1,
-                    y: initialY.current[order.indexOf(index)] || 0,
-                    zIndex: '0',
+                    y: initialY.current[order.indexOf(index)]|| 0,
+                    zIndex: 'none',
                     immediate: false
                 }
         );
@@ -89,22 +91,22 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
     const tasksWrapperHeight = props.tasks.length !== 0 ? props.tasks.map(task => task.height || 0)
         .reduce((prevHeight, nextHeight) => prevHeight + nextHeight) : 0;
 
-    const getNewIndex = (index: number, y: number) => {//useCallback!!!11
+    const getNewIndex = (index: number, y: number) => {
         if (y > 0) {
             let newIndex = index;
             let height = 0;
-            while (y > height + heights.current[index+1] / 2) {
+            while (y > height + heights.current[index + 1] / 2) {
                 newIndex += 1;
-                height += heights.current[index+1];
+                height += heights.current[index + 1];
             }
-            return newIndex > heights.current.length-1 ? heights.current.length-1 : newIndex;
+            return newIndex > heights.current.length - 1 ? heights.current.length - 1 : newIndex;
         }
         if (y < 0) {
             let newIndex = index;
             let height = 0;
-            while (Math.abs(y) > height + heights.current[index-1] / 2) {
+            while (Math.abs(y) > height + heights.current[index - 1] / 2) {
                 newIndex -= 1;
-                height += heights.current[index-1];
+                height += heights.current[index - 1];
             }
             return newIndex < 0 ? 0 : newIndex;
         }
@@ -113,11 +115,12 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
 
     const [springs, setSprings] = useSprings(props.tasks.length, settings(order.current));
     const gesture = useDrag(({args: [originalIndex], down, movement: [, y]}) => {
+        if (!editable) return;
         const curIndex = order.current.indexOf(originalIndex);//начальный индекс
         if (!initialYofDragged.current) initialYofDragged.current = initialY.current[curIndex];
         const curRow = clamp(getNewIndex(curIndex, y)!, 0, props.tasks.length - 1);//текущий новый индекс
-        const newOrder = swap(order.current, curIndex, curRow);// новый порядок
-        const newHeights = swap(heights.current, curIndex, curRow);//новый массив высот
+        const newOrder = movePos(order.current, curIndex, curRow);// новый порядок
+        const newHeights = movePos(heights.current, curIndex, curRow);//новый массив высот
         initialY.current = newHeights.map((height, index) => {//новый массив У координат
             return heights.current.reduce((total, item, i) => {
                 if (i !== 0 && i <= index) {
@@ -132,13 +135,13 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
             heights.current = newHeights;
             initialYofDragged.current = null
         }
-    },{filterTaps: true} /*{
+    }, {filterTaps: true} /*{
         filterTaps: true, bounds: { top: 0 , bottom: tasksWrapperHeight}, rubberband: true
     }*/);
 
     const tasksElements = props.tasks.map(task =>
-        <TodoListTask task={task} changeStatus={props.changeStatus} key={task.id}
-                      changeTitle={props.changeTitle} todoListId={props.todoListId}/>
+        <TodoListTask task={task} key={task.id}
+                      todoListId={props.todoListId}/>
     );
     const fragment = springs.map((styles, i) =>
         <TaskWrapper {...gesture(i)} key={i} style={styles}>

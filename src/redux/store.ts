@@ -1,6 +1,7 @@
 import {applyMiddleware, combineReducers, createStore} from "redux";
 import todoListReducer from "./reducer";
 import thunk from "redux-thunk";
+import { composeWithDevTools } from 'redux-devtools-extension';
 
 type RootReducerType = typeof rootReducer;
 export type AppStateType = ReturnType<RootReducerType>;
@@ -12,6 +13,6 @@ const rootReducer = combineReducers({
     todoList: todoListReducer
 });
 
-const store = createStore(rootReducer, applyMiddleware(thunk));
+const store = createStore(rootReducer, composeWithDevTools(applyMiddleware(thunk)));
 
 export default store;

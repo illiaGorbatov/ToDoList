@@ -1,20 +1,17 @@
 import React, {useEffect, useRef, useState} from "react";
-import TodoListTasks from './TodoListTasks';
+import TodoListTasks from '../tasks/TodoListTasks';
 import TodoListFooter from './TodoListFooter';
-import '../App.css'
-import AddNewItemForm from "./AddNewItemForm";
+import '../../App.css'
+import AddNewTask from "../tasks/AddNewTask";
 import TodoListTitle from "./TodoListTitle";
-import {useDispatch} from 'react-redux';
-import {
-    actions,
-    addTaskTC,
-    changeTaskTC,
-    changeTodoListTitleTC,
-    deleteTodoListTC,
-    restoreTasksTC
-} from "../redux/reducer";
-import {TaskType} from "../redux/entities";
+import {useDispatch, useSelector} from 'react-redux';
+import {actions, restoreTasksTC} from "../../redux/reducer";
+import {TaskType} from "../../redux/entities";
 import styled from "styled-components/macro";
+import {AppStateType} from "../../redux/store";
+import ModalWrapper from "../modalWrapper";
+import { useSpring, animated } from "react-spring";
+import {useHover} from "react-use-gesture";
 
 const colors = [
     `linear-gradient(to top, #a8edea 0%, #fed6e3 100%)`,
@@ -33,7 +30,17 @@ const colors = [
     `linear-gradient(-20deg, #ddd6f3 0%, #faaca8 100%, #faaca8 100%)`
 ];
 
+const SingleListWrapper = styled(animated.div)`
+  padding: 20px;
+  position: relative;
+  transform-style: preserve-3d;
+  transform-origin: 50% 100%;
+  backface-visibility: hidden;
+  overflow: visible
+`;
+
 const SingleList = styled.div`
+  padding: 15px;
   position: relative;
   width: 100%;
   height: 100%;
@@ -60,6 +67,9 @@ type PropsType = {
 
 const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks}) => {
 
+    const dispatch = useDispatch();
+    const editable = useSelector((state: AppStateType) => state.todoList.editable);
+
     const [backgroundColor] = useState<string>(colors[Math.ceil(Math.random() * colors.length)]);
 
     const ref = useRef<HTMLDivElement>(null);
@@ -74,56 +84,31 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks}) => {
         }
     })
 
-    const dispatch = useDispatch();
-
-    const [isEditModeActivated, setEditMode] = useState<boolean>(false);
-    const [title, setTitle] = useState<string>(listTitle);
     const [filterValue, setFilterValue] = useState<string>('All');
 
-    //work with forms
-    const onChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setTitle(e.currentTarget.value)
-    };
-    const enablingEditMode = () => {
-        setEditMode(true)
-    };
-    const disablingEditMode = () => {
-        setEditMode(false);
-        changeTodoListTitle()
-    };
-    const onKeyPressHandler = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter") disablingEditMode();
-    };
-
-    useEffect(() => {
+    useEffect(() => {//переделать
         if (!listTasks) dispatch(restoreTasksTC(id))
-    }, [listTasks]);
+    }, []);
 
 
     const changeFilter = (newFilterValue: string) => {
         setFilterValue(newFilterValue)
     };
 
-    const onAddTaskClick = (title: string) => {
-        dispatch(addTaskTC(title, id))
-    };
-
-    const changeStatus = (task: TaskType, status: number) => {
-        let newTask = {...task, status: status};
-        dispatch(changeTaskTC(id, task.id, newTask))
-    };
-
-    const changeTitle = (task: TaskType, title: string) => {
-        let newTask = {...task, title};
-        dispatch(changeTaskTC(id, task.id, newTask))
+    const addTask = () => {
+        const taskId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+            .replace(/[xy]/g, (c, r) => ('x' == c ? (Math.random() * 16 | 0) : (r & 0x3 | 0x8)).toString(16));
+        const newTask = {
+            title: '',
+            id: taskId,
+            todoListId: id,
+            editStatus: true
+        }
+        dispatch(actions.addTask(newTask, id));
     };
 
     const deleteTodoList = () => {
-        dispatch(deleteTodoListTC(id))
-    };
-
-    const changeTodoListTitle = () => {
-        dispatch(changeTodoListTitleTC(id, title))
+        dispatch(actions.deleteTodoList(id))
     };
 
     const tasks = listTasks ? listTasks.filter(t => {
@@ -138,24 +123,42 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks}) => {
         }
     }) : [];
 
+    //hover Effect
+    const [spring, setSpring] = useSpring(() => ({
+        rotateZ: 0,
+        rotateY: 0,
+        rotateX: 0,
+    }));
+
+    const bind = useHover(({hovering}) => {
+        if (hovering) setSpring({
+            rotateZ: -10,
+            rotateY: 0,
+            rotateX: -30,
+        });
+        if (!hovering) setSpring({
+            rotateZ: 0,
+            rotateY: 0,
+            rotateX: 0,
+        });
+    })
+
+
     return (
-        <SingleList style={{backgroundImage: backgroundColor}} ref={ref}>
-            <div>
-                {isEditModeActivated ?
-                    <input value={title} onBlur={disablingEditMode} autoFocus={true}
-                           onKeyPress={onKeyPressHandler}
-                           onChange={(e) => onChangeHandler(e)}/> :
-                    <TodoListTitle title={listTitle} onClickHandler={enablingEditMode}/>}
-                <AddNewItemForm onAddItemClick={onAddTaskClick} todoListName={listTitle}/>
-                <CloseButton onClick={deleteTodoList}>
-                    X
-                </CloseButton>
-            </div>
-            <TodoListTasks changeStatus={changeStatus}
-                           changeTitle={changeTitle} todoListId={id}
-                           tasks={tasks}/>
-            <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>
-        </SingleList>
+        <SingleListWrapper ref={ref} style={spring} {...bind()}>
+            <SingleList style={{backgroundImage: backgroundColor}}>
+                <div>
+                    <TodoListTitle listTitle={listTitle} id={id}/>
+                    <CloseButton onClick={deleteTodoList}>
+                        X
+                    </CloseButton>
+                </div>
+                <TodoListTasks todoListId={id}
+                               tasks={tasks}/>
+                <AddNewTask addTask={addTask} itemType={'task'}/>
+                {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}
+            </SingleList>
+        </SingleListWrapper>
     );
 }
 
