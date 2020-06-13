@@ -1,30 +1,47 @@
 import React, {useEffect, useRef, useState} from "react";
 import '../../App.css';
 import styled from "styled-components/macro";
-import {useDispatch, useSelector} from "react-redux";
-import {AppStateType} from "../../redux/store";
+import {useDispatch} from "react-redux";
 import {actions} from "../../redux/reducer";
+import {animated, useSpring} from "react-spring";
 
-const ListTitle = styled.div`
+const ListTitle = styled(animated.div)`
   font-family: 'DINNextLTPro-Bold';
   font-size: 25px;
   text-align: center;
   padding: 10px;
+  margin: 0 auto;
+  width: 100%;
+  border-radius: 4px;
+  outline: none;
+  display: inline-block;
+  overflow-wrap: break-word;
+  -webkit-line-break: after-white-space;
 `;
 
 type PropsType = {
-    listTitle: string;
-    id: string;
+    listTitle: string,
+    id: string,
+    switchTitleMode: () => void,
+    isTitleEditable: boolean
 };
 
-const TodoListTitle: React.FC<PropsType> = ({listTitle, id}) => {
+const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable, switchTitleMode}) => {
 
     const dispatch = useDispatch();
-    const editable = useSelector((state: AppStateType) => state.todoList.editable);
+
+    useEffect(() => {
+        if (ref.current && isTitleEditable) {
+            ref.current.focus();
+            dispatch(actions.setFocusedStatus(true))
+        }
+    }, [isTitleEditable]);
 
     const ref = useRef<HTMLDivElement>(null);
     useEffect(() => {
-        ref.current!.textContent = listTitle
+        if (ref.current) {
+            ref.current.textContent = listTitle
+        }
     }, [listTitle]);
 
     const [title, setTitle] = useState<string>(listTitle);
@@ -33,19 +50,26 @@ const TodoListTitle: React.FC<PropsType> = ({listTitle, id}) => {
     };
 
     const onKeyPressHandler = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter") {
-            ref.current!.blur();
-            dispatch(actions.changeTodoListTitle(id, title))
+        if (e.key === ("Enter" || "Esc")) {
+            ref.current!.blur()
         }
     };
     const onBlurHandler = () => {
+        dispatch(actions.changeTodoListTitle(id, title));
+        switchTitleMode();
+        dispatch(actions.setFocusedStatus(false))
+    };
 
-        dispatch(actions.changeTodoListTitle(id, title))
-    }
+    const editModeAnimation = useSpring({
+        scale: isTitleEditable ? 1.3 : 1.0,
+        backgroundColor: isTitleEditable ? 'rgba(202, 106, 154, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+        color : isTitleEditable ? '#ffffff' : '#ca6a9a'
+    });
 
     return (
-        <ListTitle className="todoList-header__title" contentEditable={editable} ref={ref}
-                   onInput={e => onChangeHandler(e)} onKeyPress={onKeyPressHandler} onBlur={onBlurHandler}/>
+        <ListTitle contentEditable={isTitleEditable} ref={ref} style={editModeAnimation}
+                   onInput={e => onChangeHandler(e)} onKeyPress={e => onKeyPressHandler(e)}
+                   onBlur={onBlurHandler}/>
     );
 }
 

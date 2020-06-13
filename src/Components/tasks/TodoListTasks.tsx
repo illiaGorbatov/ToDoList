@@ -1,7 +1,7 @@
 import React, {useEffect, useRef} from "react";
 import TodoListTask from "./TodoListTask";
 import {TaskType} from "../../redux/entities";
-import {animated, useSprings} from "react-spring";
+import {animated, useSprings, useSpring} from "react-spring";
 import {useDrag} from "react-use-gesture";
 import {movePos} from "../../hooks/movePos";
 import clamp from "lodash-es/clamp";
@@ -9,7 +9,7 @@ import styled from "styled-components/macro";
 import {useSelector} from "react-redux";
 import {AppStateType} from "../../redux/store";
 
-const TasksWrapper = styled.div`
+const TasksWrapper = styled(animated.div)`
   user-select: none;
   font-family: 'Raleway', sans-serif;
   position: relative;
@@ -20,25 +20,8 @@ const TaskWrapper = styled(animated.div)`
   width: 100%;
   overflow: visible;
   pointer-events: auto;
-  transform-origin: 50% 50% 0;
-  border-radius: 5px;
-  color: white;
   text-align: center;
   font-size: 14.5px;
-  background: lightblue;
-  letter-spacing: 2px;
-    &:nth-child(1) {
-      background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
-    }
-    &:nth-child(2) {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    }
-    &:nth-child(3) {
-      background: linear-gradient(135deg, #5ee7df 0%, #b490ca 100%);
-    }
-    &:nth-child(4) {
-      background: linear-gradient(135deg, #c3cfe2 0%, #c3cfe2 100%);
-    }
 `;
 
 type PropsType = {
@@ -54,17 +37,15 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
         (index: number) => (
             down && index === originalIndex
                 ? {
-                    zIndex: 1,
+                    zIndex: 2,
                     boxShadow: `rgba(0, 0, 0, 0.15) 0px 15px 30px 0px`,
-                    scale: 1.1,
                     y: (initialYofDragged.current || 0) + (y || 0),
                     immediate: (n: string): boolean => n === 'zIndex' || n === 'y',
                 }
                 : {
                     boxShadow: `rgba(0, 0, 0, 0.15) 0px 1px 2px 0px`,
-                    scale: 1,
                     y: initialY.current[order.indexOf(index)]|| 0,
-                    zIndex: 'none',
+                    zIndex: 1,
                     immediate: false
                 }
         );
@@ -114,7 +95,8 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
     }
 
     const [springs, setSprings] = useSprings(props.tasks.length, settings(order.current));
-    const gesture = useDrag(({args: [originalIndex], down, movement: [, y]}) => {
+    const gesture = useDrag(({args: [originalIndex], down, movement: [, y], event}) => {
+        event?.stopPropagation();
         if (!editable) return;
         const curIndex = order.current.indexOf(originalIndex);//начальный индекс
         if (!initialYofDragged.current) initialYofDragged.current = initialY.current[curIndex];
@@ -138,6 +120,10 @@ const TodoListTasks: React.FC<PropsType> = (props) => {
     }, {filterTaps: true} /*{
         filterTaps: true, bounds: { top: 0 , bottom: tasksWrapperHeight}, rubberband: true
     }*/);
+
+    const tasksHeight = useSpring({
+        height: tasksWrapperHeight
+    })
 
     const tasksElements = props.tasks.map(task =>
         <TodoListTask task={task} key={task.id}

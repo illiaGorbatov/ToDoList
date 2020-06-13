@@ -6,16 +6,34 @@ import {AppStateType} from "../../redux/store";
 import styled from "styled-components/macro";
 import TaskIcons from "./TaskIcons";
 import {validate} from "../../hooks/validate";
+import { useSpring, animated } from "react-spring";
+import {useMeasure} from "../../hooks/useMesure";
+import {useHover} from "react-use-gesture";
+import TaskCheckbox from "./TaskCheckbox";
 
-const TaskWrapper = styled.div`
+const TaskWrapper = styled(animated.div)`
+    position: relative;
+    text-align: left;
+`;
+
+const TaskBackground = styled(animated.div)`
+    padding: 10px 0;
+    background-clip: content-box;
+    background-color: rgba(255, 255, 255, 0.8);
     display: flex;
     position: relative;
+    border-radius: 4px;
     overflow: hidden;
 `;
 
 const TaskText = styled.div`
     padding: 10px;
     outline: none;
+    display: inline-block;
+    min-width: 100px;
+    overflow-wrap: break-word;
+    -webkit-line-break: after-white-space;
+    width: 100%;
 `;
 
 type PropsType = {
@@ -26,24 +44,32 @@ type PropsType = {
 const TodoListTask: React.FC<PropsType> = ({task, todoListId}) => {
 
     const dispatch = useDispatch();
-    const editable = useSelector((state: AppStateType) => state.todoList.editable);
+    const {editable, focusedStatus} = useSelector((state: AppStateType) => state.todoList);
 
-    const ref = useRef<HTMLDivElement>(null);
-    const textRef = useRef<HTMLDivElement>(null);
-    const [height, setHeight] = useState<number>(0);
-    useEffect(() => {
-        if (ref.current) {
-            let newHeight = ref.current.offsetHeight;
-            if (height !== newHeight) {
-                setHeight(newHeight)
-                dispatch(actions.setTaskHeight(newHeight, task.id, todoListId))
-            }
+    const [hovered, setHoverStatus] = useState<boolean>(false);
+    const hoverBind = useHover(({hovering}) => {
+        if (!editable) return
+        if (!focusedStatus) {
+            setHoverStatus(hovering);
+            return
         }
-    });
 
+    })
+
+    const [bind, {height}] = useMeasure();
     useEffect(() => {
-        if (task.editStatus) textRef.current!.focus()
-    }, [task])
+            dispatch(actions.setTaskHeight(height, task.id, todoListId))
+    }, [height]);
+
+    const [isTaskEditable, setEditableState] = useState<boolean>(false);
+    const editTask = () => {
+        setEditableState(true);
+        dispatch(actions.setFocusedStatus(true))
+    };
+    const textRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        if (task.editStatus || isTaskEditable) textRef.current!.focus()
+    }, [task, isTaskEditable])
 
     const deleteTask = () => {
         dispatch(actions.deleteTask(todoListId, task.id))
@@ -62,9 +88,11 @@ const TodoListTask: React.FC<PropsType> = ({task, todoListId}) => {
     const onChangeHandler = (e: React.FormEvent<HTMLDivElement>) => {
         let title = e.currentTarget.textContent || '';
         setTitle(title)
-    }
+    };
 
-    const setNewName = () => {
+    const setNewTask = () => {
+        setEditableState(false);
+        dispatch(actions.setFocusedStatus(false));
         const isValid = validate(title, 'Task');
         if (isValid) {
             let newTask = {...task, title, editStatus: false};
@@ -75,18 +103,30 @@ const TodoListTask: React.FC<PropsType> = ({task, todoListId}) => {
     };
 
     const onKeyPressHandler = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter") setNewName()
+        if (e.key === ("Esc" || "Enter")) {
+            setNewTask()
+        }
     };
+
+    //animation
+    const {hoverScale, ...editModeAnimation} = useSpring({
+        scale: isTaskEditable ? 1.3 : 1.0,
+        backgroundColor: isTaskEditable ? 'rgba(202, 106, 154, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+        color : isTaskEditable ? '#ffffff' : '#ca6a9a',
+        hoverScale: hovered ? 1.15 : 1.0
+    });
 
     const priority = task.priority === 0 ? 'Low' : 1 ? 'Middle' : 2 ?
         'High' : 3 ? 'Urgently' : 'Later';
 
     return (
-        <TaskWrapper ref={ref}>
-            <TaskIcons task={task} deleteTask={deleteTask}
-                       changeDoneStatus={changeDoneStatus} editable={editable}/>
-            <TaskText contentEditable={editable} onKeyPress={e => onKeyPressHandler(e)} ref={textRef}
-                 onBlur={setNewName} onInput={e => onChangeHandler(e)}/>
+        <TaskWrapper {...bind} style={{scale: hoverScale}} {...hoverBind()}>
+            <TaskIcons editTask={editTask} deleteTask={deleteTask} hovered={hovered}/>
+            <TaskBackground style={editModeAnimation}>
+                <TaskCheckbox task={task} changeDoneStatus={changeDoneStatus} editable={editable}/>
+                <TaskText contentEditable={isTaskEditable} onKeyPress={e => onKeyPressHandler(e)} ref={textRef}
+                          onBlur={setNewTask} onInput={e => onChangeHandler(e)}/>
+            </TaskBackground>
         </TaskWrapper>
     );
 }

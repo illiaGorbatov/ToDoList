@@ -1,12 +1,10 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import TodoList from "./Components/todolists/TodoList";
-import AddNewTask from "./Components/tasks/AddNewTask";
 import {actions, loadTodoListsTC, submitAllChanges} from "./redux/reducer";
 import {useDispatch, useSelector} from 'react-redux';
 import {AppStateType} from "./redux/store";
 import styled, {createGlobalStyle} from "styled-components/macro";
 import {useMedia} from "./hooks/useMedia";
-import {useMeasure} from "./hooks/useMeasure";
 import {animated, useSpring, useTransition} from "react-spring";
 import {useDrag} from "react-use-gesture";
 import {TodoListType} from "./redux/entities";
@@ -14,7 +12,9 @@ import {swap} from "./hooks/swap";
 import {library} from "@fortawesome/fontawesome-svg-core";
 import {far} from "@fortawesome/free-regular-svg-icons";
 import {fas} from "@fortawesome/free-solid-svg-icons";
-import ModalWrapper from "./Components/modalWrapper";
+import BigText from "./Components/BigText";
+import EditButton from "./Components/SwitchEditStateButton";
+import { useMeasure } from "./hooks/useMesure";
 
 library.add(far, fas);
 
@@ -30,38 +30,46 @@ const GlobalStyles = createGlobalStyle`
     padding: 0;
     user-select: none;
     outline: none;
+    &::-webkit-scrollbar { 
+    display: none;
+    };
   };
+  html {
+    -ms-overflow-style: none; 
+  }
 `;
 
-const TodoListsContainer = styled.div`
+const TodoListsContainer = styled(animated.div)` 
   position: relative;
-  background: #f0f0f0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 `;
 
 const AllLists = styled(animated.div)`
-  position: absolute;
+  background-color: rgba(255, 255, 255, 0.5) ;
+  position: relative;
   transform-style: preserve-3d;
-  width: 100%;
+  width: 70vw;
+  z-index: 2;
 `;
 
 const TodoListContainer = styled(animated.div)` 
   transform-style: preserve-3d;
   position: absolute;
-  /*will-change: transform, width, height, opacity;*/
 `;
 
 const Addddd = styled(animated.div)`
   position: absolute;
   width: 10px;
   height: 10px;
-  background-color: darkred;
   z-index: 20;
 `;
 
 
 const App = () => {
 
-    const {todoLists, editable, errorsNumber, isModalOpened} = useSelector((store: AppStateType) => store.todoList);
+    const {todoLists, editable, errorsNumber, backgroundImage} = useSelector((store: AppStateType) => store.todoList);
     const dispatch = useDispatch();
 
     useEffect(() => {
@@ -70,7 +78,7 @@ const App = () => {
 
     const addTodoList = (title: string) => {
         const id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-            .replace(/[xy]/g,(c,r)=>('x'== c?(r=Math.random()*16|0):(r&0x3|0x8)).toString(16));
+            .replace(/[xy]/g, (c, r) => ('x' == c ? (r = Math.random() * 16 | 0) : (r & 0x3 | 0x8)).toString(16));
         const newList = {
             id,
             title,
@@ -79,34 +87,41 @@ const App = () => {
         dispatch(actions.addTodoList(newList));
     };
 
-    const switchEditMode = () => dispatch(actions.enableEditMode());
-    const submitAll = () => dispatch(submitAllChanges());
-
     const [swappableTodoLists, setNewList] = useState<Array<TodoListType>>([]);
     useEffect(() => {
         setNewList(todoLists)
     }, [todoLists]);
 
     const wrapperAnimation = useSpring({
-        x: editable ?  0: -15,
+        x: editable ? '30vw' : '0vw',
         y: editable ? 0 : 275,
-        rotateX: editable ? 0 :45,
-        rotateZ: editable ? 0 :45
-    })
+        rotateX: editable ? 0 : 45,
+        rotateZ: editable ? 0 : 45,
+        config: {tension: 100, friction: 60, clamp: true},
+    });
+
+    //background
+    const [animateBackground, setBackground] = useSpring(() => ({
+        backgroundImage: `${backgroundImage}`
+    }));
+    useEffect(() => {
+        setBackground({backgroundImage: `${backgroundImage}`})
+    }, [backgroundImage])
+
 //adaptive grid with transitions
-    const columns = useMedia(['(min-width: 1500px)', '(min-width: 1000px)', '(min-width: 600px)'], [4, 3, 2], 1);
+    const columns = useMedia(['(min-width: 2000px)', '(min-width: 1400px)', '(min-width: 800px)'], [4, 3, 2], 1);
     const [bind, {width}] = useMeasure();
 
     const heights = useRef<Array<number>>([]);
     const {gridItems, diapason} = useMemo(() => {
         const newHeights = new Array(columns).fill(0);
-        const gridItems =  swappableTodoLists.map(
+        const gridItems = swappableTodoLists.map(
             (item, i) => {
                 const height = item.height || 0;
                 const column = i % columns;
                 const x = (width / columns) * column;
                 const y = (newHeights[column] += height) - height
-                const todoList = <TodoList id={item.id} key={item.id}
+                const todoList = <TodoList id={item.id} key={item.id} index={i}
                                            listTitle={item.title} listTasks={item.tasks}/>
                 return {x, y, width: width / columns, height, id: item.id, todoList}
             });
@@ -116,8 +131,8 @@ const App = () => {
                 const rightX = leftX + width / columns;
                 const botY = item.y;
                 const topY = botY + item.height;
-                const horizontalCenter = item.x + width/columns/2;
-                const verticalCenter = item.y + item.height/2;
+                const horizontalCenter = item.x + width / columns / 2;
+                const verticalCenter = item.y + item.height / 2;
                 return {leftX, rightX, topY, botY, horizontalCenter, verticalCenter}
             }
         )
@@ -132,13 +147,13 @@ const App = () => {
     const prevVelocity = useRef<Array<number>>([0, 0]);
     const calculatePositions = (x: number, y: number, vx: number, vy: number) => {
         if (vx === 0 && vy) {
-            horizontalBorder.current = currX.current + x + width/columns/2
+            horizontalBorder.current = currX.current + x + width / columns / 2
         }
         if (vy === 0 && vx) {
-            verticalBorder.current = currY.current + y + currHeight.current/2;
+            verticalBorder.current = currY.current + y + currHeight.current / 2;
         }
         if (vx > 0) {
-            horizontalBorder.current = currX.current + x + width/columns;
+            horizontalBorder.current = currX.current + x + width / columns;
         }
         if (vx < 0) {
             horizontalBorder.current = currX.current + x;
@@ -164,7 +179,7 @@ const App = () => {
             if (vx > 0 && horizontalBorder.current > item.horizontalCenter && horizontalBorder.current < item.rightX) {
                 horBord = true;
             }
-            if (vx < 0 && horizontalBorder.current > item.leftX && horizontalBorder .current < item.horizontalCenter) {
+            if (vx < 0 && horizontalBorder.current > item.leftX && horizontalBorder.current < item.horizontalCenter) {
                 horBord = true;
             }
             if (vy > 0 && verticalBorder.current < item.topY && verticalBorder.current > item.horizontalCenter) {
@@ -203,9 +218,11 @@ const App = () => {
         width: 0,
         zIndex: 1
     }));
-    const gesture = useDrag(({args: [id], down, movement: [x, y],
-                                vxvy: [vx, vy], delta:[dx, dy]}) => {
-        if (!editable || isModalOpened) return;
+    const gesture = useDrag(({
+                                 args: [id], down, movement: [x, y], event,
+                                 vxvy: [vx, vy]
+                             }) => {
+        if (!editable) return;
         draggedList.current = gridItems.findIndex(item => item.id === id);
         if (!draggedListId) {
             currX.current = gridItems[draggedList.current].x;
@@ -248,25 +265,22 @@ const App = () => {
             {item.todoList}
         </TodoListContainer>
     );
-
+console.log('render')
     return (
         <>
             <GlobalStyles/>
             {/*<AddNewTask onAddItemClick={addTodoList} itemType={'todoList'}/>*/}
-
-            <TodoListsContainer>
+            <TodoListsContainer style={animateBackground}>
+                <BigText/>
+                <EditButton/>
                 <AllLists {...bind} style={{height: (Math.max(...heights.current) || 0), ...wrapperAnimation}}>
                     <Addddd style={debugAn}/>
                     {fragment}
                 </AllLists>
             </TodoListsContainer>
-            <div style={{width: 20, height: 20, backgroundColor: 'black', position: "absolute", left: 100, top:700}}
-                 onClick={switchEditMode}/>
-            <div style={{width: 20, height: 20, backgroundColor: 'yellow', position: "absolute", left: 200, top: 700}}
-                 onClick={submitAll}/>
-            <div style={{width: 30, height: 30, backgroundColor: 'white', position: "absolute", left: 300, top: 700}}>
+           {/* <div style={{width: 30, height: 30, backgroundColor: 'white', position: "absolute", left: 300, top: 700, zIndex: 10}}>
                 {errorsNumber}
-            </div>
+            </div>*/}
         </>
     );
 }

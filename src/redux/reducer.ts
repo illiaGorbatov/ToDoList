@@ -16,7 +16,8 @@ type InitialStateType = {
     deletedTasksWithList: Array<{ todoListId: string, taskId: string }>,
     editable: boolean,
     errorsNumber: number,
-    isModalOpened: boolean,
+    backgroundImage: string,
+    focusedStatus: boolean
 };
 
 const initialState = {
@@ -31,7 +32,8 @@ const initialState = {
     addedTasks: [],
     deletedTasksWithList: [],
     errorsNumber: 0,
-    isModalOpened: false
+    backgroundImage: `linear-gradient(135deg, #D7E1EC 0%, #FFFFFF 100%)`,
+    focusedStatus: false
 };
 
 const reducer = (state: InitialStateType = initialState, action: ActionsTypes): InitialStateType => {
@@ -173,6 +175,16 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                 ...state,
                 errorsNumber: state.errorsNumber + 1
             };
+        case "reducer/SET_BACKGROUND":
+            return {
+                ...state,
+                backgroundImage: action.background
+            };
+        case "reducer/SET_FOCUSED_STATUS":
+            return {
+                ...state,
+                focusedStatus: action.status
+            }
         default:
             return state;
     }
@@ -208,6 +220,8 @@ export const actions = {
     enableEditMode: () => ({type: 'reducer/ENABLE_EDIT_MODE'} as const),
     disableEditMode: () => ({type: 'reducer/DISABLE_EDIT_MODE'} as const),
     setError: () => ({type: 'reducer/SET_ERROR'} as const),
+    setBackground: (background: string) => ({type: 'reducer/SET_BACKGROUND', background} as const),
+    setFocusedStatus: (status: boolean) => ({type: 'reducer/SET_FOCUSED_STATUS', status} as const)
 }
 
 type ThunkType = ThunkAction<void, AppStateType, unknown, ActionsTypes>;
