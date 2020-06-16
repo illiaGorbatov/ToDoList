@@ -1,65 +1,77 @@
-import React, {useEffect, useState} from "react";
+import React from "react";
 import '../../App.css';
 import styled from "styled-components/macro";
-import {animated, useSprings, useSpring, useTrail} from "react-spring";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 
-const ButtonWrapper = styled.div<{hoveredState: boolean}>`
+export const ButtonWrapper = styled.div`
+    z-index: 0;
     position: absolute;
-    z-index: 2;
-    border-radius:100%;
-    width: 160px;
-    height: 160px;
-    transform: translate(${props => props.hoveredState ? '-50%, -50%' : '0%, 0%'});
-    opacity: ${props => props.hoveredState ? 1 : 0};
+    top: 1.25rem;
+    left: 1.25rem;
+    border-radius: 100%;
+    width: 0rem;
+    height: 0rem;
+    transform: translate(-50%, -50%);
+    transition: .25s cubic-bezier(0.25, 0, 0, 1);
+    overflow: hidden;
 `;
 
-const Button = styled(animated.div)<{background: string}>`
+const Button = styled.div<{ background: string }>`
     display: grid;
     place-items: center;
     position: absolute;
-    width: 3rem;
-    height: 3rem;
+    width: 2.5rem;
+    height: 2.5rem;
     border-radius: 100%;
     cursor: pointer;
     font-size: 20px;
     background-image: ${props => props.background};
+    transform: translate(-50%, -50%);
+    transition: .25s cubic-bezier(0.25, 0, 0, 1);
+    &:hover {
+        background-image: linear-gradient(135deg, #ca6a9a 0%, #ca6a9a 100%);
+        color: white
+    }
+    &:first-child:nth-last-child(3),
+        &:first-child:nth-last-child(3) ~ * {
+            &:nth-child(1) {
+                left:50%;
+                top:15.625%;
+            }
+            &:nth-child(2) {
+                left:25%;
+                top:25%;
+            }
+            &:nth-child(3) {
+                left:15.625%;
+                top:50%;
+            }
+        }
 `;
 
 type PropsType = {
-    hovered: boolean,
     color: string,
     deleteTodoList: () => void,
     addTask: () => void,
     editList: () => void
 };
 
-const ContextButtons: React.FC<PropsType> = ({hovered, color, deleteTodoList, addTask, editList}) => {
-
-    const [animations, setAnimation] = useSprings(3, i => ({
-        top: '60%',
-        left: '60%',
-        config: {clamp: true, friction: 15}
-    }));
-
-    const [hoveredState, setState] = useState<boolean>(false);
-    useEffect(() => {
-        hovered && setState(true);
-        setAnimation(i => ({
-            top: !hovered ? '60%' : i === 0 ? '50%' : i === 1 ? '10%' : '0%',
-            left: !hovered ? '60%' : i === 0 ? '0%' : i === 1 ? '10%' : '50%',
-            onRest: () => i === 2 && !hovered && setState(false)
-        }))
-    }, [hovered])
+const ContextButtons: React.FC<PropsType> = ({color, deleteTodoList, addTask, editList}) => {
 
     return (
-        <ButtonWrapper hoveredState={hoveredState}>
-            {animations.map((springs, index) =>
-                <Button style={springs} background={color} key={index}
-                         onClick={index === 0 ? addTask : index === 1 ? deleteTodoList : editList}>
-                    <FontAwesomeIcon icon={index === 0 ? "plus" : index === 1 ? "trash" : "edit"}/>
-                </Button>
-            )}
+        <ButtonWrapper>
+            <Button background={color}
+                    onClick={addTask}>
+                <FontAwesomeIcon icon="plus"/>
+            </Button>
+            <Button background={color}
+                    onClick={deleteTodoList}>
+                <FontAwesomeIcon icon="trash"/>
+            </Button>
+            <Button background={color}
+                    onClick={editList}>
+                <FontAwesomeIcon icon="edit"/>
+            </Button>
         </ButtonWrapper>
     );
 }

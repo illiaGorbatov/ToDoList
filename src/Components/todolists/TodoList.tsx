@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useLayoutEffect, useRef, useState} from "react";
 import TodoListTasks from '../tasks/TodoListTasks';
 import '../../App.css'
 import TodoListTitle from "./TodoListTitle";
@@ -9,7 +9,7 @@ import styled from "styled-components/macro";
 import {AppStateType} from "../../redux/store";
 import {animated, useSpring} from "react-spring";
 import {useHover} from "react-use-gesture";
-import ContextButtons from "./ContextButtons";
+import ContextButtons, {ButtonWrapper} from "./ContextButtons";
 
 const colors = [
     `linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)`,
@@ -47,20 +47,24 @@ background-image:linear-gradient(-20deg, #ddd6f3 0%, #faaca8 100%);
 
 const SingleListWrapper = styled(animated.div)`
   color: #ca6a9a;
-  padding: 20px;
   position: relative;
   transform-style: preserve-3d;
   transform-origin: 50% 100%;
   backface-visibility: hidden;
-  overflow: visible
+  overflow: visible;
+  padding: 20px;
+  &:hover {
+      z-index: 5;
+  }
 `;
 
 const SingleListBottomLayer = styled(animated.div)`
   border-radius: 4px;
   background-color: rgba(0, 0, 0, 0.2);
+  background-clip: content-box;
 `;
 
-const SingleList = styled(animated.div)`
+const SingleList = styled(animated.div)<{ editable: boolean }>`
   padding: 15px;
   transform-style: preserve-3d;
   position: relative;
@@ -77,7 +81,13 @@ const SingleList = styled(animated.div)`
       width: 100%;
       height: 100%;
       background: rgba(255, 255, 255, 0.4)
-  }
+  };
+  ${props => props.editable &&
+    `&:hover ${ButtonWrapper},  ${ButtonWrapper}:focus-within{
+       width:10rem;
+       height:10rem;
+    }`
+}
 `;
 
 const ListInnerLayer = styled(animated.div)`
@@ -95,28 +105,28 @@ type PropsType = {
     id: string;
     listTitle: string;
     listTasks?: TaskType[];
-    index: number
+    index: number,
+    setData: (height: number, id: string) => void
 };
 
-const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index}) => {
+const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index, setData}) => {
 
     const dispatch = useDispatch();
     const {editable, focusedStatus} = useSelector((state: AppStateType) => state.todoList);
 
     const [backgroundImage] = useState<string>(colors[index % colors.length]);
 
-    const ref = useRef<HTMLDivElement>(null);
-    const [height, setHeight] = useState(0);
-    useEffect(() => {
-        if (ref.current) {
-            let newHeight = ref.current.offsetHeight;
-            if (height !== newHeight) {
-                setHeight(newHeight)
-                dispatch(actions.setListHeight(newHeight, id))
+    const [currHeight, setHeight] = useState<number>(0);
+    const refEf = useRef<HTMLDivElement>(null);
+    useLayoutEffect(() => {
+        if (refEf.current) {
+            const height = refEf.current.offsetHeight;
+            if (currHeight !== height) {
+                setData(height, id);
+                setHeight(height)
             }
         }
     })
-
     const [filterValue, setFilterValue] = useState<string>('All');
 
     useEffect(() => {//переделать
@@ -129,7 +139,6 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index}) => {
     };
 
     const addTask = () => {
-        setHoverStatus(false)
         const taskId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
             .replace(/[xy]/g, (c, r) => ('x' == c ? (Math.random() * 16 | 0) : (r & 0x3 | 0x8)).toString(16));
         const newTask = {
@@ -139,10 +148,10 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index}) => {
             editStatus: true
         }
         dispatch(actions.addTask(newTask, id));
+        dispatch(actions.setFocusedStatus(true))
     };
 
     const deleteTodoList = () => {
-        setHoverStatus(false);
         dispatch(actions.deleteTodoList(id))
     };
 
@@ -189,10 +198,6 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index}) => {
     }));
 
     const bind = useHover(({hovering}) => {
-        if (editable) {
-            if (!focusedStatus) setHoverStatus(hovering);
-            return
-        }
         if (hovering) {
             setSpring({
                 boxShadow: '0 0 20px 10px rgba(0, 0, 0, 0.2)',
@@ -221,35 +226,22 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index}) => {
         }
     });
 
-    const [hovered, setHoverStatus] = useState<boolean>(false);
     const [isTitleEditable, setTitleEditMode] = useState<boolean>(false);
     const switchTitleMode = () => {
-        if (hovered) setHoverStatus(false);
         setTitleEditMode(!isTitleEditable)
     };
 
-
     return (
-        <SingleListWrapper ref={ref} {...bind()}>
+        <SingleListWrapper {...!editable && {...bind()}} ref={refEf}>
             <SingleListBottomLayer style={{boxShadow}}>
-                <SingleList style={{z, backgroundImage}}>
-                    <ContextButtons hovered={hovered} color={backgroundImage} deleteTodoList={deleteTodoList}
+                <SingleList style={{z, backgroundImage}} editable={editable && !focusedStatus}>
+                    <ContextButtons color={backgroundImage} deleteTodoList={deleteTodoList}
                                     addTask={addTask} editList={switchTitleMode}/>
-                    <ListInnerLayer style={{
-                        translateZ: innerZ,
-                        rotateZ: innerRotZ,
-                        backgroundImage
-                    }}>
-                        <TasksLayer style={{
-                            translateZ: taskZ,
-                            scale,
-                            rotateZ: tasksRotZ,
-                            rotateX,
-                        }}>
+                    <ListInnerLayer style={{translateZ: innerZ, rotateZ: innerRotZ, backgroundImage}}>
+                        <TasksLayer style={{translateZ: taskZ, scale,rotateZ: tasksRotZ,rotateX}}>
                             <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable}
                                            switchTitleMode={switchTitleMode}/>
-                            <TodoListTasks todoListId={id}
-                                           tasks={tasks}/>
+                            <TodoListTasks todoListId={id} tasks={tasks}/>
                         </TasksLayer>
                     </ListInnerLayer>
                     {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}

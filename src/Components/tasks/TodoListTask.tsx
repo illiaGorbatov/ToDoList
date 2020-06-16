@@ -1,19 +1,24 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useLayoutEffect, useRef, useState} from "react";
 import {useDispatch, useSelector} from 'react-redux';
 import {actions} from "../../redux/reducer";
 import {TaskType} from "../../redux/entities";
 import {AppStateType} from "../../redux/store";
 import styled from "styled-components/macro";
-import TaskIcons from "./TaskIcons";
+import TaskButtons, {TaskButtonWrapper} from "./TaskButtons";
 import {validate} from "../../hooks/validate";
-import { useSpring, animated } from "react-spring";
-import {useMeasure} from "../../hooks/useMesure";
-import {useHover} from "react-use-gesture";
+import {animated, useSpring} from "react-spring";
 import TaskCheckbox from "./TaskCheckbox";
 
-const TaskWrapper = styled(animated.div)`
+const TaskWrapper = styled(animated.div)<{ editable: boolean }>`
     position: relative;
     text-align: left;
+    z-index: 5;
+    ${props => props.editable &&
+    `&:hover ${TaskButtonWrapper},  ${TaskButtonWrapper}:focus-within{
+           width: 4rem;
+           height: 4rem;
+        }`
+}
 `;
 
 const TaskBackground = styled(animated.div)`
@@ -24,6 +29,7 @@ const TaskBackground = styled(animated.div)`
     position: relative;
     border-radius: 4px;
     overflow: hidden;
+    cursor: grab;
 `;
 
 const TaskText = styled.div`
@@ -36,30 +42,30 @@ const TaskText = styled.div`
     width: 100%;
 `;
 
+
 type PropsType = {
     task: TaskType;
     todoListId: string;
-}
+};
 
-const TodoListTask: React.FC<PropsType> = ({task, todoListId}) => {
-
+const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId}) => {
     const dispatch = useDispatch();
     const {editable, focusedStatus} = useSelector((state: AppStateType) => state.todoList);
 
-    const [hovered, setHoverStatus] = useState<boolean>(false);
-    const hoverBind = useHover(({hovering}) => {
-        if (!editable) return
-        if (!focusedStatus) {
-            setHoverStatus(hovering);
-            return
+    const refEf = useRef<HTMLDivElement>(null);
+    const [currHeight, setHeight] = useState<number>(0);
+    useEffect(() => {
+        if (editable) {
+            if (refEf.current) {
+                const height = refEf.current.offsetHeight;
+                if (currHeight !== height)
+                    /*dispatch(actions.setTaskHeight(height, task.id, todoListId))*/
+                    setHeight(height)
+            }
         }
-
     })
 
-    const [bind, {height}] = useMeasure();
-    useEffect(() => {
-            dispatch(actions.setTaskHeight(height, task.id, todoListId))
-    }, [height]);
+
 
     const [isTaskEditable, setEditableState] = useState<boolean>(false);
     const editTask = () => {
@@ -107,29 +113,30 @@ const TodoListTask: React.FC<PropsType> = ({task, todoListId}) => {
             setNewTask()
         }
     };
-
     //animation
-    const {hoverScale, ...editModeAnimation} = useSpring({
-        scale: isTaskEditable ? 1.3 : 1.0,
-        backgroundColor: isTaskEditable ? 'rgba(202, 106, 154, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-        color : isTaskEditable ? '#ffffff' : '#ca6a9a',
-        hoverScale: hovered ? 1.15 : 1.0
+    const editModeAnimation = useSpring({
+        scale: isTaskEditable || task.editStatus ? 1.3 : 1.0,
+        backgroundColor: isTaskEditable || task.editStatus ? 'rgba(202, 106, 154, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+        color: isTaskEditable || task.editStatus ? '#ffffff' : '#ca6a9a',
     });
 
     const priority = task.priority === 0 ? 'Low' : 1 ? 'Middle' : 2 ?
         'High' : 3 ? 'Urgently' : 'Later';
 
     return (
-        <TaskWrapper {...bind} style={{scale: hoverScale}} {...hoverBind()}>
-            <TaskIcons editTask={editTask} deleteTask={deleteTask} hovered={hovered}/>
+        <TaskWrapper editable={editable && !focusedStatus} ref={refEf}>
+            <TaskButtons editTask={editTask} deleteTask={deleteTask}/>
             <TaskBackground style={editModeAnimation}>
                 <TaskCheckbox task={task} changeDoneStatus={changeDoneStatus} editable={editable}/>
-                <TaskText contentEditable={isTaskEditable} onKeyPress={e => onKeyPressHandler(e)} ref={textRef}
+                <TaskText contentEditable={isTaskEditable || task.editStatus}
+                          onKeyPress={e => onKeyPressHandler(e)}
+                          ref={textRef}
                           onBlur={setNewTask} onInput={e => onChangeHandler(e)}/>
             </TaskBackground>
         </TaskWrapper>
-    );
-}
 
-export default React.memo(TodoListTask);
+    );
+})
+
+export default TodoListTask;
 

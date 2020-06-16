@@ -5,7 +5,6 @@ import {useMeasure} from "../hooks/useMesure";
 
 const Wrapper = styled.div`
   position: relative;
-  z-index: 2;
   overflow: hidden;
 `;
 

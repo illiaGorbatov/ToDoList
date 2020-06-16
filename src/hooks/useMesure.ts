@@ -1,5 +1,5 @@
 import {MutableRefObject, useEffect, useRef, useState} from "react";
-import {ResizeObserver} from "@juggle/resize-observer";
+import ResizeObserver from "resize-observer-polyfill";
 
 type BoundsType = {
     left: number,
