@@ -3,10 +3,12 @@ import {TaskType, TodoListType} from "./entities";
 import {ThunkAction, ThunkDispatch} from "redux-thunk";
 import {AppStateType, InferActionTypes} from "./store";
 import cloneDeep from "lodash-es/cloneDeep";
+import {movePos} from "../hooks/movePos";
 
 type InitialStateType = {
     todoLists: Array<TodoListType>,
-    deepCopy: TodoListType[],
+    deepCopy: Array<TodoListType>,
+    editable: boolean,
     deletedLists: Array<string>,
     addedLists: Array<TodoListType>,
     changedLists: Array<TodoListType>,
@@ -14,7 +16,8 @@ type InitialStateType = {
     changedTasks: Array<TaskType>,
     addedTasks: Array<TaskType>,
     deletedTasksWithList: Array<{ todoListId: string, taskId: string }>,
-    editable: boolean,
+    swappedLists: Array<TodoListType>,
+    swappedTasks: Array<{todoListId: string, swappedTasks: Array<Array<string>> }>,
     errorsNumber: number,
     backgroundImage: string,
     focusedStatus: boolean
@@ -31,6 +34,8 @@ const initialState = {
     changedTasks: [],
     addedTasks: [],
     deletedTasksWithList: [],
+    swappedLists: [],
+    swappedTasks: [],
     errorsNumber: 0,
     backgroundImage: `linear-gradient(135deg, #D7E1EC 0%, #FFFFFF 100%)`,
     focusedStatus: false
@@ -61,11 +66,6 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
         case 'reducer/ADD_TASK':
             return {
                 ...state,
-                todoLists: state.todoLists.map(list => {
-                    if (list.id === action.todoListId) {
-                        return {...list, tasks: [...list.tasks, action.newTask]}
-                    } else return list
-                }),
                 addedTasks: [...state.addedTasks, action.newTask]
             };
         case 'reducer/CHANGE_TASK':
@@ -111,7 +111,7 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
             };
         case 'reducer/CHANGE_TODO_LIST_TITLE':
             const listIndex = state.changedLists.findIndex(item => item.id === action.todoListId);
-            const newListsArray: Array<TodoListType> = listIndex === -1 ? [...state.changedLists, {
+            const newListsArray = listIndex === -1 ? [...state.changedLists, {
                     id: action.todoListId, title: action.todoListTitle, tasks: []
                 }]
                 : state.changedLists.map((item, i) => {
@@ -127,30 +127,20 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                 }),
                 changedLists: [...newListsArray]
             };
-        case 'reducer/CHANGE_TASK_HEIGHT':
+        case "reducer/SWAP_TASKS":
+            const listPosition = state.swappedTasks.findIndex(item => item.todoListId === action.todoListId)
+            const newSwappedTasks = listPosition === -1 ? [...state.swappedTasks, {todoListId: action.todoListId,
+                swappedTasks: [action.swappedTasks]}] : state.swappedTasks.map((item, i) => {
+                    if (i === listPosition) return {
+                        todoListId: item.todoListId,
+                        swappedTasks: item.swappedTasks.map(tasks => tasks[0] === action.swappedTasks[0] ? action.swappedTasks : tasks)
+                    }
+                    return item
+            })
             return {
                 ...state,
-                todoLists: state.todoLists.map(list => {
-                    if (list.id === action.todoListId) {
-                        return {
-                            ...list, tasks: list.tasks.map(task => {
-                                if (task.id === action.id) {
-                                    return {...task, height: action.height}
-                                } else return task;
-                            })
-                        }
-                    } else return list
-                }),
-            };
-        case 'reducer/CHANGE_LIST_HEIGHT':
-            return {
-                ...state,
-                todoLists: state.todoLists.map(list => {
-                    if (list.id === action.todoListId) {
-                        return {...list, height: action.height}
-                    } else return list
-                })
-            };
+                swappedTasks: [...newSwappedTasks]
+            }
         case "reducer/ENABLE_EDIT_MODE":
             return {
                 ...state,
@@ -161,6 +151,8 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                 deletedTasks: [],
                 changedTasks: [],
                 addedTasks: [],
+                swappedLists: [],
+                swappedTasks: [],
                 deletedTasksWithList: [],
                 errorsNumber: 0,
                 deepCopy: cloneDeep(state.todoLists)
@@ -209,19 +201,13 @@ export const actions = {
         todoListId,
         todoListTitle
     } as const),
-    setTaskHeight: (height: number, id: string, todoListId: string) => ({
-        type: 'reducer/CHANGE_TASK_HEIGHT',
-        height, id, todoListId
-    } as const),
-    setListHeight: (height: number, todoListId: string) => ({
-        type: 'reducer/CHANGE_LIST_HEIGHT',
-        height, todoListId
-    } as const),
     enableEditMode: () => ({type: 'reducer/ENABLE_EDIT_MODE'} as const),
     disableEditMode: () => ({type: 'reducer/DISABLE_EDIT_MODE'} as const),
     setError: () => ({type: 'reducer/SET_ERROR'} as const),
     setBackground: (background: string) => ({type: 'reducer/SET_BACKGROUND', background} as const),
-    setFocusedStatus: (status: boolean) => ({type: 'reducer/SET_FOCUSED_STATUS', status} as const)
+    setFocusedStatus: (status: boolean) => ({type: 'reducer/SET_FOCUSED_STATUS', status} as const),
+    swapTasks: (todoListId: string, swappedTasks: Array<string>) => ({type: 'reducer/SWAP_TASKS',
+        todoListId, swappedTasks} as const),
 }
 
 type ThunkType = ThunkAction<void, AppStateType, unknown, ActionsTypes>;

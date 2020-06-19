@@ -1,22 +1,22 @@
 import React, {RefObject, useEffect, useLayoutEffect, useMemo, useRef, useState} from "react";
 import TodoListTask from "./TodoListTask";
 import {TaskType} from "../../redux/entities";
-import {animated, useSprings, useSpring} from "react-spring";
+import {animated, useSprings} from "react-spring";
 import {useDrag} from "react-use-gesture";
-import {movePos} from "../../hooks/movePos";
-import clamp from "lodash-es/clamp";
 import styled from "styled-components/macro";
-import {useSelector} from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
 import {AppStateType} from "../../redux/store";
+import {actions} from "../../redux/reducer";
+import {movePos} from "../../hooks/movePos";
 
-const TasksWrapper = styled(animated.div)`
+const TasksWrapper = styled.div`
   user-select: none;
   font-family: 'Raleway', sans-serif;
   position: relative;
 `;
 
 const TaskWrapper = styled(animated.div)`
-  position: absolute;
+  position: relative;
   width: 100%;
   overflow: visible;
   pointer-events: auto;
@@ -26,78 +26,73 @@ const TaskWrapper = styled(animated.div)`
 
 type PropsType = {
     todoListId: string;
-    tasks: TaskType[]
+    tasks: TaskType[],
+    newTask: TaskType | null
 };
 
-const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId}) => {
+const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, newTask}) => {
 
     const editable = useSelector((state: AppStateType) => state.todoList.editable);
+    const dispatch = useDispatch();
 
-    const settings = (order: Array<number>, down?: boolean, originalIndex?: number, curIndex?: number, y?: number): any =>
+    const settings = (down?: boolean, originalIndex?: number, y?: number, swap?: () => void): any =>
         (index: number) => (
             down && index === originalIndex
                 ? {
+                    scale: 1.2,
                     zIndex: 2,
                     /*boxShadow: `rgba(0, 0, 0, 0.15) 0px 15px 30px 0px`,*/
-                    y: (initialYofDragged.current || 0) + (y || 0),
+                    y: (initialY.current[index] || 0) + (y || 0),
                     immediate: (n: string): boolean => n === 'zIndex' || n === 'y',
                 }
                 : {
+                    scale: 1,
                     /*boxShadow: `rgba(0, 0, 0, 0.15) 0px 1px 2px 0px`,*/
-                    y: initialY.current[order.indexOf(index)] || 0,
+                    y: initialY.current[index] || 0,
                     zIndex: 1,
-                    immediate: false
+                    immediate: false,
+                    onRest: () => {
+                        if (swap) swap()
+                    }
                 }
         );
 
     const order = useRef<Array<number>>([]);
     const initialY = useRef<Array<number>>([]);
     const heights = useRef<Array<number>>([]);
-    const initialYofDragged = useRef<number | null>(null);
-
-    const [tasksWrapperHeight, setHeight] = useState<number>(0);
+    const initialIndex = useRef<number>(0);
+    const newIndex = useRef<number>(0);
+    const newMemoizedY = useRef<number>(0);
     const elementsRef = useRef<Array<RefObject<HTMLDivElement>>>([]);
+
+    const [editableTasks, setTasks] = useState<Array<TaskType>>([])
+
     useEffect(() => {
         if (tasks.length !== 0) {
             elementsRef.current = tasks.map(() => React.createRef());
             order.current = tasks.map((_, i) => i);
-            setSprings(settings(order.current));
+            setSprings(settings());
+            initialY.current = tasks.map(() => 0);
+            setTasks(tasks)
         }
-    }, [tasks])
+    }, [tasks]);
+    useEffect(() => {
+        if (newTask) {
+            elementsRef.current = [...elementsRef.current, React.createRef()];
+            setTasks([...editableTasks, newTask]);
+            order.current = [...order.current, order.current.length];
+            initialY.current = [...initialY.current, 0];
+        }
+    }, [newTask]);
 
-    /*useEffect(() => {
-        order.current = tasks.map((_, index) => index);
-        heights.current = tasks.map(task => task.height!);
-        initialY.current = heights.current.map((height, index) => {
-            return heights.current.reduce((total, item, i) => {
-                if (i !== 0 && i <= index) {
-                    total += heights.current[i - 1]
-                }
-                return total
-            }, 0)
-        });
-        setSprings(settings(order.current))
-    }, [tasks]);*/
-    const [dragged, setDragged] = useState<boolean>(false);
-    const undragedStyle = {position: 'relative'}
 
     useLayoutEffect(() => {
         if (elementsRef.current.length !== 0 && elementsRef.current[0].current !== null) {
             heights.current = elementsRef.current.map(ref => ref.current!.offsetHeight);
-            initialY.current = heights.current.map((task, index) => {
-                return heights.current.reduce((total, item, i) => {
-                    if (i !== 0 && i <= index) {
-                        total += heights.current[i - 1]
-                    }
-                    return total
-                }, 0)
-            });
-            setSprings(settings(order.current));
-            const newTasksWrapperHeight = heights.current.length !== 0 ? heights.current.reduce(
-                (prevHeight, nextHeight) => prevHeight + nextHeight) : 0;
-            if (newTasksWrapperHeight !== tasksWrapperHeight) setHeight(newTasksWrapperHeight)
+            initialY.current = tasks.map(() => 0);
+            setSprings(settings());
         }
-    }, [tasks, dragged]);
+    }, [tasks, editable, newTask]);
 
     const getNewIndex = (index: number, y: number) => {
         if (y > 0) {
@@ -121,48 +116,69 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId}) => {
         return index
     }
 
-    const [springs, setSprings] = useSprings(tasks.length, settings(order.current));
-    const gesture = useDrag(({args: [originalIndex], down, movement: [, y], event}) => {
-        event!.stopPropagation();
-        const curIndex = order.current.indexOf(originalIndex);//начальный индекс
-        if (!initialYofDragged.current) initialYofDragged.current = initialY.current[curIndex];
-        const curRow = clamp(getNewIndex(curIndex, y)!, 0, tasks.length - 1);//текущий новый индекс
-        const newOrder = movePos(order.current, curIndex, curRow);// новый порядок
-        const newHeights = movePos(heights.current, curIndex, curRow);//новый массив высот
-        initialY.current = newHeights.map((_, index) => {//новый массив У координат
-            return heights.current.reduce((total, item, i) => {
-                if (i !== 0 && i <= index) {
-                    total += newHeights[i - 1]
-                }
-                return total
-            }, 0)
-        })
-        setSprings(settings(newOrder, down, originalIndex, curIndex, y));
-        if (!down) {
-            order.current = newOrder;
-            heights.current = newHeights;
-            initialYofDragged.current = null
+    const [springs, setSprings] = useSprings(tasks.length, settings());
+    const gesture = useDrag(({args: [originalIndex], down, movement: [, y], event, first}) => {
+        event?.stopPropagation()
+        if (first) {
+            newIndex.current = order.current.indexOf(originalIndex);
+            initialIndex.current = order.current.indexOf(originalIndex);
         }
-    }, {filterTaps: true} /*{
+        const curIndex = order.current.indexOf(originalIndex);
+        const curRow = getNewIndex(initialIndex.current, y);
+       /* const processedIndex = (() => {
+            if (curRow > originalIndex) return order.current[curRow > newIndex.current ? curRow : newIndex.current];
+            if (curRow < originalIndex) return order.current[curRow > newIndex.current ? newIndex.current : curRow];
+            return order.current[newIndex.current]
+        })();*/
+        const processedIndex = order.current[curRow];
+        if (curRow !== newIndex.current) {
+            initialY.current = initialY.current.map((item, index) => {
+                if (index === originalIndex) {
+                    if (curIndex > curRow) newMemoizedY.current -= heights.current[processedIndex];
+                    else newMemoizedY.current += heights.current[processedIndex];
+                    return item
+                }
+                if (index === processedIndex) {
+                    return curIndex > curRow ? item + heights.current[originalIndex]
+                        : item - heights.current[originalIndex]
+                }
+                return item
+            });
+            console.log(curIndex, curRow, newIndex.current, processedIndex)
+            newIndex.current = curRow
+            order.current = movePos(order.current, curIndex, curRow);
+        }
+        if (!down) {
+            const newOrder = movePos(order.current, curIndex, curRow);
+            initialY.current[originalIndex] += newMemoizedY.current;
+            newMemoizedY.current = 0;
+            if (order.current !== newOrder) {
+                heights.current = movePos(heights.current, curIndex, curRow);
+                order.current = newOrder;
+                const swap = () => {
+                    dispatch(actions.swapTasks(todoListId, [editableTasks[originalIndex].id, editableTasks[processedIndex].id]));
+                }
+                setSprings(settings(down, originalIndex, y, swap))
+            } else setSprings(settings(down, originalIndex, y))
+        } else setSprings(settings(down, originalIndex, y))
+    }, {eventOptions: {capture: true}, filterTaps: true} /*{
         filterTaps: true, bounds: { top: 0 , bottom: tasksWrapperHeight}, rubberband: true
     }*/);
 
-    const tasksHeight = useSpring({
-        height: tasksWrapperHeight
-    })
-
-    const tasksElements = useMemo(() => tasks.map(task =>
-        <TodoListTask task={task} key={task.id}
-                      todoListId={todoListId}/>)
-    , [tasks]);
+    const tasksElements = useMemo(() => editableTasks.map(task =>
+            <TodoListTask task={task} key={task.id}
+                          todoListId={todoListId}/>)
+        , [editableTasks]);
 
     const fragment = springs.map((styles, i) =>
-        <TaskWrapper {...editable && {...gesture(i)}} key={i} style={editable ? styles : undragedStyle} ref={elementsRef.current[i]}>
-                {tasksElements[i]}
+        <TaskWrapper {...editable && {...gesture(i)}} key={i} style={styles}
+                     ref={elementsRef.current[i]}>
+            {tasksElements[i]}
         </TaskWrapper>
     );
+
     return (
-        <TasksWrapper style={{height: tasksWrapperHeight}}>
+        <TasksWrapper>
             {fragment}
         </TasksWrapper>
     );

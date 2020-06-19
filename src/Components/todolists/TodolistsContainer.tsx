@@ -42,11 +42,13 @@ type GridItemsType = {
     topY: number,
     horizontalCenter: number,
     verticalCenter: number,
+    toDoList: JSX.Element
 }
 
 const TodoListsContainer: React.FC = () => {
 
-    const {todoLists, editable} = useSelector((store: AppStateType) => store.todoList);
+    const editable = useSelector((store: AppStateType) => store.todoList.editable);
+    const todoLists = useSelector((store: AppStateType) => store.todoList.todoLists);
     const dispatch = useDispatch();
 
     useEffect(() => {
@@ -87,13 +89,17 @@ const TodoListsContainer: React.FC = () => {
             setHeight(heights)
         }
     };
+    const deleteList = (id: string) => {
+        const newHeights = temporaryValue.current.filter(item => item.id !== id)
+        const heights = newHeights.map(item => item.height)
+        setHeight(heights)
+    }
 
-
-    const toDoLists = todoLists.map((item, i) => ({
+    /*const toDoLists = useMemo(() => todoLists.map((item, i) => ({
         list: <TodoList id={item.id} key={item.id} index={i}
                         listTitle={item.title} listTasks={item.tasks} setData={setData}/>,
         id: item.id
-    }));
+    })), [todoLists]);*/
 //adaptive grid with transitions
 
     const [springs, setSprings] = useSprings(todoLists.length, i => ({
@@ -116,14 +122,16 @@ const TodoListsContainer: React.FC = () => {
                 const topY = y + height;
                 const horizontalCenter = x + currWidth / 2;
                 const verticalCenter = y + height / 2;
-                return {x, y, height, id: item.id, topY, rightX, horizontalCenter, verticalCenter}
+                const toDoList = <TodoList id={item.id} key={item.id} index={i} deleteList={deleteList}
+                                           listTitle={item.title} listTasks={item.tasks} setData={setData}/>
+                return {x, y, height, id: item.id, topY, rightX, horizontalCenter, verticalCenter, toDoList}
             });
         heights.current = newHeights;
-        setSprings(i => ({
+        /*setSprings(i => ({
             x: gridItems.current[i].x,
             y: gridItems.current[i].y
-        }))
-        /*setItems(gridItems.current)*/
+        }))*/
+        setItems(gridItems.current)
     }, [listsHeights, todoLists]);
 
     const columns = useMedia(['(min-width: 2000px)', '(min-width: 1400px)', '(min-width: 800px)'], [4, 3, 2], 1);
@@ -148,12 +156,11 @@ const TodoListsContainer: React.FC = () => {
                 return {...item, x, y, rightX, topY, horizontalCenter, verticalCenter}
             });
         heights.current = newHeights;
-        /*setItems(gridItems.current)*/
-        console.log(gridItems.current)
-        setSprings(i => ({
+        setItems(gridItems.current)
+        /*setSprings(i => ({
             x: gridItems.current[i].x,
             y: gridItems.current[i].y
-        }))
+        }))*/
     }
 
     const [debugAn, setAn] = useSpring(() => ({x: 0, y: 0, immediate: true}));
@@ -268,21 +275,20 @@ const TodoListsContainer: React.FC = () => {
             });
         }
     }, {filterTaps: true});
+    const fragment = transitions((style, item, t, i) =>
+        <TodoListContainer style={draggedListId && draggedListId === item.id ? spring : style}
+                           {...editable && {...gesture(item.id)}} width={currWidth}>
+            {item.toDoList}
+        </TodoListContainer>
+    );
 
-    /* const fragment = transitions((style, item, t, i) =>
-         <TodoListContainer style={draggedListId && draggedListId === item.id ? spring : style}
-                            {...editable && {...gesture(item.id)}} width={currWidth}>
-             {toDoLists.find(list => list.id === item.id)!.list}
-         </TodoListContainer>
-     );*/
-
-    const fragment = gridItems.current.length !== 0 && springs.map((style, i) =>
+    /*const fragment = gridItems.current.length !== 0 && springs.map((style, i) =>
         <TodoListContainer style={draggedListId && draggedListId === gridItems.current[i].id ? spring : style}
                            {...editable && {...gesture(gridItems.current[i].id)}} width={currWidth} key={gridItems.current[i].id}>
             {toDoLists.find(list => list.id === gridItems.current[i].id)!.list}
         </TodoListContainer>
-    );
-
+    );*/
+console.log('render')
     return (
         <AllLists height={(Math.max(...heights.current) || 0)} style={wrapperAnimation} {...bind}>
             <Addddd style={debugAn}/>

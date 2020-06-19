@@ -9,7 +9,7 @@ import {validate} from "../../hooks/validate";
 import {animated, useSpring} from "react-spring";
 import TaskCheckbox from "./TaskCheckbox";
 
-const TaskWrapper = styled(animated.div)<{ editable: boolean }>`
+const TaskWrapper = styled(animated.div)<{ editable: string | undefined}>`
     position: relative;
     text-align: left;
     z-index: 5;
@@ -50,22 +50,8 @@ type PropsType = {
 
 const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId}) => {
     const dispatch = useDispatch();
-    const {editable, focusedStatus} = useSelector((state: AppStateType) => state.todoList);
-
-    const refEf = useRef<HTMLDivElement>(null);
-    const [currHeight, setHeight] = useState<number>(0);
-    useEffect(() => {
-        if (editable) {
-            if (refEf.current) {
-                const height = refEf.current.offsetHeight;
-                if (currHeight !== height)
-                    /*dispatch(actions.setTaskHeight(height, task.id, todoListId))*/
-                    setHeight(height)
-            }
-        }
-    })
-
-
+    const editable = useSelector((state: AppStateType) => state.todoList.editable);
+    const focusedStatus = useSelector((state: AppStateType) => state.todoList.focusedStatus);
 
     const [isTaskEditable, setEditableState] = useState<boolean>(false);
     const editTask = () => {
@@ -124,7 +110,7 @@ const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId}) => {
         'High' : 3 ? 'Urgently' : 'Later';
 
     return (
-        <TaskWrapper editable={editable && !focusedStatus} ref={refEf}>
+        <TaskWrapper editable={editable && !focusedStatus ? 'true' : undefined}>
             <TaskButtons editTask={editTask} deleteTask={deleteTask}/>
             <TaskBackground style={editModeAnimation}>
                 <TaskCheckbox task={task} changeDoneStatus={changeDoneStatus} editable={editable}/>
