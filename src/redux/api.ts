@@ -23,13 +23,13 @@ export const api = {
         return instance.get<TodoListType[]>('').then(res => res.data)
     },
     addTodoList: (title: string) => {
-        return instance.post<CommonResponseType<{item: TodoListType}>>("", {title: title}).then(res => res.data)
+        return instance.post<CommonResponseType<{item: TodoListType}>>("", {title}).then(res => res.data)
     },
     restoreTasks: (todoListId: string) => {
         return instance.get<RestoreTasksResponseType>(`/${todoListId}/tasks`).then(res => res.data)
     },
     addTask: (title: string, todoListId: string) => {
-        return instance.post<CommonResponseType<{item: TaskType}>>(`/${todoListId}/tasks`, {title: title})
+        return instance.post<CommonResponseType<{item: TaskType}>>(`/${todoListId}/tasks`, {title})
             .then(res => res.data)
     },
     changeTask: (todoListId: string, taskId: string, newTask: TaskType) => {
@@ -47,12 +47,12 @@ export const api = {
         return instance.put<CommonResponseType<TodoListType>>(`/${todoListId}`, {title: newTitle})
             .then(res => res.data)
     },
-    swapTasks: (todolistId: string, currentTask: string, swappedTask: string) => {
-        return instance.put<CommonResponseType<{}>>(`/${todolistId}/tasks/${currentTask}/reorder`, {todolistId, taskId: swappedTask})
+    swapTasks: (todoListId: string, currentTask: string, swappedTask: string) => {
+        return instance.put<CommonResponseType<{}>>(`/${todoListId}/tasks/${currentTask}/reorder`, {putAfterItemId: swappedTask})
             .then(res => res.data)
     },
     swapTodoList: (currentList: string, swappedList: string) => {
-        return instance.put<CommonResponseType<{}>>(`/todo-lists/${currentList}/reorder`, {todolistId: swappedList})
+        return instance.put<CommonResponseType<{}>>(`/${currentList}/reorder`, {putAfterItemId: swappedList})
             .then(res => res.data)
     }
 };

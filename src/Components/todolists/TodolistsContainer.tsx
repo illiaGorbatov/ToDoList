@@ -241,8 +241,8 @@ const TodoListsContainer: React.FC = () => {
         zIndex: 1
     }));
     const gesture = useDrag(({
-                                 args: [id], down, movement: [x, y], event,
-                                 vxvy: [vx, vy]
+                                 args: [id], down, movement: [x, y],
+                                 vxvy: [vx, vy], active, first
                              }) => {
         draggedList.current = gridItems.current.findIndex(item => item.id === id);
         if (!draggedListId) {
@@ -258,13 +258,15 @@ const TodoListsContainer: React.FC = () => {
             });
             return
         }
-        setSpring({
-            x: currX.current + x,
-            y: currY.current + y,
-            immediate: false
-        });
-        const newIndex = calculatePositions(x, y, vx, vy);
-        if (newIndex !== null && newIndex !== draggedList.current) reordering(draggedList.current, newIndex);
+        if (active) {
+            setSpring({
+                x: currX.current + x,
+                y: currY.current + y,
+                immediate: false
+            });
+            const newIndex = calculatePositions(x, y, vx, vy);
+            if (newIndex !== null && newIndex !== draggedList.current) reordering(draggedList.current, newIndex);
+        }
         if (!down) {
             setSpring({
                 x: gridItems.current[draggedList.current].x,
@@ -281,14 +283,13 @@ const TodoListsContainer: React.FC = () => {
             {item.toDoList}
         </TodoListContainer>
     );
-
+    console.log('bigRerender')
     /*const fragment = gridItems.current.length !== 0 && springs.map((style, i) =>
         <TodoListContainer style={draggedListId && draggedListId === gridItems.current[i].id ? spring : style}
                            {...editable && {...gesture(gridItems.current[i].id)}} width={currWidth} key={gridItems.current[i].id}>
             {toDoLists.find(list => list.id === gridItems.current[i].id)!.list}
         </TodoListContainer>
     );*/
-console.log('render')
     return (
         <AllLists height={(Math.max(...heights.current) || 0)} style={wrapperAnimation} {...bind}>
             <Addddd style={debugAn}/>

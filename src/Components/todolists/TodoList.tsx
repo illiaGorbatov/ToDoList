@@ -10,7 +10,6 @@ import {AppStateType} from "../../redux/store";
 import {animated, useSpring} from "react-spring";
 import {useHover} from "react-use-gesture";
 import ContextButtons, {ButtonWrapper} from "./ContextButtons";
-import {movePos} from "../../hooks/movePos";
 
 const colors = [
     `linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)`,
@@ -65,13 +64,12 @@ const SingleListBottomLayer = styled(animated.div)`
   background-clip: content-box;
 `;
 
-const SingleList = styled(animated.div)<{ editable: boolean | undefined }>`
+const SingleList = styled(animated.div)<{ editable: string | undefined }>`
   padding: 15px;
   transform-style: preserve-3d;
   position: relative;
   width: 100%;
   height: 100%;
-  text-transform: uppercase;
   font-size: 10px;
   border-radius: 4px;
   &:after{
@@ -141,7 +139,6 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index, setData
         setFilterValue(newFilterValue)
     };
 
-    const [addedTask, setNewTask] = useState<TaskType | null>(null)
     const addTask = () => {
         const taskId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
             .replace(/[xy]/g, (c, r) => ('x' == c ? (Math.random() * 16 | 0) : (r & 0x3 | 0x8)).toString(16));
@@ -153,7 +150,6 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index, setData
         }
         dispatch(actions.addTask(newTask, id));
         dispatch(actions.setFocusedStatus(true));
-        setNewTask(newTask)
     };
 
     const deleteTodoList = () => {
@@ -236,18 +232,18 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index, setData
     const switchTitleMode = () => {
         setTitleEditMode(!isTitleEditable)
     };
-console.log('tdrernder')
+
     return (
         <SingleListWrapper {...!editable && {...bind()}} ref={ref}>
             <SingleListBottomLayer style={{boxShadow}}>
-                <SingleList style={{z, backgroundImage}} editable={editable && !focusedStatus || undefined}>
+                <SingleList style={{z, backgroundImage}} editable={editable && !focusedStatus ? 'true' : undefined}>
                     <ContextButtons color={backgroundImage} deleteTodoList={deleteTodoList}
                                     addTask={addTask} editList={switchTitleMode}/>
                     <ListInnerLayer style={{translateZ: innerZ, rotateZ: innerRotZ, backgroundImage}}>
                         <TasksLayer style={{translateZ: taskZ, scale,rotateZ: tasksRotZ,rotateX}}>
                             <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable}
                                            switchTitleMode={switchTitleMode}/>
-                            <TodoListTasks todoListId={id} tasks={tasks} newTask={addedTask}/>
+                            <TodoListTasks todoListId={id} tasks={tasks}/>
                         </TasksLayer>
                     </ListInnerLayer>
                     {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}

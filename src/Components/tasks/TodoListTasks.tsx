@@ -8,6 +8,7 @@ import {useDispatch, useSelector} from "react-redux";
 import {AppStateType} from "../../redux/store";
 import {actions} from "../../redux/reducer";
 import {movePos} from "../../hooks/movePos";
+import isEqual from "lodash-es/isEqual";
 
 const TasksWrapper = styled.div`
   user-select: none;
@@ -27,15 +28,14 @@ const TaskWrapper = styled(animated.div)`
 type PropsType = {
     todoListId: string;
     tasks: TaskType[],
-    newTask: TaskType | null
 };
 
-const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, newTask}) => {
+const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId}) => {
 
     const editable = useSelector((state: AppStateType) => state.todoList.editable);
     const dispatch = useDispatch();
 
-    const settings = (down?: boolean, originalIndex?: number, y?: number, swap?: () => void): any =>
+    const settings = (immediate?: boolean, down?: boolean, originalIndex?: number, y?: number, swap?: () => void): any =>
         (index: number) => (
             down && index === originalIndex
                 ? {
@@ -50,7 +50,7 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, newTask}) => {
                     /*boxShadow: `rgba(0, 0, 0, 0.15) 0px 1px 2px 0px`,*/
                     y: initialY.current[index] || 0,
                     zIndex: 1,
-                    immediate: false,
+                    immediate: !!immediate,
                     onRest: () => {
                         if (swap) swap()
                     }
@@ -58,41 +58,31 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, newTask}) => {
         );
 
     const order = useRef<Array<number>>([]);
+    const memoizedOrder = useRef<Array<number>>([]);
     const initialY = useRef<Array<number>>([]);
     const heights = useRef<Array<number>>([]);
     const initialIndex = useRef<number>(0);
     const newIndex = useRef<number>(0);
+    const processedMemoizedIndex = useRef<number>(0);
     const newMemoizedY = useRef<number>(0);
     const elementsRef = useRef<Array<RefObject<HTMLDivElement>>>([]);
-
-    const [editableTasks, setTasks] = useState<Array<TaskType>>([])
 
     useEffect(() => {
         if (tasks.length !== 0) {
             elementsRef.current = tasks.map(() => React.createRef());
             order.current = tasks.map((_, i) => i);
-            setSprings(settings());
+            setSprings(settings(true));
             initialY.current = tasks.map(() => 0);
-            setTasks(tasks)
         }
     }, [tasks]);
-    useEffect(() => {
-        if (newTask) {
-            elementsRef.current = [...elementsRef.current, React.createRef()];
-            setTasks([...editableTasks, newTask]);
-            order.current = [...order.current, order.current.length];
-            initialY.current = [...initialY.current, 0];
-        }
-    }, [newTask]);
-
 
     useLayoutEffect(() => {
         if (elementsRef.current.length !== 0 && elementsRef.current[0].current !== null) {
             heights.current = elementsRef.current.map(ref => ref.current!.offsetHeight);
             initialY.current = tasks.map(() => 0);
-            setSprings(settings());
+            setSprings(settings(true));
         }
-    }, [tasks, editable, newTask]);
+    }, [tasks, editable]);
 
     const getNewIndex = (index: number, y: number) => {
         if (y > 0) {
@@ -117,58 +107,61 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, newTask}) => {
     }
 
     const [springs, setSprings] = useSprings(tasks.length, settings());
-    const gesture = useDrag(({args: [originalIndex], down, movement: [, y], event, first}) => {
+    const gesture = useDrag(({args: [originalIndex], down, movement: [, y],
+                                 event, first, active}) => {
         event?.stopPropagation()
         if (first) {
             newIndex.current = order.current.indexOf(originalIndex);
             initialIndex.current = order.current.indexOf(originalIndex);
+            memoizedOrder.current = order.current
         }
         const curIndex = order.current.indexOf(originalIndex);
         const curRow = getNewIndex(initialIndex.current, y);
-       /* const processedIndex = (() => {
-            if (curRow > originalIndex) return order.current[curRow > newIndex.current ? curRow : newIndex.current];
-            if (curRow < originalIndex) return order.current[curRow > newIndex.current ? newIndex.current : curRow];
-            return order.current[newIndex.current]
-        })();*/
         const processedIndex = order.current[curRow];
-        if (curRow !== newIndex.current) {
-            initialY.current = initialY.current.map((item, index) => {
-                if (index === originalIndex) {
-                    if (curIndex > curRow) newMemoizedY.current -= heights.current[processedIndex];
-                    else newMemoizedY.current += heights.current[processedIndex];
+        if (active) {
+            const curIndex = order.current.indexOf(originalIndex);
+            const curRow = getNewIndex(initialIndex.current, y);
+            if (curRow !== newIndex.current) {
+                initialY.current = initialY.current.map((item, index) => {
+                    if (index === originalIndex) {
+                        if (curIndex > curRow) newMemoizedY.current -= heights.current[processedIndex];
+                        else newMemoizedY.current += heights.current[processedIndex];
+                        return item
+                    }
+                    if (index === processedIndex) {
+                        return curIndex > curRow ? item + heights.current[originalIndex]
+                            : item - heights.current[originalIndex]
+                    }
                     return item
-                }
-                if (index === processedIndex) {
-                    return curIndex > curRow ? item + heights.current[originalIndex]
-                        : item - heights.current[originalIndex]
-                }
-                return item
-            });
-            console.log(curIndex, curRow, newIndex.current, processedIndex)
-            newIndex.current = curRow
-            order.current = movePos(order.current, curIndex, curRow);
+                });
+                processedMemoizedIndex.current = processedIndex;
+                newIndex.current = curRow
+                order.current = movePos(order.current, curIndex, curRow);
+            }
+            setSprings(settings(false, down, originalIndex, y))
         }
         if (!down) {
-            const newOrder = movePos(order.current, curIndex, curRow);
             initialY.current[originalIndex] += newMemoizedY.current;
             newMemoizedY.current = 0;
-            if (order.current !== newOrder) {
+            if (!isEqual(order.current, memoizedOrder.current)) {
+                console.log('swap')
                 heights.current = movePos(heights.current, curIndex, curRow);
-                order.current = newOrder;
                 const swap = () => {
-                    dispatch(actions.swapTasks(todoListId, [editableTasks[originalIndex].id, editableTasks[processedIndex].id]));
+                    console.log('animSwap')
+                    dispatch(actions.swapTasks(todoListId, [tasks[originalIndex].id,
+                        tasks[processedMemoizedIndex.current].id]))
                 }
-                setSprings(settings(down, originalIndex, y, swap))
-            } else setSprings(settings(down, originalIndex, y))
-        } else setSprings(settings(down, originalIndex, y))
+                setSprings(settings(false, down, originalIndex, y, swap))
+            } else setSprings(settings(false, down, originalIndex, y))
+        }
     }, {eventOptions: {capture: true}, filterTaps: true} /*{
         filterTaps: true, bounds: { top: 0 , bottom: tasksWrapperHeight}, rubberband: true
     }*/);
 
-    const tasksElements = useMemo(() => editableTasks.map(task =>
+    const tasksElements = useMemo(() => tasks.map(task =>
             <TodoListTask task={task} key={task.id}
                           todoListId={todoListId}/>)
-        , [editableTasks]);
+        , [tasks]);
 
     const fragment = springs.map((styles, i) =>
         <TaskWrapper {...editable && {...gesture(i)}} key={i} style={styles}
