@@ -65,11 +65,6 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
         case 'reducer/ADD_TASK':
             return {
                 ...state,
-                todoLists: state.todoLists.map(list => {
-                    if (list.id === action.todoListId) {
-                        return {...list, tasks: [action.newTask, ...list.tasks]}
-                    } else return list
-                }),
                 addedTasks: [...state.addedTasks]
             };
         case 'reducer/CHANGE_TASK':
@@ -95,11 +90,6 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
         case 'reducer/DELETE_TASK':
             return {
                 ...state,
-                todoLists: state.todoLists.map(list => {
-                    if (list.id === action.todoListId) {
-                        return {...list, tasks: list.tasks.filter(task => task.id !== action.taskId)}
-                    } else return list
-                }),
                 deletedTasks: [...state.deletedTasks, {todoListId: action.todoListId, taskId: action.taskId}]
             };
         case 'reducer/CHANGE_TODO_LIST_TITLE':

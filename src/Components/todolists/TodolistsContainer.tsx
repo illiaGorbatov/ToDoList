@@ -1,4 +1,4 @@
-import React, {RefObject, useEffect, useLayoutEffect, useMemo, useRef, useState} from "react";
+import React, {RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from "react";
 import TodoList from "./TodoList";
 import {actions, loadTodoListsTC} from "../../redux/reducer";
 import {useDispatch, useSelector} from 'react-redux';
@@ -76,7 +76,7 @@ const TodoListsContainer: React.FC = () => {
 
     const [listsHeights, setHeight] = useState<Array<number>>([]);
     const temporaryValue = useRef<Array<{ height: number, id: string }>>([]);
-    const setData = (height: number, id: string) => {
+    const setData = useCallback((height: number, id: string) => {
         const findHeight = temporaryValue.current.findIndex(item => item.id === id);
         const newHeightsArray = findHeight === -1 ? [...temporaryValue.current, {height, id}]
             : temporaryValue.current.map((item, i) => {
@@ -88,12 +88,12 @@ const TodoListsContainer: React.FC = () => {
             const heights = todoLists.map(item => newHeightsArray.find(object => object.id === item.id)!.height)
             setHeight(heights)
         }
-    };
-    const deleteList = (id: string) => {
+    }, [todoLists]);
+    const deleteList = useCallback((id: string) => {
         const newHeights = temporaryValue.current.filter(item => item.id !== id)
         const heights = newHeights.map(item => item.height)
         setHeight(heights)
-    }
+    }, []);
 
     /*const toDoLists = useMemo(() => todoLists.map((item, i) => ({
         list: <TodoList id={item.id} key={item.id} index={i}

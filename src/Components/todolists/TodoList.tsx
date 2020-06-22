@@ -1,4 +1,4 @@
-import React, {useEffect, useLayoutEffect, useRef, useState} from "react";
+import React, {useCallback, useEffect, useLayoutEffect, useRef, useState} from "react";
 import TodoListTasks from '../tasks/TodoListTasks';
 import '../../App.css'
 import TodoListTitle from "./TodoListTitle";
@@ -139,9 +139,11 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index, setData
         setFilterValue(newFilterValue)
     };
 
+
+    const [newTask, setNewTask] = useState<TaskType | null>(null);
     const addTask = () => {
         const taskId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-            .replace(/[xy]/g, (c, r) => ('x' == c ? (Math.random() * 16 | 0) : (r & 0x3 | 0x8)).toString(16));
+            .replace(/[xy]/g, (c, r) => ('x' === c ? (Math.random() * 16 || 0) : (r && 0x3 || 0x8)).toString(16));
         const newTask = {
             title: '',
             id: taskId,
@@ -150,12 +152,13 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index, setData
         }
         dispatch(actions.addTask(newTask, id));
         dispatch(actions.setFocusedStatus(true));
+        setNewTask(newTask)
     };
 
-    const deleteTodoList = () => {
+    const deleteTodoList = useCallback(() => {
         deleteList(id)
         dispatch(actions.deleteTodoList(id))
-    };
+    }, []);
 
     const tasks = listTasks ? listTasks.filter(t => {
         if (filterValue === "All") {
@@ -240,10 +243,10 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index, setData
                     <ContextButtons color={backgroundImage} deleteTodoList={deleteTodoList}
                                     addTask={addTask} editList={switchTitleMode}/>
                     <ListInnerLayer style={{translateZ: innerZ, rotateZ: innerRotZ, backgroundImage}}>
-                        <TasksLayer style={{translateZ: taskZ, scale,rotateZ: tasksRotZ,rotateX}}>
+                        <TasksLayer style={{translateZ: taskZ, scale, rotateZ: tasksRotZ, rotateX}}>
                             <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable}
                                            switchTitleMode={switchTitleMode}/>
-                            <TodoListTasks todoListId={id} tasks={tasks}/>
+                            <TodoListTasks todoListId={id} tasks={tasks} newTask={newTask}/>
                         </TasksLayer>
                     </ListInnerLayer>
                     {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}
