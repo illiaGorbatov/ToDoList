@@ -80,6 +80,7 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, newTask}) => {
             initialY.current = tasks.map(() => 0);
             setTasks(tasks)
         }
+        return () => console.log(editableTasks, newTask)
     }, [tasks]);
     useEffect(() => {
         if (newTask) {
@@ -94,7 +95,6 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, newTask}) => {
         if (elementsRef.current.length !== 0 && elementsRef.current[0].current !== null) {
             heights.current = elementsRef.current.map(ref => ref.current!.offsetHeight);
             setSprings(settings(true));
-            console.log(editableTasks, newTask)
         }
     }, [tasks]);
     useLayoutEffect(() => {
