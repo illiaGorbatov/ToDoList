@@ -155,9 +155,7 @@ const TodoListsContainer: React.FC = () => {
             const topY = y + item.height;
             const horizontalCenter = x + currWidth / 2;
             const verticalCenter = y + item.height / 2;
-            const toDoList = gridItems.current[index].toDoList;
-            const id = gridItems.current[index].id;
-            return {...item, x, y, rightX, topY, horizontalCenter, verticalCenter, index, id, toDoList}
+            return {...item, x, y, rightX, topY, horizontalCenter, verticalCenter, index}
         });
         /*gridItems.current = gridItems.current.map((item, i) => {
             const index = i === oldIndex ? gridItems.current[newIndex].index
@@ -311,8 +309,8 @@ const TodoListsContainer: React.FC = () => {
     const fragment = gridItems.current.length !== 0 && springs.map((style, i) =>
         <TodoListContainer style={draggedListId && draggedListId === gridItems.current[i].id ? spring : style}
                            {...editable && {...gesture(gridItems.current[i].id)}} width={currWidth}
-                           key={gridItems.current[i].id}>
-            {gridItems.current[i].toDoList}
+                           key={i}>
+            {toDoLists[i].list}
         </TodoListContainer>
     );
 
