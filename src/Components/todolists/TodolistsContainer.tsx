@@ -255,30 +255,31 @@ const TodoListsContainer: React.FC = () => {
         trail: 25,
         key: item => item.id,
     });*/
-
+    const draggedList = useRef<number>(0);
     const currX = useRef<number>(0);
     const currY = useRef<number>(0);
     const currHeight = useRef<number>(0);
-    const [draggedList, dragList] = useState<null | number>(null);
+    const [draggedListId, dragList] = useState<null | string>(null);
     const [spring, setSpring] = useSpring(() => ({
         x: 0,
         y: 0,
         zIndex: 1
     }));
     const gesture = useDrag(({
-                                 args: [index], down, movement: [x, y],
+                                 args: [id], down, movement: [x, y],
                                  vxvy: [vx, vy], active, first
                              }) => {
-        if (first) {
-            currX.current = gridItems.current[index].x;
-            currY.current = gridItems.current[index].y;
-            currHeight.current = gridItems.current[index].height;
+        draggedList.current = gridItems.current.findIndex(item => item.id === id);
+        if (!draggedListId) {
+            currX.current = gridItems.current[draggedList.current].x;
+            currY.current = gridItems.current[draggedList.current].y;
+            currHeight.current = gridItems.current[draggedList.current].height;
             setSpring({
                 x: currX.current,
                 y: currY.current,
                 zIndex: 3,
                 immediate: true,
-                onRest: () => dragList(index)
+                onRest: () => dragList(id)
             });
             return
         }
@@ -289,12 +290,12 @@ const TodoListsContainer: React.FC = () => {
                 immediate: false
             });
             const newIndex = calculatePositions(x, y, vx, vy);
-            if (newIndex !== null && newIndex !== index) reordering(index, newIndex);
+            if (newIndex !== null && newIndex !== draggedList.current) reordering(draggedList.current, newIndex);
         }
         if (!down) {
             setSpring({
-                x: gridItems.current[index].x,
-                y: gridItems.current[index].y,
+                x: gridItems.current[draggedList.current].x,
+                y: gridItems.current[draggedList.current].y,
                 zIndex: 1,
                 onRest: () => dragList(null),
                 immediate: false
@@ -308,8 +309,8 @@ const TodoListsContainer: React.FC = () => {
         </TodoListContainer>
     );*/
     const fragment = gridItems.current.length !== 0 && springs.map((style, i) =>
-        <TodoListContainer style={draggedList && draggedList === i ? spring : style}
-                           {...editable && {...gesture(i)}} width={currWidth}
+        <TodoListContainer style={draggedListId && draggedListId === gridItems.current[i].id ? spring : style}
+                           {...editable && {...gesture(gridItems.current[i].id)}} width={currWidth}
                            key={gridItems.current[i].id}>
             {gridItems.current[i].toDoList}
         </TodoListContainer>
