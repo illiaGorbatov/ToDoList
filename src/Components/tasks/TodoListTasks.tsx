@@ -8,7 +8,7 @@ import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import {AppStateType} from "../../redux/store";
 import {actions} from "../../redux/reducer";
 import {movePos} from "../../hooks/movePos";
-import isEqual from "lodash-es/isEqual";
+import isEqual from "react-fast-compare";
 
 const TasksWrapper = styled.div`
   user-select: none;
@@ -71,7 +71,7 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId}) => {
     const processedMemoizedIndex = useRef<number>(0);
     const newMemoizedY = useRef<number>(0);
     const elementsRef = useRef<Array<RefObject<HTMLDivElement>>>([]);
-
+console.log(`updated ${todoListId} tasks`)
     useLayoutEffect(() => {
         if (tasks.length !== 0) {
             elementsRef.current = tasks.map(() => React.createRef());
@@ -184,5 +184,5 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId}) => {
     );
 }
 
-export default React.memo(TodoListTasks);
+export default React.memo(TodoListTasks, isEqual);
 

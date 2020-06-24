@@ -10,6 +10,7 @@ import {AppStateType} from "../../redux/store";
 import {animated, useSpring} from "react-spring";
 import {useHover} from "react-use-gesture";
 import ContextButtons, {ButtonWrapper} from "./ContextButtons";
+import isEqual from "react-fast-compare";
 
 const colors = [
     `linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)`,
@@ -253,4 +254,4 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index, setData
     );
 }
 
-export default React.memo(TodoList);
+export default React.memo(TodoList, isEqual);
