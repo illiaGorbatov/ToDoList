@@ -46,10 +46,9 @@ const TaskText = styled.div`
 type PropsType = {
     task: TaskType;
     todoListId: string;
-    changeTask: (id: string, task: TaskType) => void
 };
 
-const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId, changeTask}) => {
+const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId}) => {
     const dispatch = useDispatch();
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const focusedStatus = useSelector((state: AppStateType) => state.todoList.focusedStatus, shallowEqual);
@@ -90,8 +89,6 @@ const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId, changeT
         if (isValid) {
             let newTask = {...task, title, editStatus: false};
             dispatch(actions.changeTask(newTask));
-            changeTask(task.id, newTask)
-
         } else {
 
         }

@@ -53,6 +53,10 @@ const TodoListsContainer: React.FC = () => {
     useEffect(() => {
         if (todoLists.length === 0) dispatch(loadTodoListsTC());
     }, []);
+    useEffect(() => {
+        console.log('mounted');
+        return () => console.log('unmounting...');
+    }, [])
 
     const addTodoList = (title: string) => {
         const id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
@@ -129,9 +133,7 @@ const TodoListsContainer: React.FC = () => {
             x: gridItems.current[i].x,
             y: gridItems.current[i].y,
         }))
-        console.log('useEffect')
         setItems(gridItems.current)
-        return () => console.log('willUnmount')
     }, [listsHeights, todoLists]);
 
     const columns = useMedia(['(min-width: 2000px)', '(min-width: 1400px)', '(min-width: 800px)'], [4, 3, 2], 1);
@@ -177,7 +179,6 @@ const TodoListsContainer: React.FC = () => {
             return {...item, x, y, rightX, topY, horizontalCenter, verticalCenter}
         });*/
         heights.current = newHeights;
-        console.log(gridItems.current)
     }
 
     const [debugAn, setAn] = useSpring(() => ({x: 0, y: 0, immediate: true}));
@@ -285,7 +286,7 @@ const TodoListsContainer: React.FC = () => {
             });
         }
         if (!down) {
-            const currentSettings = gridItems.current.find(item => item.id === id)!;
+            const currentItemIndex = gridItems.current.findIndex(item => item.id === id)!;
             /*setSpring({
                 x: currentSettings.x,
                 y: currentSettings.y,
@@ -293,9 +294,14 @@ const TodoListsContainer: React.FC = () => {
                 onRest: () => dragList(null),
                 immediate: false
             });*/
+            const beforeSwappedListId = currentItemIndex === 0 ? null : gridItems.current[currentItemIndex-1].id
+            const swap = () => {
+                console.log('swap')
+                dispatch(actions.swapTodoLists(id, index, beforeSwappedListId, currentItemIndex))
+            }
             setSprings(i => {
                 const currentSettings = gridItems.current.find((list) => list.index === i)!;
-                return {x: currentSettings.x, y: currentSettings.y, zIndex: 3}
+                return {x: currentSettings.x, y: currentSettings.y, zIndex: 3, onRest:() => swap()}
             });
         }
     }, {filterTaps: true});
@@ -306,18 +312,32 @@ const TodoListsContainer: React.FC = () => {
         </TodoListContainer>
     );*/
 
-    const fragment = useMemo(() => {
+    /*const fragment = useMemo(() => {
         return gridItems.current.length !== 0 && springs.map((style, i) =>
         <TodoListContainer style={style} {...editable && {...gesture(gridItems.current[i].id, i)}} width={currWidth}
                            key={gridItems.current[i].id}>
             {toDoLists[i]}
         </TodoListContainer>
-        )}, [toDoLists, editable, todoLists]);
-
+        )}, [listsHeights, editable, todoLists]);*/
+    /*const fragment = useMemo(() => {
+        return gridItems.current.length !== 0 && todoLists.map((item, i) =>
+            <TodoListContainer style={springs[i]} {...editable && {...gesture(gridItems.current[i].id, i)}}
+                               width={currWidth} key={gridItems.current[i].id}>
+                <TodoList id={item.id} index={i} deleteList={deleteList}
+                          listTitle={item.title} listTasks={item.tasks} setData={setData}/>
+            </TodoListContainer>
+        )
+    }, [listsHeights, editable, todoLists]);*/
+    console.log('wrapRender')
     return (
         <AllLists height={(Math.max(...heights.current) || 0)} style={wrapperAnimation} {...bind}>
             <Addddd style={debugAn}/>
-            {fragment}
+            {gridItems.current.length !== 0 && todoLists.map((item, i) =>
+                <TodoListContainer style={springs[i]} {...editable && {...gesture(gridItems.current[i].id, i)}}
+                                   width={currWidth} key={gridItems.current[i].id}>
+                    <TodoList id={item.id} index={i} deleteList={deleteList}
+                              listTitle={item.title} listTasks={item.tasks} setData={setData}/>
+                </TodoListContainer>)}
         </AllLists>
     );
 }

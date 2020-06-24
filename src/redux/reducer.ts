@@ -3,6 +3,7 @@ import {TaskType, TodoListType} from "./entities";
 import {ThunkAction, ThunkDispatch} from "redux-thunk";
 import {AppStateType, InferActionTypes} from "./store";
 import cloneDeep from "lodash-es/cloneDeep";
+import {movePos} from "../hooks/movePos";
 
 type InitialStateType = {
     todoLists: Array<TodoListType>,
@@ -15,7 +16,7 @@ type InitialStateType = {
     changedTasks: Array<TaskType>,
     addedTasks: Array<TaskType>,
     deletedTasksWithList: Array<{ todoListId: string, taskId: string }>,
-    swappedLists: Array<Array<TodoListType>>,
+    swappedLists: Array<Array<string | null>>,
     swappedTasks: Array<{ todoListId: string, swappedTasks: Array<Array<string>> }>,
     errorsNumber: number,
     backgroundImage: string,
@@ -65,6 +66,11 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
         case 'reducer/ADD_TASK':
             return {
                 ...state,
+                todoLists: state.todoLists.map(list => {
+                    if (list.id === action.todoListId) {
+                        return {...list, tasks: [...list.tasks, action.newTask]}
+                    } else return list
+                }),
                 addedTasks: [...state.addedTasks]
             };
         case 'reducer/CHANGE_TASK':
@@ -76,6 +82,17 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                 });
             return {
                 ...state,
+                todoLists: state.todoLists.map(list => {
+                    if (list.id === action.task.todoListId) {
+                        return {
+                            ...list, tasks: list.tasks.map(task => {
+                                if (task.id === action.task.id) {
+                                    return {...action.task}
+                                } else return task;
+                            })
+                        }
+                    } else return list
+                }),
                 changedTasks: [...newTasksArray]
             };
         case 'reducer/DELETE_TODO_LIST':
@@ -90,6 +107,11 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
         case 'reducer/DELETE_TASK':
             return {
                 ...state,
+                todoLists: state.todoLists.map(list => {
+                    if (list.id === action.todoListId) {
+                        return {...list, tasks: list.tasks.filter(task => task.id !== action.taskId)}
+                    } else return list
+                }),
                 deletedTasks: [...state.deletedTasks, {todoListId: action.todoListId, taskId: action.taskId}]
             };
         case 'reducer/CHANGE_TODO_LIST_TITLE':
@@ -103,6 +125,11 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                 });
             return {
                 ...state,
+                todoLists: state.todoLists.map(list => {
+                    if (list.id === action.todoListId) {
+                        return {...list, title: action.todoListTitle}
+                    } else return list
+                }),
                 changedLists: [...newListsArray]
             };
         case "reducer/SWAP_TASKS":
@@ -156,6 +183,12 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
             return {
                 ...state,
                 focusedStatus: action.status
+            };
+        case "reducer/SWAP_TODO_LISTS":
+            return {
+                ...state,
+                todoLists: movePos(state.todoLists, action.swappedListIndex, action.newIndex),
+                swappedLists: [[action.swappedListId, action.beforeSwappedListId]]
             }
         default:
             return state;
@@ -189,6 +222,9 @@ export const actions = {
     swapTasks: (todoListId: string, swappedTasks: Array<string>) => ({
         type: 'reducer/SWAP_TASKS',
         todoListId, swappedTasks
+    } as const),
+    swapTodoLists: (swappedListId: string,swappedListIndex: number, beforeSwappedListId: string | null, newIndex: number) => ({
+        type: 'reducer/SWAP_TODO_LISTS', swappedListId, beforeSwappedListId,swappedListIndex, newIndex
     } as const),
 }
 
@@ -246,10 +282,10 @@ export const submitAllChanges = (): ThunkType =>
             .findIndex(i => i === item.id) === -1);
         const clearlyDeletedLists = deletedLists.filter(list => addedLists
             .findIndex(item => item.id === list) === -1);
-        const addedSwappedLists = getState().todoList.swappedLists.filter(item => clearedAddedLists
+        /*const addedSwappedLists = getState().todoList.swappedLists.filter(item => clearedAddedLists
             .findIndex(i => i.id === (item[0].id || item[1].id)) !== -1);
         const clearlySwappedLists = getState().todoList.swappedLists.filter(item => addedSwappedLists
-            .findIndex(i => i[0] === item[0] && i[1] === item[1]) === -1);
+            .findIndex(i => i[0] === item[0] && i[1] === item[1]) === -1);*/
 
         const deletedTasksWithList = getState().todoList.deletedTasksWithList;
         const deletedTasks = getState().todoList.deletedTasks.filter(item => deletedTasksWithList

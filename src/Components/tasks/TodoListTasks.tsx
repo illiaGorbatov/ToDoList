@@ -28,13 +28,17 @@ const TaskWrapper = styled(animated.div)`
 type PropsType = {
     todoListId: string;
     tasks: TaskType[],
-    newTask: TaskType | null,
 };
 
-const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, newTask}) => {
+const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId}) => {
 
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const dispatch = useDispatch();
+
+    useEffect(() => {
+        console.log(`mounted${todoListId}`);
+        return () => console.log(`unmounted${todoListId}`);
+    }, [])
 
     const settings = (immediate?: boolean, down?: boolean, originalIndex?: number, y?: number, swap?: () => void): any =>
         (index: number) => (
@@ -68,41 +72,21 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, newTask}) => {
     const newMemoizedY = useRef<number>(0);
     const elementsRef = useRef<Array<RefObject<HTMLDivElement>>>([]);
 
-    const [editableTasks, setTasks] = useState<Array<TaskType>>([]);
-    const editTask = useCallback((id: string, task: TaskType) => {
-        const editedTasks = editableTasks.map(item => item.id === id ? task : item);
-        setTasks(editedTasks)
-    }, [editableTasks])
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (tasks.length !== 0) {
             elementsRef.current = tasks.map(() => React.createRef());
             order.current = tasks.map((_, i) => i);
             initialY.current = tasks.map(() => 0);
-            setTasks(tasks)
         }
-        return () => console.log('tasks unmounted')
     }, [tasks]);
-    useEffect(() => {
-        if (newTask) {
-            elementsRef.current = [React.createRef(), ...elementsRef.current];
-            order.current = [editableTasks.length, ...order.current];
-            initialY.current = [0, ...initialY.current];
-            setTasks([newTask, ...editableTasks]);
-        }
-    }, [newTask])
 
     useLayoutEffect(() => {
-        if (elementsRef.current.length !== 0 && elementsRef.current[0].current !== null) {
+        if (elementsRef.current.length !== 0 && elementsRef.current[0].current !== null) {//не работает
             heights.current = elementsRef.current.map(ref => ref.current!.offsetHeight);
             setSprings(settings(true));
+            console.log(heights.current)
         }
     }, [tasks]);
-    useLayoutEffect(() => {
-        if (newTask && elementsRef.current[0].current !== null) {
-            heights.current = [elementsRef.current[0].current.offsetHeight, ...heights.current]
-            setSprings(settings(true));
-        }
-    }, [newTask]);
 
     const getNewIndex = (index: number, y: number) => {
         if (y > 0) {
@@ -126,7 +110,7 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, newTask}) => {
         return index
     }
 
-    const [springs, setSprings] = useSprings(editableTasks.length, settings(true));
+    const [springs, setSprings] = useSprings(tasks.length, settings(true));
     const gesture = useDrag(({args: [originalIndex], down, movement: [, y],
                                  event, first, active}) => {
         event?.stopPropagation()
@@ -178,21 +162,24 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, newTask}) => {
         filterTaps: true, bounds: { top: 0 , bottom: tasksWrapperHeight}, rubberband: true
     }*/);
 
-    const tasksElements = useMemo(() => editableTasks.map(task =>
-            <TodoListTask task={task} key={task.id} changeTask={editTask}
-                          todoListId={todoListId}/>)
-        , [editableTasks]);
+    const tasksElements = useMemo(() => tasks.map(task =>
+            <TodoListTask task={task} key={task.id} todoListId={todoListId}/>)
+        , [tasks]);
 
-    const fragment = springs.map((styles, i) =>
-        <TaskWrapper {...editable && {...gesture(i)}} key={i} style={styles}
+    const fragment = tasks.map((task, i) =>
+        <TaskWrapper {...editable && {...gesture(i)}} key={task.id} style={springs[i]}
                      ref={elementsRef.current[i]}>
-            {tasksElements[i]}
+            <TodoListTask task={task} todoListId={todoListId}/>
         </TaskWrapper>
     );
 
     return (
         <TasksWrapper>
-            {fragment}
+            {tasks.map((task, i) =>
+                <TaskWrapper {...editable && {...gesture(i)}} key={i} style={springs[i]}
+                             ref={elementsRef.current[i]}>
+                    <TodoListTask task={task} key={task.id} todoListId={todoListId}/>
+                </TaskWrapper>)}
         </TasksWrapper>
     );
 }

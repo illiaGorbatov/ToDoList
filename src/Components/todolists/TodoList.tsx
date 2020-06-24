@@ -140,10 +140,9 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index, setData
     };
 
 
-    const [newTask, setNewTask] = useState<TaskType | null>(null);
     const addTask = () => {
         const taskId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-            .replace(/[xy]/g, (c, r) => ('x' === c ? (Math.random() * 16 || 0) : (r && 0x3 || 0x8)).toString(16));
+            .replace(/[xy]/g, (c, r) => ('x' == c ? (Math.random() * 16 | 0) : (r & 0x3 | 0x8)).toString(16));
         const newTask = {
             title: '',
             id: taskId,
@@ -151,12 +150,10 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index, setData
             editStatus: true
         }
         dispatch(actions.addTask(newTask, id));
-        dispatch(actions.setFocusedStatus(true));
-        setNewTask(newTask)
+        dispatch(actions.setFocusedStatus(true))
     };
 
     const deleteTodoList = useCallback(() => {
-        deleteList(id)
         dispatch(actions.deleteTodoList(id))
     }, []);
 
@@ -246,7 +243,7 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index, setData
                         <TasksLayer style={{translateZ: taskZ, scale, rotateZ: tasksRotZ, rotateX}}>
                             <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable}
                                            switchTitleMode={switchTitleMode}/>
-                            <TodoListTasks todoListId={id} tasks={tasks} newTask={newTask}/>
+                            <TodoListTasks todoListId={id} tasks={tasks}/>
                         </TasksLayer>
                     </ListInnerLayer>
                     {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}
