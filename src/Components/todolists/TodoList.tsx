@@ -2,7 +2,7 @@ import React, {useCallback, useEffect, useLayoutEffect, useRef, useState} from "
 import TodoListTasks from '../tasks/TodoListTasks';
 import '../../App.css'
 import TodoListTitle from "./TodoListTitle";
-import {useDispatch, useSelector} from 'react-redux';
+import {shallowEqual, useDispatch, useSelector} from 'react-redux';
 import {actions, restoreTasksTC} from "../../redux/reducer";
 import {TaskType} from "../../redux/entities";
 import styled from "styled-components/macro";
@@ -112,7 +112,7 @@ type PropsType = {
 const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index, setData, deleteList}) => {
 
     const dispatch = useDispatch();
-    const editable = useSelector((state: AppStateType) => state.todoList.editable);
+    const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const focusedStatus = useSelector((state: AppStateType) => state.todoList.focusedStatus);
 
     const [backgroundImage] = useState<string>(colors[index % colors.length]);

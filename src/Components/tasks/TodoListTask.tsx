@@ -1,5 +1,5 @@
 import React, {useEffect, useLayoutEffect, useRef, useState} from "react";
-import {useDispatch, useSelector} from 'react-redux';
+import {shallowEqual, useDispatch, useSelector} from 'react-redux';
 import {actions} from "../../redux/reducer";
 import {TaskType} from "../../redux/entities";
 import {AppStateType} from "../../redux/store";
@@ -51,8 +51,8 @@ type PropsType = {
 
 const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId, changeTask}) => {
     const dispatch = useDispatch();
-    const editable = useSelector((state: AppStateType) => state.todoList.editable);
-    const focusedStatus = useSelector((state: AppStateType) => state.todoList.focusedStatus);
+    const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
+    const focusedStatus = useSelector((state: AppStateType) => state.todoList.focusedStatus, shallowEqual);
 
     const [isTaskEditable, setEditableState] = useState<boolean>(false);
     const editTask = () => {

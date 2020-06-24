@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect} from "react";
 import styled, {createGlobalStyle} from "styled-components/macro";
 import {library} from "@fortawesome/fontawesome-svg-core";
 import {far} from "@fortawesome/free-regular-svg-icons";

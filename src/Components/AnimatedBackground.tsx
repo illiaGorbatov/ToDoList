@@ -1,5 +1,5 @@
 import React, {useEffect} from "react";
-import {useSelector} from 'react-redux';
+import {shallowEqual, useSelector} from 'react-redux';
 import {AppStateType} from "../redux/store";
 import styled from "styled-components/macro";
 import {animated, useSpring} from "react-spring";
@@ -18,7 +18,12 @@ const Background = styled(animated.div)`
 
 const AnimatedBackground:React.FC = () => {
 
-    const {backgroundImage} = useSelector((store: AppStateType) => store.todoList);
+    const backgroundImage = useSelector((store: AppStateType) => store.todoList.backgroundImage, shallowEqual);
+
+    useEffect(() => {
+        console.log('app mounted')
+        return () =>  console.log('app unmounted')
+    })
 
     const [animateBackground, setBackground] = useSpring(() => ({
         backgroundImage: `${backgroundImage}`

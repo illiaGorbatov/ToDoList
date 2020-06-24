@@ -4,7 +4,7 @@ import {TaskType} from "../../redux/entities";
 import {animated, useSprings} from "react-spring";
 import {useDrag} from "react-use-gesture";
 import styled from "styled-components/macro";
-import {useDispatch, useSelector} from "react-redux";
+import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import {AppStateType} from "../../redux/store";
 import {actions} from "../../redux/reducer";
 import {movePos} from "../../hooks/movePos";
@@ -33,7 +33,7 @@ type PropsType = {
 
 const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, newTask}) => {
 
-    const editable = useSelector((state: AppStateType) => state.todoList.editable);
+    const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const dispatch = useDispatch();
 
     const settings = (immediate?: boolean, down?: boolean, originalIndex?: number, y?: number, swap?: () => void): any =>
@@ -80,7 +80,7 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, newTask}) => {
             initialY.current = tasks.map(() => 0);
             setTasks(tasks)
         }
-        return () => console.log(editableTasks, newTask)
+        return () => console.log('tasks unmounted')
     }, [tasks]);
     useEffect(() => {
         if (newTask) {

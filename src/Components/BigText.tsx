@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect} from "react";
 import styled from "styled-components/macro";
 import {animated, useSpring} from "react-spring";
 import {useMeasure} from "../hooks/useMesure";

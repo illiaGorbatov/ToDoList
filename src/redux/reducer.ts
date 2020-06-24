@@ -289,7 +289,6 @@ export const submitAllChanges = (): ThunkType =>
             .findIndex(list => list.id === task.todoListId) !== -1);
         const clearlyAddedTasks = clearedNewTasks.filter(task => addedInNewListsTasks
             .findIndex(item => item.id === task.id) !== 1);
-        console.log(clearedSwappedTasks)
         const addedSwappedTasks = clearedSwappedTasks.map(item => item.filter(task =>
             clearlyAddedTasks.findIndex(i => i.id === task) !== -1));
         const addedInNewListsSwappedTasks = clearedSwappedTasks.map(item => item.filter(task =>
