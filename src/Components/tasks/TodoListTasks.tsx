@@ -73,7 +73,7 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId}) => {
             elementsRef.current = tasks.map(() => React.createRef());
             order.current = tasks.map((_, i) => i);
             initialY.current = tasks.map(() => 0);
-            rerender(forceRerender+1)
+            rerender(forceRerender + 1)
         }
     }, [tasks]);
 
@@ -107,8 +107,10 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId}) => {
     }
 
     const [springs, setSprings] = useSprings(tasks.length, settings(true));
-    const gesture = useDrag(({args: [originalIndex], down, movement: [, y],
-                                 event, first, active}) => {
+    const gesture = useDrag(({
+                                 args: [originalIndex], down, movement: [, y],
+                                 event, first, active
+                             }) => {
         event?.stopPropagation()
         if (first) {
             newIndex.current = order.current.indexOf(originalIndex);
@@ -146,12 +148,11 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId}) => {
             if (!isEqual(order.current, memoizedOrder.current)) {
                 console.log('swap')
                 heights.current = movePos(heights.current, curIndex, curRow);
-                const swap = () => {
-                    console.log('animSwap')
+                (async () => {
+                    await setSprings(settings(false, down, originalIndex, y))
                     dispatch(actions.swapTasks(todoListId, [tasks[originalIndex].id,
                         tasks[processedMemoizedIndex.current].id]))
-                }
-                setSprings(settings(false, down, originalIndex, y, swap))
+                })();
             } else setSprings(settings(false, down, originalIndex, y))
         }
     }, {eventOptions: {capture: true}, filterTaps: true} /*{

@@ -136,7 +136,7 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
         case "reducer/SWAP_TODO_LISTS":
             return {
                 ...state,
-                /*todoLists: swap(state.todoLists, action.swappedListIndex, action.newIndex),*/
+               /* todoLists: swap(state.todoLists, action.swappedListIndex, action.newIndex),*/
                 swappedLists: [[action.swappedListId, ]]
             }
         case "reducer/SWAP_TASKS":
