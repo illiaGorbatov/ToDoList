@@ -20,11 +20,6 @@ const AnimatedBackground:React.FC = () => {
 
     const backgroundImage = useSelector((store: AppStateType) => store.todoList.backgroundImage, shallowEqual);
 
-    useEffect(() => {
-        console.log('app mounted')
-        return () =>  console.log('app unmounted')
-    })
-
     const [animateBackground, setBackground] = useSpring(() => ({
         backgroundImage: `${backgroundImage}`
     }));

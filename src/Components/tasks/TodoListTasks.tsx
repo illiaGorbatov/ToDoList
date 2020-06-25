@@ -35,11 +35,6 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId}) => {
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const dispatch = useDispatch();
 
-    useEffect(() => {
-        console.log(`mounted${todoListId}`);
-        return () => console.log(`unmounted${todoListId}`);
-    }, [])
-
     const settings = (immediate?: boolean, down?: boolean, originalIndex?: number, y?: number, swap?: () => void): any =>
         (index: number) => (
             down && index === originalIndex
@@ -71,12 +66,14 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId}) => {
     const processedMemoizedIndex = useRef<number>(0);
     const newMemoizedY = useRef<number>(0);
     const elementsRef = useRef<Array<RefObject<HTMLDivElement>>>([]);
-console.log(`updated ${todoListId} tasks`)
+
+    const [forceRerender, rerender] = useState<number>(0);
     useLayoutEffect(() => {
         if (tasks.length !== 0) {
             elementsRef.current = tasks.map(() => React.createRef());
             order.current = tasks.map((_, i) => i);
             initialY.current = tasks.map(() => 0);
+            rerender(forceRerender+1)
         }
     }, [tasks]);
 
@@ -84,9 +81,8 @@ console.log(`updated ${todoListId} tasks`)
         if (elementsRef.current.length !== 0 && elementsRef.current[0].current !== null) {//не работает
             heights.current = elementsRef.current.map(ref => ref.current!.offsetHeight);
             setSprings(settings(true));
-            console.log(heights.current)
         }
-    }, [tasks]);
+    }, [forceRerender]);
 
     const getNewIndex = (index: number, y: number) => {
         if (y > 0) {

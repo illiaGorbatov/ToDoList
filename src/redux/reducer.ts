@@ -4,6 +4,7 @@ import {ThunkAction, ThunkDispatch} from "redux-thunk";
 import {AppStateType, InferActionTypes} from "./store";
 import cloneDeep from "lodash-es/cloneDeep";
 import {movePos} from "../hooks/movePos";
+import { swap } from "../hooks/swap";
 
 type InitialStateType = {
     todoLists: Array<TodoListType>,
@@ -132,6 +133,12 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                 }),
                 changedLists: [...newListsArray]
             };
+        case "reducer/SWAP_TODO_LISTS":
+            return {
+                ...state,
+                /*todoLists: swap(state.todoLists, action.swappedListIndex, action.newIndex),*/
+                swappedLists: [[action.swappedListId, ]]
+            }
         case "reducer/SWAP_TASKS":
             const listPosition = state.swappedTasks.findIndex(item => item.todoListId === action.todoListId)
             const newSwappedTasks = listPosition === -1 ? [...state.swappedTasks, {
@@ -184,12 +191,6 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                 ...state,
                 focusedStatus: action.status
             };
-        case "reducer/SWAP_TODO_LISTS":
-            return {
-                ...state,
-                todoLists: movePos(state.todoLists, action.swappedListIndex, action.newIndex),
-                swappedLists: [[action.swappedListId, action.beforeSwappedListId]]
-            }
         default:
             return state;
     }
@@ -223,8 +224,8 @@ export const actions = {
         type: 'reducer/SWAP_TASKS',
         todoListId, swappedTasks
     } as const),
-    swapTodoLists: (swappedListId: string,swappedListIndex: number, beforeSwappedListId: string | null, newIndex: number) => ({
-        type: 'reducer/SWAP_TODO_LISTS', swappedListId, beforeSwappedListId,swappedListIndex, newIndex
+    swapTodoLists: (swappedListId: string,swappedListIndex: number, newIndex: number) => ({
+        type: 'reducer/SWAP_TODO_LISTS', swappedListId, swappedListIndex, newIndex
     } as const),
 }
 

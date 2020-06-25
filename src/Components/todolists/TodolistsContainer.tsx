@@ -51,7 +51,7 @@ const TodoListsContainer: React.FC = () => {
     const dispatch = useDispatch();
 
     useEffect(() => {
-        if (todoLists.length === 0) dispatch(loadTodoListsTC());
+        dispatch(loadTodoListsTC());
     }, []);
     useEffect(() => {
         console.log('mounted');
@@ -104,20 +104,24 @@ const TodoListsContainer: React.FC = () => {
     )), [todoLists]);
 //adaptive grid with transitions
 
-    const [springs, setSprings] = useSprings(todoLists.length, i => ({
-        x: 0,
-        y: 0,
-        zIndex: 3
-    }))
+    const heights = useRef<Array<number>>([]);
+    const gridItems = useRef<Array<GridItemsType>>([]);
 
-    const [bigItems, setItems] = useState<Array<GridItemsType>>([])
+    const [springs, setSprings] = useSprings(todoLists.length, i => {
+        if (gridItems.current.length === 0) return {x: 0, y: 0, zIndex: 3};
+        const currentSettings = gridItems.current.find((list) => list.index === i)!;
+        return {x: currentSettings.x, y: currentSettings.y}
+    })
+
     const elementsHeights = useRef<Array<number>>([]);
     useEffect(() => {
         elementsHeights.current = listsHeights;
+        const isQuantityEqual = elementsHeights.current.length === todoLists.length;
         const newHeights = new Array(columns).fill(0);
         gridItems.current = todoLists.map(
             (item, i) => {
-                const height = elementsHeights.current[i] || 0;
+                const heightInMeasuredArray = temporaryValue.current.find(list => item.id === list.id);
+                const height = heightInMeasuredArray ? heightInMeasuredArray.height : 0;
                 const column = i % columns;
                 const x = currWidth * column;
                 const y = (newHeights[column] += height) - height
@@ -129,19 +133,16 @@ const TodoListsContainer: React.FC = () => {
                 return {x, y, height, id: item.id, topY, rightX, horizontalCenter, verticalCenter, index}
             });
         heights.current = newHeights;
-        setSprings(i => ({
-            x: gridItems.current[i].x,
-            y: gridItems.current[i].y,
-        }))
-        setItems(gridItems.current)
+        setSprings(i => {
+            const currentSettings = gridItems.current.find((list) => list.index === i)!;
+            return {x: currentSettings.x, y: currentSettings.y}
+        })
+
     }, [listsHeights, todoLists]);
 
     const columns = useMedia(['(min-width: 2000px)', '(min-width: 1400px)', '(min-width: 800px)'], [4, 3, 2], 1);
     const [bind, {width}] = useMeasure();
     const currWidth = useMemo(() => width / columns, [width]);
-
-    const heights = useRef<Array<number>>([]);
-    const gridItems = useRef<Array<GridItemsType>>([]);
 
     const reordering = (oldIndex: number, newIndex: number) => {
         const newHeights = new Array(columns).fill(0);
@@ -253,10 +254,10 @@ const TodoListsContainer: React.FC = () => {
     const currHeight = useRef<number>(0);
     const [draggedListId, dragList] = useState<null | string>(null);
     const gesture = useDrag(({
-                                 args: [id, index], down, movement: [x, y],
+                                 args: [index], down, movement: [x, y],
                                  vxvy: [vx, vy], active, first
                              }) => {
-        draggedList.current = gridItems.current.findIndex(item => item.id === id);
+        draggedList.current = gridItems.current.findIndex(item => item.index === index);
         if (first) {
             currX.current = gridItems.current[draggedList.current].x;
             currY.current = gridItems.current[draggedList.current].y;
@@ -286,7 +287,7 @@ const TodoListsContainer: React.FC = () => {
             });
         }
         if (!down) {
-            const currentItemIndex = gridItems.current.findIndex(item => item.id === id)!;
+            const currentItemIndex = gridItems.current.findIndex(item => item.index === index);
             /*setSpring({
                 x: currentSettings.x,
                 y: currentSettings.y,
@@ -294,14 +295,14 @@ const TodoListsContainer: React.FC = () => {
                 onRest: () => dragList(null),
                 immediate: false
             });*/
-            const beforeSwappedListId = currentItemIndex === 0 ? null : gridItems.current[currentItemIndex-1].id
-            const swap = () => {
-                console.log('swap')
-                dispatch(actions.swapTodoLists(id, index, beforeSwappedListId, currentItemIndex))
+            const dispatchedSwap = () => {
+                console.log('swap', index, currentItemIndex)
+                dispatch(actions.swapTodoLists(gridItems.current[currentItemIndex].id, index, currentItemIndex))
             }
+            console.log(index, currentItemIndex)
             setSprings(i => {
                 const currentSettings = gridItems.current.find((list) => list.index === i)!;
-                return {x: currentSettings.x, y: currentSettings.y, zIndex: 3, onRest:() => swap()}
+                return {x: currentSettings.x, y: currentSettings.y, zIndex: 3, immediate: false}
             });
         }
     }, {filterTaps: true});
@@ -333,7 +334,8 @@ const TodoListsContainer: React.FC = () => {
         <AllLists height={(Math.max(...heights.current) || 0)} style={wrapperAnimation} {...bind}>
             <Addddd style={debugAn}/>
             {gridItems.current.length !== 0 && todoLists.map((item, i) =>
-                <TodoListContainer style={springs[i]} {...editable && {...gesture(gridItems.current[i].id, i)}}
+                <TodoListContainer style={springs[gridItems.current.findIndex(item => item.index === i)]}
+                                   {...editable && {...gesture(i)}}
                                    width={currWidth} key={gridItems.current[i].id}>
                     <TodoList id={item.id} index={i} deleteList={deleteList}
                               listTitle={item.title} listTasks={item.tasks} setData={setData}/>
