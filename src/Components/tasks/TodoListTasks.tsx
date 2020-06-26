@@ -149,9 +149,9 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId}) => {
                 console.log('swap')
                 heights.current = movePos(heights.current, curIndex, curRow);
                 (async () => {
-                    await setSprings(settings(false, down, originalIndex, y))
-                    dispatch(actions.swapTasks(todoListId, [tasks[originalIndex].id,
-                        tasks[processedMemoizedIndex.current].id]))
+                    await setSprings(settings(false, down, originalIndex, y));
+                    const newOrder = order.current.map(item => tasks[item].id)
+                    dispatch(actions.swapTasks(todoListId, newOrder))
                 })();
             } else setSprings(settings(false, down, originalIndex, y))
         }

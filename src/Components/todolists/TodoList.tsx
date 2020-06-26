@@ -118,14 +118,13 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index, setData
 
     const [backgroundImage] = useState<string>(colors[index % colors.length]);
 
-    const [currHeight, setHeight] = useState<number>(0);
+    const currHeight = useRef<number>(0);
     const ref = useRef<HTMLDivElement>(null);
     useLayoutEffect(() => {
         if (ref.current) {
             const height = ref.current.offsetHeight;
-            if (currHeight !== height) {
+            if (currHeight.current !== height) {
                 setData(height, id);
-                setHeight(height)
             }
         }
     })

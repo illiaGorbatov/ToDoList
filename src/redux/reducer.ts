@@ -4,7 +4,7 @@ import {ThunkAction, ThunkDispatch} from "redux-thunk";
 import {AppStateType, InferActionTypes} from "./store";
 import cloneDeep from "lodash-es/cloneDeep";
 import {movePos} from "../hooks/movePos";
-import { swap } from "../hooks/swap";
+import {swap} from "../hooks/swap";
 
 type InitialStateType = {
     todoLists: Array<TodoListType>,
@@ -17,8 +17,10 @@ type InitialStateType = {
     changedTasks: Array<TaskType>,
     addedTasks: Array<TaskType>,
     deletedTasksWithList: Array<{ todoListId: string, taskId: string }>,
-    swappedLists: Array<Array<string | null>>,
-    swappedTasks: Array<{ todoListId: string, swappedTasks: Array<Array<string>> }>,
+    listsOrder: Array<string>,
+    tasksOrder: Array<{ todoListId: string, newTasksOrder: Array<string> }>,
+    newListsId: Array<{ oldId: string, newId: string }>,
+    newTasksId: Array<{ oldId: string, newId: string, todoListId: string }>,
     errorsNumber: number,
     backgroundImage: string,
     focusedStatus: boolean
@@ -35,8 +37,10 @@ const initialState = {
     changedTasks: [],
     addedTasks: [],
     deletedTasksWithList: [],
-    swappedLists: [],
-    swappedTasks: [],
+    listsOrder: [],
+    tasksOrder: [],
+    newListsId: [],
+    newTasksId: [],
     errorsNumber: 0,
     backgroundImage: `linear-gradient(135deg, #D7E1EC 0%, #FFFFFF 100%)`,
     focusedStatus: false
@@ -62,25 +66,25 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
             return {
                 ...state,
                 todoLists: [action.newTodoList, ...state.todoLists],
-                addedLists: [ action.newTodoList, ...state.addedLists]
+              /*  addedLists: [action.newTodoList, ...state.addedLists]*/
             };
         case 'reducer/ADD_TASK':
             return {
                 ...state,
                 todoLists: state.todoLists.map(list => {
                     if (list.id === action.todoListId) {
-                        return {...list, tasks: [...list.tasks, action.newTask]}
+                        return {...list, tasks: [ action.newTask, ...list.tasks]}
                     } else return list
                 }),
-                addedTasks: [...state.addedTasks]
+           /*     addedTasks: [...state.addedTasks]*/
             };
         case 'reducer/CHANGE_TASK':
-            const indexOfTask = state.changedTasks.findIndex(item => item.id === action.task.id);
+           /* const indexOfTask = state.changedTasks.findIndex(item => item.id === action.task.id);
             const newTasksArray = indexOfTask === -1 ? [...state.changedTasks, action.task]
                 : state.changedTasks.map((item, i) => {
                     if (i === indexOfTask) return action.task;
                     return item
-                });
+                });*/
             return {
                 ...state,
                 todoLists: state.todoLists.map(list => {
@@ -94,16 +98,16 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                         }
                     } else return list
                 }),
-                changedTasks: [...newTasksArray]
+               /* changedTasks: [...newTasksArray]*/
             };
         case 'reducer/DELETE_TODO_LIST':
             return {
                 ...state,
                 todoLists: state.todoLists.filter(list => list.id !== action.todoListId),
-                deletedLists: [...state.deletedLists, action.todoListId],
+               /* deletedLists: [...state.deletedLists, action.todoListId],
                 deletedTasksWithList: [...state.deletedTasksWithList, ...state.todoLists
                     .find(item => item.id === action.todoListId)!.tasks
-                    .map(item => ({todoListId: item.todoListId, taskId: item.id}))]
+                    .map(item => ({todoListId: item.todoListId, taskId: item.id}))]*/
             };
         case 'reducer/DELETE_TASK':
             return {
@@ -113,17 +117,17 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                         return {...list, tasks: list.tasks.filter(task => task.id !== action.taskId)}
                     } else return list
                 }),
-                deletedTasks: [...state.deletedTasks, {todoListId: action.todoListId, taskId: action.taskId}]
+              /*  deletedTasks: [...state.deletedTasks, {todoListId: action.todoListId, taskId: action.taskId}]*/
             };
         case 'reducer/CHANGE_TODO_LIST_TITLE':
-            const listIndex = state.changedLists.findIndex(item => item.id === action.todoListId);
+            /*const listIndex = state.changedLists.findIndex(item => item.id === action.todoListId);
             const newListsArray = listIndex === -1 ? [...state.changedLists, {
                     id: action.todoListId, title: action.todoListTitle, tasks: []
                 }]
                 : state.changedLists.map((item, i) => {
                     if (i === listIndex) return {id: action.todoListId, title: action.todoListTitle, tasks: []};
                     return item
-                });
+                });*/
             return {
                 ...state,
                 todoLists: state.todoLists.map(list => {
@@ -131,16 +135,15 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                         return {...list, title: action.todoListTitle}
                     } else return list
                 }),
-                changedLists: [...newListsArray]
+               /* changedLists: [...newListsArray]*/
             };
         case "reducer/SWAP_TODO_LISTS":
             return {
                 ...state,
-               /* todoLists: swap(state.todoLists, action.swappedListIndex, action.newIndex),*/
-                swappedLists: [[action.swappedListId, ]]
+                listsOrder: action.newListsOrder
             }
         case "reducer/SWAP_TASKS":
-            const listPosition = state.swappedTasks.findIndex(item => item.todoListId === action.todoListId)
+            /*const listPosition = state.tasksOrder.findIndex(item => item.todoListId === action.todoListId)
             const newSwappedTasks = listPosition === -1 ? [...state.swappedTasks, {
                 todoListId: action.todoListId,
                 swappedTasks: [action.swappedTasks]
@@ -150,10 +153,15 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                     swappedTasks: item.swappedTasks.map(tasks => tasks[0] === action.swappedTasks[0] ? action.swappedTasks : tasks)
                 }
                 return item
-            })
+            })*/
+            const index = state.tasksOrder.findIndex(item => item.todoListId === action.todoListId);
+            const newSwappedTasks = index !== -1 ? state.tasksOrder.map((item, i) => {
+                if (i === index) return {todoListId: action.todoListId, newTasksOrder: action.newTasksOrder}
+                return item
+            }) : [...state.tasksOrder, {todoListId: action.todoListId, newTasksOrder: action.newTasksOrder}]
             return {
                 ...state,
-                swappedTasks: [...newSwappedTasks]
+                tasksOrder: newSwappedTasks
             }
         case "reducer/ENABLE_EDIT_MODE":
             return {
@@ -165,8 +173,8 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                 deletedTasks: [],
                 changedTasks: [],
                 addedTasks: [],
-                swappedLists: [],
-                swappedTasks: [],
+                listsOrder: [],
+                tasksOrder: [],
                 deletedTasksWithList: [],
                 errorsNumber: 0,
                 deepCopy: cloneDeep(state.todoLists)
@@ -191,6 +199,21 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                 ...state,
                 focusedStatus: action.status
             };
+        case "reducer/SET_NEW_ID":
+            return {
+                ...state,
+                todoLists: action.newTodoLists
+            };
+        case "reducer/SET_NEW_LISTS_ID":
+            return {
+                ...state,
+                newListsId: action.newListsId
+            }
+        case "reducer/SET_NEW_TASKS_ID":
+            return {
+                ...state,
+                newTasksId: action.newTasksId
+            }
         default:
             return state;
     }
@@ -220,12 +243,16 @@ export const actions = {
     setError: () => ({type: 'reducer/SET_ERROR'} as const),
     setBackground: (background: string) => ({type: 'reducer/SET_BACKGROUND', background} as const),
     setFocusedStatus: (status: boolean) => ({type: 'reducer/SET_FOCUSED_STATUS', status} as const),
-    swapTasks: (todoListId: string, swappedTasks: Array<string>) => ({
-        type: 'reducer/SWAP_TASKS',
-        todoListId, swappedTasks
+    swapTasks: (todoListId: string, newTasksOrder: Array<string>) => ({
+        type: 'reducer/SWAP_TASKS', todoListId, newTasksOrder
     } as const),
-    swapTodoLists: (swappedListId: string,swappedListIndex: number, newIndex: number) => ({
-        type: 'reducer/SWAP_TODO_LISTS', swappedListId, swappedListIndex, newIndex
+    swapTodoLists: (newListsOrder: Array<string>) => ({type: 'reducer/SWAP_TODO_LISTS', newListsOrder} as const),
+    setTodoListsWithNewId: (newTodoLists: Array<TodoListType>) => ({type: 'reducer/SET_NEW_ID', newTodoLists} as const),
+    setNewListsId: (newListsId: Array<{ oldId: string, newId: string }>) => ({
+        type: 'reducer/SET_NEW_LISTS_ID', newListsId
+    } as const),
+    setNewTasksId: (newTasksId: Array<{ oldId: string, newId: string, todoListId: string }>) => ({
+        type: 'reducer/SET_NEW_TASKS_ID', newTasksId
     } as const),
 }
 
@@ -273,7 +300,7 @@ export const changeTodoListTitleTC = (todoListId: string, todoListTitle: string)
     })
 };
 
-export const submitAllChanges = (): ThunkType =>
+/*export const submitAllChanges = (): ThunkType =>
     async (dispatch: ThunkActionType, getState: () => AppStateType) => {
         const deletedLists = getState().todoList.deletedLists;
         const addedLists = getState().todoList.addedLists;
@@ -283,10 +310,10 @@ export const submitAllChanges = (): ThunkType =>
             .findIndex(i => i === item.id) === -1);
         const clearlyDeletedLists = deletedLists.filter(list => addedLists
             .findIndex(item => item.id === list) === -1);
-        /*const addedSwappedLists = getState().todoList.swappedLists.filter(item => clearedAddedLists
+        /!*const addedSwappedLists = getState().todoList.swappedLists.filter(item => clearedAddedLists
             .findIndex(i => i.id === (item[0].id || item[1].id)) !== -1);
         const clearlySwappedLists = getState().todoList.swappedLists.filter(item => addedSwappedLists
-            .findIndex(i => i[0] === item[0] && i[1] === item[1]) === -1);*/
+            .findIndex(i => i[0] === item[0] && i[1] === item[1]) === -1);*!/
 
         const deletedTasksWithList = getState().todoList.deletedTasksWithList;
         const deletedTasks = getState().todoList.deletedTasks.filter(item => deletedTasksWithList
@@ -431,6 +458,170 @@ export const submitAllChanges = (): ThunkType =>
             })
         }
         dispatch(actions.disableEditMode())
-    }
+    };*/
+
+export const submitAllChanges = (): ThunkType =>
+    async (dispatch: ThunkActionType, getState: () => AppStateType) => {
+        const oldTodoLists = getState().todoList.deepCopy;
+        const newTodoLists = getState().todoList.todoLists;
+        let listsOrder = getState().todoList.listsOrder;
+        let tasksOrder = getState().todoList.tasksOrder;
+
+        const newListsId: Array<{ oldId: string, newId: string }> = [];
+        const newTasksId: Array<{ oldId: string, newId: string, todoListId: string }> = [];
+        let todoListsWithNewId: Array<TodoListType> = [];
+
+        //added items
+        const addedLists = newTodoLists.filter(list => oldTodoLists.findIndex(oldList => oldList.id === list.id) === -1);
+        const deletedLists = oldTodoLists.filter(list => newTodoLists.findIndex(newList => newList.id === list.id) === -1);
+        const editedLists: Array<TodoListType> = []
+        newTodoLists.map(list => {
+            const oldList = oldTodoLists.find(oldList => oldList.id === list.id);
+            if (oldList && list.title !== oldList.title) {
+                editedLists.push(list)
+            }
+        })
+
+        let addedTasks: Array<TaskType> = [];
+        const editedTasks: Array<TaskType> = [];
+        newTodoLists.map(list => {
+            const oldList = oldTodoLists.find(oldList => oldList.id === list.id);
+            if (oldList) {
+                list.tasks.map(task => {
+                    const oldTask = oldList.tasks.find(oldTask => oldTask.id === task.id)
+                    if (!oldTask) {
+                        addedTasks.push(task);
+                        return
+                    }
+                    if (oldTask && oldTask.title !== task.title) {
+                        editedTasks.push(task)
+                    }
+                })
+            }
+            if (!oldList && list.tasks.length !== 0) {
+                list.tasks.map(task => addedTasks.push(task))
+            }
+        })
+        const deletedTasks: Array<TaskType> = [];
+        oldTodoLists.map(list => {
+            const newList = newTodoLists.find(newList => newList.id === list.id);
+            if (newList) {
+                list.tasks.map(task => {
+                    const newTask = newList.tasks.find(newTask => newTask.id === task.id)
+                    if (!newTask) {
+                        deletedTasks.push(task)
+                    }
+                })
+            }
+        })
+
+        const createAndChangeIdOfTasksInOrderList = async () => {
+            if (addedTasks.length !== 0) {
+                const tasksPromises = addedTasks.map(async (task) => {
+                    api.addTask(task.title, task.todoListId).then(data => {
+                        if (data.resultCode === 0) newTasksId.push({
+                            newId: data.data.item.id,
+                            oldId: task.id,
+                            todoListId: data.data.item.todoListId
+                        })
+                        if (data.resultCode !== 0) dispatch(actions.setError())
+                    });
+                })
+                await Promise.all(tasksPromises);
+                if (tasksOrder.length !== 0) {
+                    tasksOrder = tasksOrder.map(item => {
+                        const newList = newListsId.find(list => list.oldId === item.todoListId)
+                        const tasksWithNewId = item.newTasksOrder.map(taskId => {
+                            const newTask = newTasksId.find(newTask => newTask.oldId === taskId);
+                            if (newTask) return newTask.newId;
+                            return taskId
+                        })
+                        return {todoListId: newList ? newList.newId : item.todoListId, newTasksOrder: tasksWithNewId}
+                    })
+                }
+            }
+        }
+
+        //запросы, добавить последовательность вызова
+        if (addedLists.length !== 0) {
+            const listPromises = addedLists.map(async (list) => {
+                return await api.addTodoList(list.title).then(data => {
+                    if (data.resultCode === 0) newListsId.push({newId: data.data.item.id, oldId: list.id})
+                    if (data.resultCode !== 0) dispatch(actions.setError())
+                })
+
+            })
+            await Promise.all(listPromises);
+            if (addedTasks.length !== 0) {
+                addedTasks = addedTasks.map(task => {
+                    const newListId = newListsId.find(list => list.oldId === task.todoListId);
+                    if (newListId) return {...task, todoListId: newListId.newId}
+                    return task
+                })
+            }
+            if (listsOrder.length !== 0) {
+                listsOrder = listsOrder.map(item => {
+                    const newList = newListsId.find(list => list.oldId === item)
+                    if (newList) return newList.newId;
+                    return item
+                })
+            }
+            await createAndChangeIdOfTasksInOrderList()
+        } else await createAndChangeIdOfTasksInOrderList();
+        if (deletedLists.length !== 0) {
+            deletedLists.forEach(list => {
+                api.deleteTodoList(list.id).then(data => {
+                    if (data.resultCode !== 0) dispatch(actions.setError())
+                })
+            })
+        }
+        if (deletedTasks.length !== 0) {
+            deletedTasks.forEach(task => {
+                api.deleteTask(task.todoListId, task.id).then(data => {
+                    if (data.resultCode !== 0) dispatch(actions.setError())
+                })
+            })
+        }
+        if (editedLists.length !== 0) {
+            editedLists.forEach(list => {
+                api.changeTodoListTitle(list.id, list.title).then(data => {
+                    if (data.resultCode !== 0) dispatch(actions.setError())
+                })
+            })
+        }
+        if (editedTasks.length !== 0) {
+            editedTasks.forEach(task => {
+                api.changeTask(task.todoListId, task.id, task).then(data => {
+                    if (data.resultCode !== 0) dispatch(actions.setError())
+                })
+            })
+        }
+        //swap all items
+
+        //changing id
+        if (newListsId.length !== 0) {
+            todoListsWithNewId = newTodoLists.map(list => {
+                const newList = newListsId.find(item => item.oldId === list.id)
+                if (newList) return {...list, id: newList.newId};
+                return list
+            })
+        }
+        if (newTasksId.length !== 0) {
+            const mappedConst = todoListsWithNewId.length !== 0 ? todoListsWithNewId : newTodoLists;
+            todoListsWithNewId = mappedConst.map(list => {
+                const tasks = list.tasks.map(task => {
+                    const newTask = newTasksId.find(item => item.oldId === task.id)
+                    if (newTask) return {...task, id: newTask.newId}
+                    return task
+                })
+                return {...list, tasks}
+            })
+        }
+        if (todoListsWithNewId.length !== 0) {
+            dispatch(actions.setTodoListsWithNewId(todoListsWithNewId))
+        }
+
+        dispatch(actions.disableEditMode())
+    };
 
 export default reducer

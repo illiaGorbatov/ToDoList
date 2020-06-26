@@ -5,7 +5,7 @@ import {shallowEqual, useDispatch, useSelector} from 'react-redux';
 import {AppStateType} from "../../redux/store";
 import styled from "styled-components/macro";
 import {useMedia} from "../../hooks/useMedia";
-import {animated, useSpring, useSprings, useTransition} from "react-spring";
+import {animated, useSpring, useSprings} from "react-spring";
 import {useDrag} from "react-use-gesture";
 import {swap} from "../../hooks/swap";
 import {useMeasure} from "../../hooks/useMesure";
@@ -49,6 +49,8 @@ const TodoListsContainer: React.FC = () => {
 
     const editable = useSelector((store: AppStateType) => store.todoList.editable, shallowEqual);
     const todoLists = useSelector((store: AppStateType) => store.todoList.todoLists, isEqual);
+    const newListsId = useSelector((store: AppStateType) => store.todoList.newListsId, isEqual);
+    const newTasksId = useSelector((store: AppStateType) => store.todoList.newTasksId, isEqual);
     const dispatch = useDispatch();
 
     useEffect(() => {
@@ -92,31 +94,54 @@ const TodoListsContainer: React.FC = () => {
             const heights = todoLists.map(item => newHeightsArray.find(object => object.id === item.id)!.height)
             setHeight(heights)
         }
-    }, [todoLists]);
+    }, [todoLists, newListsId]);
     const deleteList = useCallback((id: string) => {
         const newHeights = temporaryValue.current.filter(item => item.id !== id)
         const heights = newHeights.map(item => item.height)
         setHeight(heights)
-    }, [todoLists]);
+    }, [todoLists, newListsId]);
 
-    const toDoLists = useMemo(() => todoLists.map((item, i) => (
+    /*const toDoLists = useMemo(() => todoLists.map((item, i) => (
         <TodoList id={item.id} key={item.id} index={i} deleteList={deleteList}
                   listTitle={item.title} listTasks={item.tasks} setData={setData}/>
-    )), [todoLists]);
+    )), [todoLists]);*/
 //adaptive grid with transitions
 
     const heights = useRef<Array<number>>([]);
     const gridItems = useRef<Array<GridItemsType>>([]);
 
     const [springs, setSprings] = useSprings(todoLists.length, i => {
-        if (gridItems.current.length === 0) return {x: 0, y: 0, zIndex: 3};
+        if (gridItems.current.length ===  0) return {x: 0, y: 0, zIndex: 3};
         const currentSettings = gridItems.current.find((list) => list.index === i);
         return {x: currentSettings ? currentSettings.x : 0, y: currentSettings ? currentSettings.y : 0}
     })
 
-    const elementsHeights = useRef<Array<number>>([]);
+    const collectNewTasksId = useMemo(() => {
+        const collectNewListsId: Array<string> = [];
+        newTasksId.map(task => {
+            const listId = collectNewListsId.find(item => item === task.todoListId)
+            if (!listId) collectNewListsId.push()
+        })
+        return collectNewListsId.map(item => {
+            const tasks = newTasksId.filter(task => task.todoListId === item);
+            return {todoListId: item, tasks}
+        })
+    }, [newTasksId])
     useEffect(() => {
-        elementsHeights.current = listsHeights;
+        if (newListsId.length !== 0) {
+            temporaryValue.current = temporaryValue.current.map(item => {
+                const newList = newListsId.find(newList => newList.oldId === item.id);
+                if (newList) return {...item, id: newList.newId}
+                return item
+            });
+            gridItems.current.map(item => {
+                const newList = newListsId.find(newList => newList.oldId === item.id);
+                if (newList) return {...item, id: newList.newId}
+                return item
+            });
+        }
+    }, [newListsId])
+    useEffect(() => {
         const newHeights = new Array(columns).fill(0);
         if (gridItems.current.length === 0) {
             gridItems.current = todoLists.map(
@@ -348,7 +373,8 @@ const TodoListsContainer: React.FC = () => {
                     const currentSettings = gridItems.current.find((list) => list.index === i)!;
                     return {x: currentSettings.x, y: currentSettings.y, zIndex: 3}
                 });
-                dispatch(actions.swapTodoLists(gridItems.current[currentItemIndex].id, index, currentItemIndex))
+                const newOrder = gridItems.current.map(item => item.id)
+                dispatch(actions.swapTodoLists(newOrder))
             })();
         }
     }, {filterTaps: true});
@@ -380,7 +406,7 @@ const TodoListsContainer: React.FC = () => {
     return (
         <AllLists height={(Math.max(...heights.current) || 0)} style={wrapperAnimation} {...bind}>
             <Addddd style={debugAn} onClick={() => addTodoList('newList')}/>
-            {gridItems.current.length !== 0 && todoLists.map((item, i) =>
+            {todoLists.length !== 0 && todoLists.map((item, i) =>
                 <TodoListContainer style={springs[i]}
                                    {...editable && {...gesture(i)}}
                                    width={currWidth} key={item.id}>
