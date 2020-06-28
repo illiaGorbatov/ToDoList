@@ -47,12 +47,12 @@ export const api = {
         return instance.put<CommonResponseType<TodoListType>>(`/${todoListId}`, {title: newTitle})
             .then(res => res.data)
     },
-    swapTasks: (todoListId: string, currentTask: string, swappedTask: string) => {
-        return instance.put<CommonResponseType<{}>>(`/${todoListId}/tasks/${currentTask}/reorder`, {putAfterItemId: swappedTask})
+    swapTasks: (todoListId: string, swappedTask: string, beforeSwappedTask: string | null) => {
+        return instance.put<CommonResponseType<{}>>(`/${todoListId}/tasks/${swappedTask}/reorder`, {putAfterItemId: beforeSwappedTask})
             .then(res => res.data)
     },
-    swapTodoList: (currentList: string, swappedList: string) => {
-        return instance.put<CommonResponseType<{}>>(`/${currentList}/reorder`, {putAfterItemId: swappedList})
+    swapTodoList: (swappedList: string, beforeSwappedList: string| null) => {
+        return instance.put<CommonResponseType<{}>>(`/${swappedList}/reorder`, {putAfterItemId: beforeSwappedList})
             .then(res => res.data)
     }
 };

@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useLayoutEffect, useRef, useState} from "react";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 import TodoListTasks from '../tasks/TodoListTasks';
 import '../../App.css'
 import TodoListTitle from "./TodoListTitle";
@@ -106,11 +106,13 @@ type PropsType = {
     listTitle: string,
     listTasks?: TaskType[],
     index: number,
-    setData: (height: number, id: string) => void,
-    deleteList: (id: string) => void
+    setNewHeights: (height: number, id: string) => void,
+    deleteList: (id: string) => void,
+    /*newTasksId: Array<{todoListId: string, tasks: Array<{oldId: string, newId: string, todoListId: string}>}>*/
 };
 
-const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index, setData, deleteList}) => {
+const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index,
+                                           setNewHeights, deleteList, /*newTasksId*/}) => {
 
     const dispatch = useDispatch();
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
@@ -120,20 +122,23 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index, setData
 
     const currHeight = useRef<number>(0);
     const ref = useRef<HTMLDivElement>(null);
-    useLayoutEffect(() => {
+    const setHeight = useCallback(() => {
         if (ref.current) {
             const height = ref.current.offsetHeight;
             if (currHeight.current !== height) {
-                setData(height, id);
+                setNewHeights(height, id);
             }
         }
-    })
+    }, [])
+   /* useLayoutEffect(() => {
+        if (ref.current) {
+            const height = ref.current.offsetHeight;
+            if (currHeight.current !== height) {
+                setNewHeights(height, id);
+            }
+        }
+    }, [listTasks])*/
     const [filterValue, setFilterValue] = useState<string>('All');
-
-    useEffect(() => {//переделать
-        if (!listTasks) dispatch(restoreTasksTC(id))
-    }, []);
-
 
     const changeFilter = (newFilterValue: string) => {
         setFilterValue(newFilterValue)
@@ -154,6 +159,7 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index, setData
     };
 
     const deleteTodoList = useCallback(() => {
+        deleteList(id)
         dispatch(actions.deleteTodoList(id))
     }, []);
 
@@ -232,7 +238,7 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index, setData
     const switchTitleMode = () => {
         setTitleEditMode(!isTitleEditable)
     };
-
+console.log(`${listTitle} ${id} render`)
     return (
         <SingleListWrapper {...!editable && {...bind()}} ref={ref}>
             <SingleListBottomLayer style={{boxShadow}}>
@@ -243,7 +249,7 @@ const TodoList: React.FC<PropsType> = ({id, listTitle, listTasks, index, setData
                         <TasksLayer style={{translateZ: taskZ, scale, rotateZ: tasksRotZ, rotateX}}>
                             <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable}
                                            switchTitleMode={switchTitleMode}/>
-                            <TodoListTasks todoListId={id} tasks={tasks}/>
+                            <TodoListTasks todoListId={id} tasks={tasks} setHeight={setHeight}/>
                         </TasksLayer>
                     </ListInnerLayer>
                     {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}
