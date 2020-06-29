@@ -28,7 +28,7 @@ const initialState = {
     newListsId: [],
     newTasksId: [],
     errorsNumber: 0,
-    backgroundImage: `linear-gradient(135deg, #D7E1EC 0%, #FFFFFF 100%)`,
+    backgroundImage: "rgb(246, 247, 250)",
     focusedStatus: false
 };
 
