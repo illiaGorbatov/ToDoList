@@ -97,13 +97,10 @@ const SingleListBottomLayer = styled(animated.div)<{ index: number, editable: st
       right: 0;
       box-shadow: ${props => neumorphColors[props.index].shadows};
       transition: 0.3s cubic-bezier(0.25, 0, 0, 1);
-  }:
+  };
   &:hover::before {
       opacity: 1;
   };
-  &:hover {
-    background: gray;
-  }
   ${props => props.editable &&
     `&:hover ${ButtonWrapper},  ${ButtonWrapper}:focus-within
     {
@@ -112,7 +109,7 @@ const SingleListBottomLayer = styled(animated.div)<{ index: number, editable: st
        opacity: 1;
        transition: opacity .6s cubic-bezier(0.25, 0, 0, 1);
     };`
-};
+  }
 `;
 
 type PropsType = {
@@ -122,12 +119,12 @@ type PropsType = {
     index: number,
     setNewHeights: (height: number, id: string) => void,
     deleteList: (id: string) => void,
-    /*newTasksId: Array<{todoListId: string, tasks: Array<{oldId: string, newId: string, todoListId: string}>}>*/
+    newTasksId: {todoListId: string, tasks: Array<{oldId: string, newId: string, todoListId: string}>} | undefined
 };
 
 const TodoList: React.FC<PropsType> = ({
                                            id, listTitle, listTasks, index,
-                                           setNewHeights, deleteList, /*newTasksId*/
+                                           setNewHeights, deleteList, newTasksId
                                        }) => {
 
     const dispatch = useDispatch();
@@ -252,7 +249,8 @@ const TodoList: React.FC<PropsType> = ({
                                 addTask={addTask} editList={switchTitleMode}/>
                 <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable}
                                switchTitleMode={switchTitleMode} colors={colorScheme}/>
-                <TodoListTasks todoListId={id} tasks={tasks} setHeight={setHeight} colors={colorScheme}/>
+                <TodoListTasks todoListId={id} tasks={tasks} setHeight={setHeight} colors={colorScheme}
+                               newTasksId={newTasksId}/>
                 {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}
             </SingleListBottomLayer>
         </SingleListWrapper>

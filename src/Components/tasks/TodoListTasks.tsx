@@ -31,10 +31,11 @@ type PropsType = {
     tasks: TaskType[],
     setHeight: () => void,
     colors: NeumorphColorsType
-    /*newTasksId: Array<{todoListId: string, tasks: Array<{oldId: string, newId: string, todoListId: string}>}>*/
+    newTasksId: {todoListId: string, tasks: Array<{oldId: string, newId: string, todoListId: string}>} | undefined
 };
 
-const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, colors}) => {
+const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, colors,
+                                                newTasksId}) => {
 
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const dispatch = useDispatch();
@@ -45,13 +46,11 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, color
                 ? {
                     scale: 1.2,
                     zIndex: 2,
-                    /*boxShadow: `rgba(0, 0, 0, 0.15) 0px 15px 30px 0px`,*/
                     y: (initialY.current[index] || 0) + (y || 0),
                     immediate: (n: string): boolean => n === 'zIndex' || n === 'y',
                 }
                 : {
                     scale: 1,
-                    /*boxShadow: `rgba(0, 0, 0, 0.15) 0px 1px 2px 0px`,*/
                     y: initialY.current[index] || 0,
                     zIndex: 1,
                 }
@@ -85,7 +84,6 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, color
 
     useLayoutEffect(() => {
         if (tasks.length !== 0) {
-            console.log(elementsRef.current)
             heights.current = elementsRef.current.map(ref => ref.current!.offsetHeight);
             setSprings(settings())
         }
@@ -163,16 +161,14 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, color
                 })();
             } else setSprings(settings(down, originalIndex, y))
         }
-    }, {eventOptions: {capture: true}, filterTaps: true} /*{
-        filterTaps: true, bounds: { top: 0 , bottom: tasksWrapperHeight}, rubberband: true
-    }*/);
+    }, {eventOptions: {capture: true}, filterTaps: true});
     console.log(`${todoListId} tasks render`)
     return (
         <TasksWrapper>
             {tasks.map((task, i) =>
                 <TaskWrapper {...editable && {...gesture(i)}} key={i} style={springs[i]}
                              ref={elementsRef.current[i]}>
-                    <TodoListTask task={task} key={task.id} todoListId={todoListId} colors={colors}/>
+                    <TodoListTask task={task} todoListId={todoListId} colors={colors}/>
                 </TaskWrapper>)}
         </TasksWrapper>
     );

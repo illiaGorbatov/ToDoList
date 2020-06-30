@@ -72,6 +72,7 @@ const TodoListsContainer: React.FC = () => {
         config: {tension: 100, friction: 60, clamp: true},
     });
 
+    // child height calculation logic
     const temporaryValue = useRef<Array<{ height: number, id: string }>>([]);
     const setNewHeights = useCallback((height: number, id: string) => {
         const findHeight = temporaryValue.current.findIndex(item => item.id === id);
@@ -104,18 +105,7 @@ const TodoListsContainer: React.FC = () => {
         return {x: currentSettings ? currentSettings.x : 0, y: currentSettings ? currentSettings.y : 0}
     })
 
-    const collectedNewTasksId = useMemo(() => {
-        const collectedNewListsId: Array<string> = [];
-        newTasksId.map(task => {
-            const listId = collectedNewListsId.find(item => item === task.todoListId)
-            if (!listId) collectedNewListsId.push()
-        })
-        return collectedNewListsId.map(item => {
-            const tasks = newTasksId.filter(task => task.todoListId === item);
-            return {todoListId: item, tasks}
-        })
-    }, [newTasksId]);
-
+    //resize logic
     const [width, setWidth] = useState<number>(0);
     const onResize = (width: number) => setWidth(width);
     useEffect(() => {
@@ -131,6 +121,7 @@ const TodoListsContainer: React.FC = () => {
     const currWidth = useMemo(() => width / columns, [width]);
     const measuredRef = useRef<HTMLDivElement>(null)
 
+    //changing id of added lists
     useEffect(() => {
         if (newListsId.length !== 0) {
             temporaryValue.current = temporaryValue.current.map(item => {
@@ -144,7 +135,22 @@ const TodoListsContainer: React.FC = () => {
                 return item
             });
         }
-    }, [newListsId])
+    }, [newListsId]);
+
+    //changing id of added tasks
+    const collectedNewTasksId = useMemo(() => {
+        const collectedNewListsId: Array<string> = [];
+        newTasksId.map(task => {
+            const listId = collectedNewListsId.find(item => item === task.todoListId)
+            if (!listId) collectedNewListsId.push()
+        })
+        return collectedNewListsId.map(item => {
+            const tasks = newTasksId.filter(task => task.todoListId === item);
+            return {todoListId: item, tasks}
+        })
+    }, [newTasksId]);
+
+    //swap animation logic
     useEffect(() => {
         if (gridItems.current.length === 0) {
             const newHeights = new Array(columns).fill(0);
@@ -244,14 +250,14 @@ const TodoListsContainer: React.FC = () => {
         x: 0,
         y: 0
     });
-    const bounds = useRef<{left: number, right: number, top: number, bottom: number}>({
+    const bounds = useRef<{ left: number, right: number, top: number, bottom: number }>({
         left: 0, right: 0, top: 0, bottom: 0
     });
 
     const getBounds = () => {
-        const left = gridItems.current.length !== 0 ? - gridItems.current[draggedList.current].x - 25 : 0;
+        const left = gridItems.current.length !== 0 ? -gridItems.current[draggedList.current].x - 25 : 0;
         const right = gridItems.current.length !== 0 ? width - gridItems.current[draggedList.current].rightX + 25 : 0;
-        const top = gridItems.current.length !== 0 ? - gridItems.current[draggedList.current].y - 25: 0;
+        const top = gridItems.current.length !== 0 ? -gridItems.current[draggedList.current].y - 25 : 0;
         const bottom = gridItems.current.length !== 0 ?
             Math.max(...heights.current) - gridItems.current[draggedList.current].botY + 25 : 0;
         console.log(left, right, top, bottom)
@@ -294,11 +300,7 @@ const TodoListsContainer: React.FC = () => {
                 dispatch(actions.swapTodoLists(newOrder))
             })();
         }
-    }, {
-        filterTaps: true,
-        bounds: getBounds(),
-        rubberband: true
-    });
+    }, {filterTaps: true});
     console.log('wrapRender')
 
     return (
@@ -311,7 +313,7 @@ const TodoListsContainer: React.FC = () => {
                                        width={currWidth} key={list.id}>
                         <TodoList id={list.id} index={i} deleteList={deleteList} setNewHeights={setNewHeights}
                                   listTitle={list.title} listTasks={list.tasks}
-                            /*newTasksId={collectedNewTasksId.find(item => item.todoListId === list.id)}*//>
+                                  newTasksId={collectedNewTasksId.find(item => item.todoListId === list.id)}/>
                     </TodoListContainer>)}
                 <div style={{
                     position: "absolute",

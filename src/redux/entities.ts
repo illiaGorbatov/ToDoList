@@ -4,7 +4,6 @@ export type TodoListType = {
     order?: number;
     title: string;
     tasks: TaskType[],
-    height?: number
 };
 
 export type TaskType = {
@@ -19,6 +18,5 @@ export type TaskType = {
     todoListId: string;
     order?: number;
     addedDate?: string;
-    height?: number;
     editStatus?: boolean
 };
