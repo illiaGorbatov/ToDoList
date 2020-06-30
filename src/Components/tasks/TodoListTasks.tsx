@@ -9,6 +9,7 @@ import {AppStateType} from "../../redux/store";
 import {actions} from "../../redux/reducer";
 import {movePos} from "../../hooks/movePos";
 import isEqual from "react-fast-compare";
+import {NeumorphColorsType} from "../todolists/TodoList";
 
 const TasksWrapper = styled.div`
   user-select: none;
@@ -29,10 +30,11 @@ type PropsType = {
     todoListId: string;
     tasks: TaskType[],
     setHeight: () => void,
+    colors: NeumorphColorsType
     /*newTasksId: Array<{todoListId: string, tasks: Array<{oldId: string, newId: string, todoListId: string}>}>*/
 };
 
-const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, /*newTasksId*/}) => {
+const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, colors}) => {
 
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const dispatch = useDispatch();
@@ -170,7 +172,7 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, /*new
             {tasks.map((task, i) =>
                 <TaskWrapper {...editable && {...gesture(i)}} key={i} style={springs[i]}
                              ref={elementsRef.current[i]}>
-                    <TodoListTask task={task} key={task.id} todoListId={todoListId}/>
+                    <TodoListTask task={task} key={task.id} todoListId={todoListId} colors={colors}/>
                 </TaskWrapper>)}
         </TasksWrapper>
     );

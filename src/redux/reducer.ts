@@ -28,7 +28,7 @@ const initialState = {
     newListsId: [],
     newTasksId: [],
     errorsNumber: 0,
-    backgroundImage: "rgb(246, 247, 250)",
+    backgroundImage: '#FFFFFF',
     focusedStatus: false
 };
 

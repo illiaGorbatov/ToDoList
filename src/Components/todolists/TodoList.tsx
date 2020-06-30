@@ -12,91 +12,61 @@ import {useHover} from "react-use-gesture";
 import ContextButtons, {ButtonWrapper} from "./ContextButtons";
 import isEqual from "react-fast-compare";
 
-const colors = [
-    `linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)`,
-    `linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)`,
-    `linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%)`,
-    `linear-gradient(120deg, #f093fb 0%, #f5576c 100%)`,
-    `linear-gradient(-225deg, #E3FDF5 0%, #FFE6FA 100%)`,
-    `linear-gradient(135deg, #5ee7df 0%, #b490ca 100%)`,
-    `linear-gradient(135deg, #d299c2 0%, #fef9d7 100%)`,
-    `linear-gradient(135deg, #ebc0fd 0%, #d9ded8 100%)`,
-    `linear-gradient(120deg, #f6d365 0%, #fda085 100%)`,
-    `linear-gradient(135deg, #96fbc4 0%, #f9f586 100%)`,
-    `linear-gradient(-225deg, #FFFEFF 0%, #D7FFFE 100%)`,
-    `linear-gradient(135deg, #fff1eb 0%, #ace0f9 100%)`,
-    `linear-gradient(135deg, #c1dfc4 0%, #deecdd 100%)`,
-    `linear-gradient(-20deg, #ddd6f3 0%, #faaca8 100%)`
-];
-
 const neumorphColors = [
     {
         background: '#1a0b3b',
-        backgroundInner: 'linear-gradient(145deg, #170a35, #1c0c3f)',
-        shadows: '22px 22px 49px #110727, -22px -22px 49px #230f4f',
-        shadowsHovered: 'inset 22px 22px 49px #110727, inset -22px -22px 49px #230f4f' ,
+        backgroundOuter: 'linear-gradient(145deg, #170a35, #1c0c3f)',
+        shadows: '27px 27px 54px #0a0418, -27px -27px 54px #2a125e',
+        shadowsHovered: 'inset 27px 27px 54px #0a0418, inset -27px -27px 54px #2a125e',
+        innerShadows: '11px 11px 23px #0a0418, -11px -11px 23px #2a125e',
         color: 'rgb(108, 98, 131)',
         hoveredAltBackground: '#ff9605',
         hoveredColor: 'rgb(30, 13, 55)',
         backgroundAltInner: 'linear-gradient(145deg, #ffa105, #e68705)',
         shadowsAlt: '22px 22px 49px #a86303, -22px -22px 49px #ffc907',
-        shadowsHoveredAlt: 'inset 22px 22px 49px #a86303, inset -22px -22px 49px #ffc907' ,
+        shadowsHoveredAlt: 'inset 22px 22px 49px #a86303, inset -22px -22px 49px #ffc907',
     },
     {
         background: '#f6f7fa',
-        backgroundInner: 'linear-gradient(145deg, #dddee1, #ffffff)',
+        backgroundOuter: 'linear-gradient(145deg, #dddee1, #ffffff)',
         shadows: '22px 22px 49px #a2a3a5, -22px -22px 49px #ffffff',
-        shadowsHovered: 'inset 22px 22px 49px #a2a3a5, inset -22px -22px 49px #ffffff' ,
+        shadowsHovered: 'inset 22px 22px 49px #a2a3a5, inset -22px -22px 49px #ffffff',
+        innerShadows: '11px 11px 23px #a2a3a5, -11px -11px 23px #ffffff',
         color: '#ff9605',
         hoveredAltBackground: '#ff9605',
         hoveredColor: '#f6f7fa',
         backgroundAltInner: 'linear-gradient(145deg, #ffa105, #e68705)',
         shadowsAlt: '22px 22px 49px #a86303, -22px -22px 49px #ffc907',
-        shadowsHoveredAlt: 'inset 22px 22px 49px #a86303, inset -22px -22px 49px #ffc907' ,
+        shadowsHoveredAlt: 'inset 22px 22px 49px #a86303, inset -22px -22px 49px #ffc907',
     },
     {
         background: '#ff9605',
-        backgroundInner: 'linear-gradient(145deg, #ffa105, #e68705)',
+        backgroundOuter: 'linear-gradient(145deg, #ffa105, #e68705)',
         shadows: '22px 22px 49px #a86303, -22px -22px 49px #ffc907',
-        shadowsHovered: 'inset 22px 22px 49px #a86303, inset -22px -22px 49px #ffc907' ,
+        shadowsHovered: 'inset 22px 22px 49px #a86303, inset -22px -22px 49px #ffc907',
+        innerShadows: '11px 11px 23px #a86303, -11px -11px 23px #ffc907',
         color: '#f6f7fa',
         hoveredAltBackground: '#f6f7fa',
         hoveredColor: '#ff9605',
         backgroundAltInner: 'linear-gradient(145deg, #dddee1, #ffffff)',
         shadowsAlt: '22px 22px 49px #a2a3a5, -22px -22px 49px #ffffff',
-        shadowsHoveredAlt: 'inset 22px 22px 49px #a2a3a5, inset -22px -22px 49px #ffffff' ,
+        shadowsHoveredAlt: 'inset 22px 22px 49px #a2a3a5, inset -22px -22px 49px #ffffff',
     }
 ];
 
 export type NeumorphColorsType = {
     background: string,
-    backgroundInner: string,
+    backgroundOuter: string,
     shadows: string,
-    shadowsHovered: string ,
+    shadowsHovered: string,
+    innerShadows: string
     color: string,
     hoveredAltBackground: string,
     hoveredColor: string,
     backgroundAltInner: string,
     shadowsAlt: string,
-    shadowsHoveredAlt: string ,
+    shadowsHoveredAlt: string,
 };
-
-const Coloras = styled(animated.div)`
-background-image: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-background-image: linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%);
-background-image: linear-gradient(120deg, #f093fb 0%, #f5576c 100%);
-background-image: linear-gradient(-225deg, #E3FDF5 0%, #FFE6FA 100%);
-background-image: linear-gradient(135deg, #5ee7df 0%, #b490ca 100%);
-background-image: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%);
-background-image: linear-gradient(135deg, #ebc0fd 0%, #d9ded8 100%);
-background-image: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
-background-image: linear-gradient(135deg, #96fbc4 0%, #f9f586 100%);
-background-image: linear-gradient(-225deg, #FFFEFF 0%, #D7FFFE 100%);
-background-image: linear-gradient(135deg, #fff1eb 0%, #ace0f9 100%);
-background-image: linear-gradient(135deg, #c1dfc4 0%, #deecdd 100%);
-background-image:linear-gradient(-20deg, #ddd6f3 0%, #faaca8 100%);
-`;
 
 const SingleListWrapper = styled(animated.div)`
   position: relative;
@@ -104,52 +74,45 @@ const SingleListWrapper = styled(animated.div)`
   transform-origin: 50% 100%;
   backface-visibility: hidden;
   overflow: visible;
-  padding: 20px;
+  padding: 25px;
   &:hover {
       z-index: 5;
   }
 `;
 
-const SingleListBottomLayer = styled(animated.div)<{index: number }>`
+const SingleListBottomLayer = styled(animated.div)<{ index: number, editable: string | undefined }>`
   border-radius: 30px;
-  background-clip: content-box;
-  background: ${props => neumorphColors[props.index].background};
-  box-shadow: ${props => neumorphColors[props.index].shadows}
-`;
-
-const SingleList = styled(animated.div)<{ editable: string | undefined }>`
-  padding: 15px;
-  transform-style: preserve-3d;
+  padding: 25px;
+  background: ${props => neumorphColors[props.index].backgroundOuter};
   position: relative;
-  width: 100%;
-  height: 100%;
-  font-size: 10px;
-  border-radius: 4px;
-  &:after{
-      content: '';
+  &:before {
+      opacity: 0;
+      border-radius: 30px;
+      content: "";
       position: absolute;
       top: 0;
+      z-index: -1;
+      bottom: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
+      right: 0;
+      box-shadow: ${props => neumorphColors[props.index].shadows};
+      transition: 0.3s cubic-bezier(0.25, 0, 0, 1);
+  }:
+  &:hover::before {
+      opacity: 1;
   };
+  &:hover {
+    background: gray;
+  }
   ${props => props.editable &&
-    `&:hover ${ButtonWrapper},  ${ButtonWrapper}:focus-within{
-       width:10rem;
-       height:10rem;
-    }`
-}
-`;
-
-const ListInnerLayer = styled(animated.div)`
-  transform-style: preserve-3d;
-  position: relative;
-  z-index: 3;
-  padding: 5px;
-`;
-
-const TasksLayer = styled(animated.div)`
-  padding: 0 5px
+    `&:hover ${ButtonWrapper},  ${ButtonWrapper}:focus-within
+    {
+       width: 90px;
+       height: 90px;
+       opacity: 1;
+       transition: opacity .6s cubic-bezier(0.25, 0, 0, 1);
+    };`
+};
 `;
 
 type PropsType = {
@@ -249,9 +212,9 @@ const TodoList: React.FC<PropsType> = ({
         rotateX: 0,
     }));
 
-    /*const bind = useHover(({hovering}) => {
+    const bind = useHover(({hovering}) => {
         if (hovering) {
-            setSpring({
+            /*setSpring({
                 z: 60,
                 taskZ: 60,
                 scale: 1.5,
@@ -259,22 +222,22 @@ const TodoList: React.FC<PropsType> = ({
                 innerRotZ: -23,
                 tasksRotZ: -22,
                 rotateX: -10,
-            });
-            dispatch(actions.setBackground(backgroundImage))
+            });*/
+            dispatch(actions.setBackground(colorScheme.background))
         }
         if (!hovering) {
-            setSpring({
-                z: 0,
-                taskZ: 0,
-                scale: 1,
-                innerZ: 0,
-                innerRotZ: 0,
-                tasksRotZ: 0,
-                rotateX: 0,
-            });
-            dispatch(actions.setBackground(`linear-gradient(135deg, #D7E1EC 0%, #FFFFFF 100%)`))
+            /* setSpring({
+                 z: 0,
+                 taskZ: 0,
+                 scale: 1,
+                 innerZ: 0,
+                 innerRotZ: 0,
+                 tasksRotZ: 0,
+                 rotateX: 0,
+             });*/
+            dispatch(actions.setBackground('#FFFFFF'))
         }
-    });*/
+    });
 
     const [isTitleEditable, setTitleEditMode] = useState<boolean>(false);
     const switchTitleMode = () => {
@@ -282,20 +245,15 @@ const TodoList: React.FC<PropsType> = ({
     };
     console.log(`${listTitle} ${id} render`)
     return (
-        <SingleListWrapper /*{...!editable && {...bind()}} */ ref={ref}>
-            <SingleListBottomLayer index={index % neumorphColors.length}>
-                <SingleList style={{z}} editable={editable && !focusedStatus ? 'true' : undefined}>
-                    <ContextButtons colors={colorScheme} deleteTodoList={deleteTodoList}
-                                    addTask={addTask} editList={switchTitleMode}/>
-                    <ListInnerLayer style={{translateZ: innerZ, rotateZ: innerRotZ, background: colorScheme.background}}>
-                        <TasksLayer style={{translateZ: taskZ, scale, rotateZ: tasksRotZ, rotateX}}>
-                            <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable}
-                                           switchTitleMode={switchTitleMode}/>
-                            <TodoListTasks todoListId={id} tasks={tasks} setHeight={setHeight}/>
-                        </TasksLayer>
-                    </ListInnerLayer>
-                    {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}
-                </SingleList>
+        <SingleListWrapper {...bind()} ref={ref}>
+            <SingleListBottomLayer index={index % neumorphColors.length}
+                                   editable={editable && !focusedStatus ? 'true' : undefined}>
+                <ContextButtons colors={colorScheme} deleteTodoList={deleteTodoList}
+                                addTask={addTask} editList={switchTitleMode}/>
+                <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable}
+                               switchTitleMode={switchTitleMode} colors={colorScheme}/>
+                <TodoListTasks todoListId={id} tasks={tasks} setHeight={setHeight} colors={colorScheme}/>
+                {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}
             </SingleListBottomLayer>
         </SingleListWrapper>
     );

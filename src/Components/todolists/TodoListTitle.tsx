@@ -4,29 +4,44 @@ import styled from "styled-components/macro";
 import {useDispatch} from "react-redux";
 import {actions} from "../../redux/reducer";
 import {animated, useSpring} from "react-spring";
+import {NeumorphColorsType} from "./TodoList";
 
-const ListTitle = styled(animated.div)`
+const ListTitle = styled(animated.div)<{background: string, color: string, shadows: string}>`
   font-family: 'DINNextLTPro-Bold';
+  background-color: ${props => props.background};
+  color: ${props => props.color};
+  position: relative;
   font-size: 25px;
   text-align: center;
-  padding: 10px;
-  margin: 0 auto;
+  padding: 15px 10px;
+  margin: 0 auto 10px auto;
   width: 100%;
-  border-radius: 4px;
+  border-radius: 10px;
   outline: none;
   display: inline-block;
   overflow-wrap: break-word;
   -webkit-line-break: after-white-space;
+  &:before {
+      border-radius: 10px;
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      box-shadow: ${props => props.shadows};
+  }
 `;
 
 type PropsType = {
     listTitle: string,
     id: string,
     switchTitleMode: () => void,
-    isTitleEditable: boolean
+    isTitleEditable: boolean,
+    colors: NeumorphColorsType
 };
 
-const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable, switchTitleMode}) => {
+const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable, switchTitleMode, colors}) => {
 
     const dispatch = useDispatch();
 
@@ -62,14 +77,16 @@ const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable, swi
 
     const editModeAnimation = useSpring({
         scale: isTitleEditable ? 1.3 : 1.0,
-        backgroundColor: isTitleEditable ? 'rgba(202, 106, 154, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-        color : isTitleEditable ? '#ffffff' : '#ca6a9a'
+        /*backgroundColor: isTitleEditable ? 'rgba(202, 106, 154, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+        color : isTitleEditable ? '#ffffff' : '#ca6a9a'*/
     });
 
     return (
         <ListTitle contentEditable={isTitleEditable} ref={ref} style={editModeAnimation}
                    onInput={e => onChangeHandler(e)} onKeyPress={e => onKeyPressHandler(e)}
-                   onBlur={onBlurHandler}/>
+                   onBlur={onBlurHandler}
+                   background={colors.background}
+                   color={colors.color} shadows={colors.innerShadows}/>
     );
 }
 

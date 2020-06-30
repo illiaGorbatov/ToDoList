@@ -10,9 +10,9 @@ import {useDrag} from "react-use-gesture";
 import {swap} from "../../hooks/swap";
 import isEqual from "react-fast-compare";
 import ReactResizeDetector from 'react-resize-detector';
+import {config} from "@fortawesome/fontawesome-svg-core";
 
 const AllLists = styled(animated.div)<{ height: number }>`
-  background-color: rgba(255, 255, 255, 0.5) ;
   position: relative;
   transform-style: preserve-3d;
   width: 70vw;
@@ -244,6 +244,20 @@ const TodoListsContainer: React.FC = () => {
         x: 0,
         y: 0
     });
+    const bounds = useRef<{left: number, right: number, top: number, bottom: number}>({
+        left: 0, right: 0, top: 0, bottom: 0
+    });
+
+    const getBounds = () => {
+        const left = gridItems.current.length !== 0 ? - gridItems.current[draggedList.current].x - 25 : 0;
+        const right = gridItems.current.length !== 0 ? width - gridItems.current[draggedList.current].rightX + 25 : 0;
+        const top = gridItems.current.length !== 0 ? - gridItems.current[draggedList.current].y - 25: 0;
+        const bottom = gridItems.current.length !== 0 ?
+            Math.max(...heights.current) - gridItems.current[draggedList.current].botY + 25 : 0;
+        console.log(left, right, top, bottom)
+        return {left, right, top, bottom}
+    }
+
     const gesture = useDrag(({
                                  args: [index], down, movement: [x, y],
                                  active, first
@@ -280,10 +294,15 @@ const TodoListsContainer: React.FC = () => {
                 dispatch(actions.swapTodoLists(newOrder))
             })();
         }
-    }, {filterTaps: true});
+    }, {
+        filterTaps: true,
+        bounds: getBounds(),
+        rubberband: true
+    });
     console.log('wrapRender')
 
     return (
+        // @ts-ignore
         <ReactResizeDetector handleWidth onResize={onResize} refreshMode="debounce" targetRef={measuredRef}>
             {() => <AllLists height={(Math.max(...heights.current) || 0)} style={wrapperAnimation} ref={measuredRef}>
                 {todoLists.length !== 0 && todoLists.map((list, i) =>

@@ -7,27 +7,28 @@ import {NeumorphColorsType} from "./TodoList";
 export const ButtonWrapper = styled.div`
     z-index: 0;
     position: absolute;
-    top: 1.25rem;
-    left: 1.25rem;
+    top: 15px;
+    left: 15px;
     border-radius: 100%;
-    width: 0rem;
-    height: 0rem;
+    width: 0;
+    height: 0;
+    opacity: 0;
     transform: translate(-50%, -50%);
-    transition: .25s cubic-bezier(0.25, 0, 0, 1);
-    overflow: hidden;
+    transition: opacity .6s cubic-bezier(0.25, 0, 0, 1), width 0s linear .6s, height 0s linear .6s;
 `;
 
 const Button = styled.div<{ background: NeumorphColorsType }>`
     display: grid;
     place-items: center;
     position: absolute;
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 40px;
+    height: 40px;
     border-radius: 100%;
     cursor: pointer;
     font-size: 20px;
     background: ${props => props.background.background};
     color: ${props => props.background.color};
+    box-shadow: ${props => props.background.shadows};;
     transform: translate(-50%, -50%);
     transition: .25s cubic-bezier(0.25, 0, 0, 1);
     &:hover {
@@ -37,16 +38,16 @@ const Button = styled.div<{ background: NeumorphColorsType }>`
     &:first-child:nth-last-child(3),
         &:first-child:nth-last-child(3) ~ * {
             &:nth-child(1) {
-                left:50%;
-                top:15.625%;
+                left: 50px;
+                top: 0;
             }
             &:nth-child(2) {
-                left:25%;
-                top:25%;
+                left: 0;
+                top: 0;
             }
             &:nth-child(3) {
-                left:15.625%;
-                top:50%;
+                left: 0;
+                top: 50px;
             }
         }
 `;

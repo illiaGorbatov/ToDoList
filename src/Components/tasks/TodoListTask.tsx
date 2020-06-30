@@ -8,28 +8,40 @@ import TaskButtons, {TaskButtonWrapper} from "./TaskButtons";
 import {validate} from "../../hooks/validate";
 import {animated, useSpring} from "react-spring";
 import TaskCheckbox from "./TaskCheckbox";
+import {NeumorphColorsType} from "../todolists/TodoList";
 
 const TaskWrapper = styled(animated.div)<{ editable: string | undefined}>`
     position: relative;
+    padding: 10px 0;
     text-align: left;
-    z-index: 5;
     ${props => props.editable &&
-    `&:hover ${TaskButtonWrapper},  ${TaskButtonWrapper}:focus-within{
+    `&:hover ${TaskButtonWrapper},  ${TaskButtonWrapper}:focus-within {
            width: 4rem;
            height: 4rem;
-        }`
+     }`
 }
 `;
 
-const TaskBackground = styled(animated.div)`
-    padding: 10px 0;
-    background-clip: content-box;
-    background-color: rgba(255, 255, 255, 0.8);
+const TaskBackground = styled(animated.div)<{background: string, color: string, shadows: string}>`
+    padding: 15px 0;
+    background-color: ${props => props.background};
+    color: ${props => props.color};
     display: flex;
     position: relative;
-    border-radius: 4px;
-    overflow: hidden;
+    border-radius: 10px;
     cursor: grab;
+    z-index: 5;
+    &:before {
+      border-radius: 10px;
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: -1;
+      box-shadow: ${props => props.shadows};
+    };
 `;
 
 const TaskText = styled.div`
@@ -44,11 +56,12 @@ const TaskText = styled.div`
 
 
 type PropsType = {
-    task: TaskType;
-    todoListId: string;
+    task: TaskType,
+    todoListId: string,
+    colors: NeumorphColorsType
 };
 
-const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId}) => {
+const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId, colors}) => {
     const dispatch = useDispatch();
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const focusedStatus = useSelector((state: AppStateType) => state.todoList.focusedStatus, shallowEqual);
@@ -102,8 +115,8 @@ const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId}) => {
     //animation
     const editModeAnimation = useSpring({
         scale: isTaskEditable || task.editStatus ? 1.3 : 1.0,
-        backgroundColor: isTaskEditable || task.editStatus ? 'rgba(202, 106, 154, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-        color: isTaskEditable || task.editStatus ? '#ffffff' : '#ca6a9a',
+        /*backgroundColor: isTaskEditable || task.editStatus ? 'rgba(202, 106, 154, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+        color: isTaskEditable || task.editStatus ? '#ffffff' : '#ca6a9a',*/
     });
 
     const priority = task.priority === 0 ? 'Low' : 1 ? 'Middle' : 2 ?
@@ -112,7 +125,8 @@ const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId}) => {
     return (
         <TaskWrapper editable={editable && !focusedStatus ? 'true' : undefined}>
             <TaskButtons editTask={editTask} deleteTask={deleteTask}/>
-            <TaskBackground style={editModeAnimation}>
+            <TaskBackground style={editModeAnimation} background={colors.background}
+                            color={colors.color} shadows={colors.innerShadows}>
                 <TaskCheckbox task={task} changeDoneStatus={changeDoneStatus} editable={editable}/>
                 <TaskText contentEditable={isTaskEditable || task.editStatus}
                           onKeyPress={e => onKeyPressHandler(e)}

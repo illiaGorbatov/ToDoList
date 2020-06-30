@@ -21,10 +21,10 @@ const AnimatedBackground:React.FC = () => {
     const backgroundImage = useSelector((store: AppStateType) => store.todoList.backgroundImage, shallowEqual);
 
     const [animateBackground, setBackground] = useSpring(() => ({
-        backgroundImage: `${backgroundImage}`
+        background: `${backgroundImage}`
     }));
     useEffect(() => {
-        setBackground({backgroundImage: `${backgroundImage}`})
+        setBackground({background: `${backgroundImage}`})
     }, [backgroundImage])
 
     return <Background style={animateBackground}/>
