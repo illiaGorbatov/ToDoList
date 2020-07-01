@@ -575,7 +575,6 @@ export const submitAllChanges = (): ThunkType =>
         }
         if (newListsId.length !== 0 || newTasksId.length !== 0) {
             dispatch(actions.setTodoLists(todoListsWithNewId))
-            console.log('ids swapped')
         }
 
         //swap all items
@@ -641,10 +640,16 @@ export const submitAllChanges = (): ThunkType =>
                 } else return undefined
             })() : undefined;
 
+            console.log(currentListsStateOnServer,
+                todoListsWithNewId.find(item => item.id === currentListsStateOnServer![0].todoListId)!
+                    .tasks.map(item => item.id),
+                todoListsWithNewId.find(item => item.id === currentListsStateOnServer![0].todoListId)!
+                    .tasks.map(item => item.title))
+
             let requiredOrder: Array<{ todoListId: string, tasks: Array<string> }> = [];
             if (currentListsStateOnServer && tasksOrder.length !== 0) {
                 currentListsStateOnServer.map(item => {
-                    const isItemInOrder = tasksOrder.findIndex(currItem =>
+                    const isItemInOrder = tasksOrder.find(currItem =>
                         currItem.todoListId === item.todoListId);
                     if (isItemInOrder) return;
                     const orderFromCurrentState = todoListsWithNewId.find(list => item.todoListId === list.id)!;
@@ -671,31 +676,36 @@ export const submitAllChanges = (): ThunkType =>
                     .find(list => list.todoListId === item.todoListId) : undefined;
                 const curItem = todoListsWithNewId.find(list => list.id === item.todoListId)!;
                 if (itemWithUpdatedState) return itemWithUpdatedState;
-                return {todoListId: curItem.id,tasks: curItem.tasks.map(task => task.id)}
+                return {todoListId: curItem.id, tasks: curItem.tasks.map(task => task.id)}
             });
 
+            /*console.log(requiredOrder, currentOrder)*/
+
             const swapOrder: Array<{ todoListId: string, swappedId: string, beforeSwappedId: string | null }> = [];
-            requiredOrder.map(newOrder => {
-                let currOrder = currentOrder.find(item => item.todoListId === newOrder.todoListId)!;
-                newOrder.tasks.map((newTaskPosId, index) => {
-                    if (newTaskPosId !== currOrder.tasks[index]) {
+            requiredOrder.forEach(newOrder => {
+                let currOrder = currentOrder.find(item => item.todoListId === newOrder.todoListId)!.tasks;
+                console.log('it', newOrder, currOrder)
+                newOrder.tasks.forEach((newTaskPosId, index) => {
+                    if (newTaskPosId !== currOrder[index]) {
+                        console.log('here', newTaskPosId, currOrder[index], index, currOrder)
                         if (index === 0) swapOrder.push({
                             todoListId: newOrder.todoListId, swappedId: newTaskPosId, beforeSwappedId: null
                         });
                         else swapOrder.push({
                             todoListId: newOrder.todoListId, swappedId: newTaskPosId,
-                            beforeSwappedId: currOrder.tasks[index - 1]
+                            beforeSwappedId: currOrder[index - 1]
                         });
-                        const oldIndex = currOrder.tasks.findIndex(taskId => taskId === newTaskPosId)
-                        currOrder.tasks = movePos(currOrder.tasks, oldIndex, index)
+                        const oldIndex = currOrder.findIndex(taskId => taskId === newTaskPosId)
+                        currOrder = movePos(currOrder, oldIndex, index)
                     }
                 })
             });
-            swapOrder.map(item => {
-                api.swapTasks(item.todoListId, item.swappedId, item.beforeSwappedId).then(data => {
+            console.log(swapOrder)
+            for (let item of swapOrder) {
+                await api.swapTasks(item.todoListId, item.swappedId, item.beforeSwappedId).then(data => {
                     if (data.resultCode !== 0) dispatch(actions.setError())
                 })
-            })
+            }
         }
 
         dispatch(actions.disableEditMode())

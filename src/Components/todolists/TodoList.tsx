@@ -80,12 +80,12 @@ const SingleListWrapper = styled(animated.div)`
   }
 `;
 
-const SingleListBottomLayer = styled(animated.div)<{ index: number, editable: string | undefined }>`
+const SingleListBottomLayer = styled(animated.div)<{ background: string, shadow: string, editable: string | undefined }>`
   border-radius: 30px;
   transform-style: preserve-3d;
-  transform-origin: 50% 50%;
+  transform-origin: 50% 100%;
   padding: 25px;
-  background: ${props => neumorphColors[props.index].backgroundOuter};
+  background: ${props => props.background};
   position: relative;
   &:before {
       opacity: 0;
@@ -97,7 +97,7 @@ const SingleListBottomLayer = styled(animated.div)<{ index: number, editable: st
       bottom: 0;
       left: 0;
       right: 0;
-      box-shadow: ${props => neumorphColors[props.index].shadows};
+      box-shadow: ${props => props.shadow};
       transition: 0.3s cubic-bezier(0.25, 0, 0, 1);
   };
   &:hover::before {
@@ -221,7 +221,7 @@ const TodoList: React.FC<PropsType> = ({
     console.log(`${listTitle} ${id} render`)
     return (
         <SingleListWrapper {...!editable && {...bind()}} ref={ref}>
-            <SingleListBottomLayer index={index % neumorphColors.length} style={spring}
+            <SingleListBottomLayer shadow={colorScheme.shadows} background={colorScheme.backgroundOuter} style={spring}
                                    editable={editable && !focusedStatus ? 'true' : undefined}>
                 <ContextButtons colors={colorScheme} deleteTodoList={deleteTodoList}
                                 addTask={addTask} editList={switchTitleMode}/>

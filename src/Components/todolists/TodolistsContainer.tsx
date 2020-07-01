@@ -6,7 +6,7 @@ import {AppStateType} from "../../redux/store";
 import styled from "styled-components/macro";
 import {useMedia} from "../../hooks/useMedia";
 import {animated, useSpring, useSprings} from "react-spring";
-import {useDrag, useHover} from "react-use-gesture";
+import {useDrag, useHover, useScroll} from "react-use-gesture";
 import {swap} from "../../hooks/swap";
 import isEqual from "react-fast-compare";
 import ReactResizeDetector from 'react-resize-detector';
@@ -161,8 +161,8 @@ const TodoListsContainer: React.FC = () => {
             const currentSettings = gridItems.current.find((list) => list.index === i)!;
             return {x: currentSettings.x, y: currentSettings.y}
         })
-    }, [width, columns]);
-    console.log(width, columns)
+    }, [width, columns, currWidth]);
+    console.log(width, columns, currWidth)
 
     //changing id of added lists
     useEffect(() => {
@@ -361,6 +361,9 @@ const TodoListsContainer: React.FC = () => {
         }
 
     })*/
+    const scroll = useScroll(({}) => {
+
+    })
 
     return (
         // @ts-ignore
