@@ -71,7 +71,7 @@ export type NeumorphColorsType = {
 const SingleListWrapper = styled(animated.div)`
   position: relative;
   transform-style: preserve-3d;
-  transform-origin: 50% 100%;
+  transform-origin: 50% 50%;
   backface-visibility: hidden;
   overflow: visible;
   padding: 25px;
@@ -82,6 +82,8 @@ const SingleListWrapper = styled(animated.div)`
 
 const SingleListBottomLayer = styled(animated.div)<{ index: number, editable: string | undefined }>`
   border-radius: 30px;
+  transform-style: preserve-3d;
+  transform-origin: 50% 50%;
   padding: 25px;
   background: ${props => neumorphColors[props.index].backgroundOuter};
   position: relative;
@@ -110,6 +112,11 @@ const SingleListBottomLayer = styled(animated.div)<{ index: number, editable: st
        transition: opacity .6s cubic-bezier(0.25, 0, 0, 1);
     };`
   }
+`;
+
+const DebDiv = styled.div`
+    position: absolute;
+    top: -100px
 `;
 
 type PropsType = {
@@ -179,59 +186,29 @@ const TodoList: React.FC<PropsType> = ({
             return t.status === 2;
         }
     }) : [];
-    //editModeAnimation
-    useEffect(() => {
-        if (editable) setSpring({
-            to: async animate => {
-                await animate({z: 60, taskZ: 60, innerZ: 60});
-                await animate({delay: 1500, z: 0, taskZ: 0, innerZ: 0});
-            }
-        });
-        if (!editable) setSpring({
-            to: async animate => {
-                await animate({z: 60, taskZ: 60, innerZ: 60});
-                await animate({delay: 1500, z: 0, taskZ: 0, innerZ: 0});
-            }
-        });
-    }, [editable])
-
 
     //hover Effect
-    const [{
-        z, taskZ, innerZ, scale, innerRotZ, tasksRotZ, rotateX
-    }, setSpring] = useSpring(() => ({
-        z: 0,
-        taskZ: 0,
-        innerZ: 0,
-        scale: 1,
-        innerRotZ: 0,
-        tasksRotZ: 0,
+    const [spring, setSpring] = useSpring(() => ({
         rotateX: 0,
+        rotateY: 0,
+        rotateZ: 0
     }));
 
     const bind = useHover(({hovering}) => {
         if (hovering) {
-            /*setSpring({
-                z: 60,
-                taskZ: 60,
-                scale: 1.5,
-                innerZ: 60,
-                innerRotZ: -23,
-                tasksRotZ: -22,
-                rotateX: -10,
-            });*/
+            setSpring({
+                rotateX: -45,
+                rotateY: 30,
+                rotateZ: -30
+            });
             dispatch(actions.setBackground(colorScheme.background))
         }
         if (!hovering) {
-            /* setSpring({
-                 z: 0,
-                 taskZ: 0,
-                 scale: 1,
-                 innerZ: 0,
-                 innerRotZ: 0,
-                 tasksRotZ: 0,
+             setSpring({
                  rotateX: 0,
-             });*/
+                 rotateY: 0,
+                 rotateZ: 0
+             });
             dispatch(actions.setBackground('#FFFFFF'))
         }
     });
@@ -240,10 +217,11 @@ const TodoList: React.FC<PropsType> = ({
     const switchTitleMode = () => {
         setTitleEditMode(!isTitleEditable)
     };
+
     console.log(`${listTitle} ${id} render`)
     return (
-        <SingleListWrapper {...bind()} ref={ref}>
-            <SingleListBottomLayer index={index % neumorphColors.length}
+        <SingleListWrapper {...!editable && {...bind()}} ref={ref}>
+            <SingleListBottomLayer index={index % neumorphColors.length} style={spring}
                                    editable={editable && !focusedStatus ? 'true' : undefined}>
                 <ContextButtons colors={colorScheme} deleteTodoList={deleteTodoList}
                                 addTask={addTask} editList={switchTitleMode}/>

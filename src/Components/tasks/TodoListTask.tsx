@@ -24,13 +24,13 @@ const TaskWrapper = styled(animated.div)<{ editable: string | undefined}>`
 
 const TaskBackground = styled(animated.div)<{background: string, color: string, shadows: string}>`
     padding: 15px 0;
-    background-color: ${props => props.background};
+    background: ${props => props.background};
     color: ${props => props.color};
     display: flex;
     position: relative;
     border-radius: 10px;
     cursor: grab;
-    z-index: 5;
+    z-index: 2;
     &:before {
       border-radius: 10px;
       content: "";
@@ -115,8 +115,6 @@ const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId, colors}
     //animation
     const editModeAnimation = useSpring({
         scale: isTaskEditable || task.editStatus ? 1.3 : 1.0,
-        /*backgroundColor: isTaskEditable || task.editStatus ? 'rgba(202, 106, 154, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-        color: isTaskEditable || task.editStatus ? '#ffffff' : '#ca6a9a',*/
     });
 
     const priority = task.priority === 0 ? 'Low' : 1 ? 'Middle' : 2 ?

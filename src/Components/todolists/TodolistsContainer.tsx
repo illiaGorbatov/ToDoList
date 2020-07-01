@@ -6,11 +6,53 @@ import {AppStateType} from "../../redux/store";
 import styled from "styled-components/macro";
 import {useMedia} from "../../hooks/useMedia";
 import {animated, useSpring, useSprings} from "react-spring";
-import {useDrag} from "react-use-gesture";
+import {useDrag, useHover} from "react-use-gesture";
 import {swap} from "../../hooks/swap";
 import isEqual from "react-fast-compare";
 import ReactResizeDetector from 'react-resize-detector';
 import {config} from "@fortawesome/fontawesome-svg-core";
+
+const neumorphColors = [
+    {
+        background: '#1a0b3b',
+        backgroundOuter: 'linear-gradient(145deg, #170a35, #1c0c3f)',
+        shadows: '27px 27px 54px #0a0418, -27px -27px 54px #2a125e',
+        shadowsHovered: 'inset 27px 27px 54px #0a0418, inset -27px -27px 54px #2a125e',
+        innerShadows: '11px 11px 23px #0a0418, -11px -11px 23px #2a125e',
+        color: 'rgb(108, 98, 131)',
+        hoveredAltBackground: '#ff9605',
+        hoveredColor: 'rgb(30, 13, 55)',
+        backgroundAltInner: 'linear-gradient(145deg, #ffa105, #e68705)',
+        shadowsAlt: '22px 22px 49px #a86303, -22px -22px 49px #ffc907',
+        shadowsHoveredAlt: 'inset 22px 22px 49px #a86303, inset -22px -22px 49px #ffc907',
+    },
+    {
+        background: '#f6f7fa',
+        backgroundOuter: 'linear-gradient(145deg, #dddee1, #ffffff)',
+        shadows: '22px 22px 49px #a2a3a5, -22px -22px 49px #ffffff',
+        shadowsHovered: 'inset 22px 22px 49px #a2a3a5, inset -22px -22px 49px #ffffff',
+        innerShadows: '11px 11px 23px #a2a3a5, -11px -11px 23px #ffffff',
+        color: '#ff9605',
+        hoveredAltBackground: '#ff9605',
+        hoveredColor: '#f6f7fa',
+        backgroundAltInner: 'linear-gradient(145deg, #ffa105, #e68705)',
+        shadowsAlt: '22px 22px 49px #a86303, -22px -22px 49px #ffc907',
+        shadowsHoveredAlt: 'inset 22px 22px 49px #a86303, inset -22px -22px 49px #ffc907',
+    },
+    {
+        background: '#ff9605',
+        backgroundOuter: 'linear-gradient(145deg, #ffa105, #e68705)',
+        shadows: '22px 22px 49px #a86303, -22px -22px 49px #ffc907',
+        shadowsHovered: 'inset 22px 22px 49px #a86303, inset -22px -22px 49px #ffc907',
+        innerShadows: '11px 11px 23px #a86303, -11px -11px 23px #ffc907',
+        color: '#f6f7fa',
+        hoveredAltBackground: '#f6f7fa',
+        hoveredColor: '#ff9605',
+        backgroundAltInner: 'linear-gradient(145deg, #dddee1, #ffffff)',
+        shadowsAlt: '22px 22px 49px #a2a3a5, -22px -22px 49px #ffffff',
+        shadowsHoveredAlt: 'inset 22px 22px 49px #a2a3a5, inset -22px -22px 49px #ffffff',
+    }
+];
 
 const AllLists = styled(animated.div)<{ height: number }>`
   position: relative;
@@ -108,18 +150,19 @@ const TodoListsContainer: React.FC = () => {
     //resize logic
     const [width, setWidth] = useState<number>(0);
     const onResize = (width: number) => setWidth(width);
+    const columns = useMemo(() => {
+        return width >= 2000 ? 5 : width >= 1400 ? 4 : width >= 900 ? 3 : width >= 600 ? 2 : 1
+    }, [width]);
+    const currWidth = useMemo(() => width / columns, [width]);
+    const measuredRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         recalculateMeasures();
         setSprings(i => {
             const currentSettings = gridItems.current.find((list) => list.index === i)!;
             return {x: currentSettings.x, y: currentSettings.y}
         })
-    }, [width]);
-    const columns = useMemo(() => {
-        return width >= 2000 ? 5 : width >= 1400 ? 4 : width >= 900 ? 3 : width >= 600 ? 2 : 1
-    }, [width]);
-    const currWidth = useMemo(() => width / columns, [width]);
-    const measuredRef = useRef<HTMLDivElement>(null)
+    }, [width, columns]);
+    console.log(width, columns)
 
     //changing id of added lists
     useEffect(() => {
@@ -303,15 +346,32 @@ const TodoListsContainer: React.FC = () => {
     }, {filterTaps: true});
     console.log('wrapRender')
 
+    const findListIndex = (id: string) => {
+        const item = gridItems.current.find(item => item.id === id)
+        return item ? item.index : 0;
+    }
+
+    //hover animation logic
+
+    /*const hoverBind = useHover(({args: [index],hovering, first}) => {
+        if (first) {
+            const
+            dispatch(actions.setBackground(neumorphColors[index].background));
+
+        }
+
+    })*/
+
     return (
         // @ts-ignore
         <ReactResizeDetector handleWidth onResize={onResize} refreshMode="debounce" targetRef={measuredRef}>
             {() => <AllLists height={(Math.max(...heights.current) || 0)} style={wrapperAnimation} ref={measuredRef}>
                 {todoLists.length !== 0 && todoLists.map((list, i) =>
-                    <TodoListContainer style={springs[i]}
+                    <TodoListContainer style={springs[i]} /*{...hoverBind((todoLists.length-i)%3)}*/
                                        {...editable && {...gesture(i)}}
                                        width={currWidth} key={list.id}>
-                        <TodoList id={list.id} index={i} deleteList={deleteList} setNewHeights={setNewHeights}
+                        <TodoList id={list.id} index={todoLists.length-i}
+                                  deleteList={deleteList} setNewHeights={setNewHeights}
                                   listTitle={list.title} listTasks={list.tasks}
                                   newTasksId={collectedNewTasksId.find(item => item.todoListId === list.id)}/>
                     </TodoListContainer>)}

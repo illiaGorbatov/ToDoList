@@ -5,6 +5,7 @@ import {AppStateType, InferActionTypes} from "./store";
 import cloneDeep from "lodash-es/cloneDeep";
 import {movePos} from "../hooks/movePos";
 import {swap} from "../hooks/swap";
+import {findIndex} from "lodash-es";
 
 type InitialStateType = {
     todoLists: Array<TodoListType>,
@@ -613,8 +614,8 @@ export const submitAllChanges = (): ThunkType =>
                     return item
                 })
             }
+            let addedTasksInLists: Array<{ todoListId: string, tasks: Array<string> }> = [];
             const currentListsStateOnServer = newTasksId.length > 1 ? await (async () => {
-                let addedTasksInLists: Array<{ todoListId: string, tasks: Array<string> }> = [];
                 newTasksId.map(task => {
                     const list = addedTasksInLists.length !== 0 ?
                         addedTasksInLists.find(list => list.todoListId === task.todoListId) : undefined;
@@ -640,49 +641,53 @@ export const submitAllChanges = (): ThunkType =>
                 } else return undefined
             })() : undefined;
 
-            let currentOrder: Array<{ todoListId: string, newTasksOrder: Array<string> }> = [];
-            /*const order = tasksOrder.length !== 0 && addedTasks.length <= 1 ? tasksOrder
-                : tasksOrder.length === 0 && addedTasks.length > 1 ? (() => {
-                let requiredOrder: Array<{ todoListId: string, newTasksOrder: Array<string> }> = [];
-                newTasksId.map(task => {
-                    const isListIdAdded = requiredOrder.length !== 0 ?
-                        requiredOrder.find(item => item.todoListId === task.todoListId) : undefined;
-                    if (isListIdAdded) return;
-                    requiredOrder = requiredOrder.map(item => item.todoListId !== task.todoListId ? item
-                        : {...item, newTasksOrder: [...item.newTasksOrder,]});
-                    requiredOrder.push({todoListId: task.todoListId, newTasksOrder: []})
-                })
-            })();*/
-            if (addedTasks.length !== 0) {
-                const getCurrentOrder = tasksOrder.map(async (item) => {
-                    return await api.restoreTasks(item.todoListId).then(res => {
-                        const newTasksOrder = res.items.map(item => item.id);
-                        currentOrder.push({todoListId: item.todoListId, newTasksOrder})
-                    });
+            let requiredOrder: Array<{ todoListId: string, tasks: Array<string> }> = [];
+            if (currentListsStateOnServer && tasksOrder.length !== 0) {
+                currentListsStateOnServer.map(item => {
+                    const isItemInOrder = tasksOrder.findIndex(currItem =>
+                        currItem.todoListId === item.todoListId);
+                    if (isItemInOrder) return;
+                    const orderFromCurrentState = todoListsWithNewId.find(list => item.todoListId === list.id)!;
+                    requiredOrder.push({
+                        todoListId: orderFromCurrentState.id,
+                        tasks: orderFromCurrentState.tasks.map(task => task.id)
+                    })
                 });
-                await Promise.all(getCurrentOrder)
-            } else todoListsWithNewId.map(list => {
-                const isThisListTasksSwapped = tasksOrder.find(item => item.todoListId === list.id);
-                if (isThisListTasksSwapped) {
-                    const newTasksOrder = list.tasks.map(task => task.id)
-                    currentOrder.push({todoListId: list.id, newTasksOrder})
-                }
+                tasksOrder.map(item => requiredOrder.push({todoListId: item.todoListId, tasks: item.newTasksOrder}))
+            } else if (!currentListsStateOnServer && tasksOrder.length !== 0) {
+                requiredOrder = tasksOrder.map(item => ({todoListId: item.todoListId, tasks: item.newTasksOrder}));
+            } else if (currentListsStateOnServer && tasksOrder.length === 0) {
+                currentListsStateOnServer.map(item => {
+                    const orderFromCurrentState = todoListsWithNewId.find(list => item.todoListId === list.id)!;
+                    requiredOrder.push({
+                        todoListId: orderFromCurrentState.id,
+                        tasks: orderFromCurrentState.tasks.map(task => task.id)
+                    })
+                });
+            }
+
+            const currentOrder = requiredOrder.map(item => {
+                const itemWithUpdatedState = currentListsStateOnServer ? currentListsStateOnServer
+                    .find(list => list.todoListId === item.todoListId) : undefined;
+                const curItem = todoListsWithNewId.find(list => list.id === item.todoListId)!;
+                if (itemWithUpdatedState) return itemWithUpdatedState;
+                return {todoListId: curItem.id,tasks: curItem.tasks.map(task => task.id)}
             });
 
             const swapOrder: Array<{ todoListId: string, swappedId: string, beforeSwappedId: string | null }> = [];
-            tasksOrder.map(newOrder => {
+            requiredOrder.map(newOrder => {
                 let currOrder = currentOrder.find(item => item.todoListId === newOrder.todoListId)!;
-                newOrder.newTasksOrder.map((newTaskPosId, index) => {
-                    if (newTaskPosId !== currOrder.newTasksOrder[index]) {
+                newOrder.tasks.map((newTaskPosId, index) => {
+                    if (newTaskPosId !== currOrder.tasks[index]) {
                         if (index === 0) swapOrder.push({
                             todoListId: newOrder.todoListId, swappedId: newTaskPosId, beforeSwappedId: null
                         });
                         else swapOrder.push({
                             todoListId: newOrder.todoListId, swappedId: newTaskPosId,
-                            beforeSwappedId: currOrder.newTasksOrder[index - 1]
+                            beforeSwappedId: currOrder.tasks[index - 1]
                         });
-                        const oldIndex = currOrder.newTasksOrder.findIndex(taskId => taskId === newTaskPosId)
-                        currOrder.newTasksOrder = movePos(currOrder.newTasksOrder, oldIndex, index)
+                        const oldIndex = currOrder.tasks.findIndex(taskId => taskId === newTaskPosId)
+                        currOrder.tasks = movePos(currOrder.tasks, oldIndex, index)
                     }
                 })
             });
