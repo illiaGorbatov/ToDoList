@@ -4,13 +4,11 @@ import {actions, getStateFromServer} from "../../redux/reducer";
 import {shallowEqual, useDispatch, useSelector} from 'react-redux';
 import {AppStateType} from "../../redux/store";
 import styled from "styled-components/macro";
-import {useMedia} from "../../hooks/useMedia";
 import {animated, useSpring, useSprings} from "react-spring";
-import {useDrag, useHover, useScroll} from "react-use-gesture";
+import {useDrag, useWheel} from "react-use-gesture";
 import {swap} from "../../hooks/swap";
 import isEqual from "react-fast-compare";
 import ReactResizeDetector from 'react-resize-detector';
-import {config} from "@fortawesome/fontawesome-svg-core";
 
 const neumorphColors = [
     {
@@ -67,6 +65,13 @@ const TodoListContainer = styled(animated.div)<{ width: number }>`
   width: ${props => props.width}px;
 `;
 
+const ScrollableWrapper = styled(animated.div)`
+  position: absolute;
+  transform-style: preserve-3d;
+  width: 100%;
+  height: 100%;
+`;
+
 type GridItemsType = {
     x: number,
     y: number,
@@ -108,9 +113,9 @@ const TodoListsContainer: React.FC = () => {
 
     const wrapperAnimation = useSpring({
         x: editable ? '30vw' : '0vw',
-        y: editable ? 0 : 275,
         rotateX: editable ? 0 : 45,
         rotateZ: editable ? 0 : 45,
+        y: editable ? 0 : 275,
         config: {tension: 100, friction: 60, clamp: true},
     });
 
@@ -138,7 +143,7 @@ const TodoListsContainer: React.FC = () => {
         temporaryValue.current = temporaryValue.current.filter(item => item.id !== id)
     }, []);
 
-    const heights = useRef<Array<number>>([]);
+    const height = useRef<number>(0);
     const gridItems = useRef<Array<GridItemsType>>([]);
 
     const [springs, setSprings] = useSprings(todoLists.length, i => {
@@ -162,7 +167,7 @@ const TodoListsContainer: React.FC = () => {
             return {x: currentSettings.x, y: currentSettings.y}
         })
     }, [width, columns, currWidth]);
-    console.log(width, columns, currWidth)
+    console.log(width, columns, currWidth);
 
     //changing id of added lists
     useEffect(() => {
@@ -211,7 +216,7 @@ const TodoListsContainer: React.FC = () => {
                     const index = i;
                     return {x, y, height, id: item.id, botY, rightX, horizontalCenter, verticalCenter, index}
                 });
-            heights.current = newHeights;
+            height.current = Math.max(...newHeights);
         }
         if (gridItems.current.length < todoLists.length) {
             gridItems.current = [{
@@ -254,7 +259,7 @@ const TodoListsContainer: React.FC = () => {
             const verticalCenter = y + height / 2;
             return {...item, x, y, rightX, botY, horizontalCenter, verticalCenter, height}
         });
-        heights.current = newHeights;
+        height.current = Math.max(...newHeights);
     }
 
     const reorder = (oldIndex: number, newIndex: number) => {
@@ -269,7 +274,7 @@ const TodoListsContainer: React.FC = () => {
             const verticalCenter = y + item.height / 2;
             return {...item, x, y, rightX, botY, horizontalCenter, verticalCenter}
         });
-        heights.current = newHeights;
+        height.current = Math.max(...newHeights);
     }
 
     const calculatePositions = (x: number, y: number) => {
@@ -302,15 +307,16 @@ const TodoListsContainer: React.FC = () => {
         const right = gridItems.current.length !== 0 ? width - gridItems.current[draggedList.current].rightX + 25 : 0;
         const top = gridItems.current.length !== 0 ? -gridItems.current[draggedList.current].y - 25 : 0;
         const bottom = gridItems.current.length !== 0 ?
-            Math.max(...heights.current) - gridItems.current[draggedList.current].botY + 25 : 0;
+            height.current - gridItems.current[draggedList.current].botY + 25 : 0;
         console.log(left, right, top, bottom)
         return {left, right, top, bottom}
     }
 
     const gesture = useDrag(({
                                  args: [index], down, movement: [x, y],
-                                 active, first
+                                 active, first, event
                              }) => {
+        event?.stopPropagation();
         draggedList.current = gridItems.current.findIndex(item => item.index === index);
         if (first) {
             currItem.current = gridItems.current[draggedList.current];
@@ -344,7 +350,6 @@ const TodoListsContainer: React.FC = () => {
             })();
         }
     }, {filterTaps: true});
-    console.log('wrapRender')
 
     const findListIndex = (id: string) => {
         const item = gridItems.current.find(item => item.id === id)
@@ -361,23 +366,42 @@ const TodoListsContainer: React.FC = () => {
         }
 
     })*/
-    const scroll = useScroll(({}) => {
+    const [scrollingAnimation, setScroll] = useSpring(() => ({
+        y: 0
+    }));
+    const scrolledY = useRef<number>(0);
 
-    })
+    useWheel(({delta: [, y], active, event}) => {
+        const border = height.current -window.innerHeight;
+        console.log(y, border, scrolledY.current);
+        scrolledY.current = scrolledY.current - y > -border && scrolledY.current - y < 0 ? scrolledY.current - y
+            : scrolledY.current;
+        setScroll({
+            y: scrolledY.current
+        });
+    }, {domTarget: window, eventOptions: {capture: true}});
+    useDrag(({offset: [, y], active, event}) => {
+        setScroll({
+            y: scrolledY.current + y
+        });
+        scrolledY.current = y
+    }, {domTarget: window, filterTaps: true})
 
     return (
         // @ts-ignore
         <ReactResizeDetector handleWidth onResize={onResize} refreshMode="debounce" targetRef={measuredRef}>
-            {() => <AllLists height={(Math.max(...heights.current) || 0)} style={wrapperAnimation} ref={measuredRef}>
-                {todoLists.length !== 0 && todoLists.map((list, i) =>
-                    <TodoListContainer style={springs[i]} /*{...hoverBind((todoLists.length-i)%3)}*/
-                                       {...editable && {...gesture(i)}}
-                                       width={currWidth} key={list.id}>
-                        <TodoList id={list.id} index={todoLists.length-i}
-                                  deleteList={deleteList} setNewHeights={setNewHeights}
-                                  listTitle={list.title} listTasks={list.tasks}
-                                  newTasksId={collectedNewTasksId.find(item => item.todoListId === list.id)}/>
-                    </TodoListContainer>)}
+            {() => <AllLists height={height.current} style={wrapperAnimation} ref={measuredRef}>
+                <ScrollableWrapper style={scrollingAnimation}>
+                    {todoLists.length !== 0 && todoLists.map((list, i) =>
+                        <TodoListContainer style={springs[i]} /*{...hoverBind((todoLists.length-i)%3)}*/
+                                           {...editable && {...gesture(i)}}
+                                           width={currWidth} key={list.id}>
+                            <TodoList id={list.id} index={todoLists.length - i}
+                                      deleteList={deleteList} setNewHeights={setNewHeights}
+                                      listTitle={list.title} listTasks={list.tasks}
+                                      newTasksId={collectedNewTasksId.find(item => item.todoListId === list.id)}/>
+                        </TodoListContainer>)}
+                </ScrollableWrapper>
                 <div style={{
                     position: "absolute",
                     top: 0,
