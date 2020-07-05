@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import TodoList from "./TodoList";
-import {actions, getStateFromServer} from "../../redux/reducer";
+import {actions, getStateFromServer} from "../../redux/functionalReducer";
 import {shallowEqual, useDispatch, useSelector} from 'react-redux';
 import {AppStateType} from "../../redux/store";
 import styled from "styled-components/macro";
@@ -9,54 +9,13 @@ import {useDrag, useWheel} from "react-use-gesture";
 import {swap} from "../../hooks/swap";
 import isEqual from "react-fast-compare";
 import ReactResizeDetector from 'react-resize-detector';
+import {neumorphColors} from "../neumorphColors";
+import ClosingButton from "./CloseButton";
 
-const neumorphColors = [
-    {
-        background: '#1a0b3b',
-        backgroundOuter: 'linear-gradient(145deg, #170a35, #1c0c3f)',
-        shadows: '27px 27px 54px #0a0418, -27px -27px 54px #2a125e',
-        shadowsHovered: 'inset 27px 27px 54px #0a0418, inset -27px -27px 54px #2a125e',
-        innerShadows: '11px 11px 23px #0a0418, -11px -11px 23px #2a125e',
-        color: 'rgb(108, 98, 131)',
-        hoveredAltBackground: '#ff9605',
-        hoveredColor: 'rgb(30, 13, 55)',
-        backgroundAltInner: 'linear-gradient(145deg, #ffa105, #e68705)',
-        shadowsAlt: '22px 22px 49px #a86303, -22px -22px 49px #ffc907',
-        shadowsHoveredAlt: 'inset 22px 22px 49px #a86303, inset -22px -22px 49px #ffc907',
-    },
-    {
-        background: '#f6f7fa',
-        backgroundOuter: 'linear-gradient(145deg, #dddee1, #ffffff)',
-        shadows: '22px 22px 49px #a2a3a5, -22px -22px 49px #ffffff',
-        shadowsHovered: 'inset 22px 22px 49px #a2a3a5, inset -22px -22px 49px #ffffff',
-        innerShadows: '11px 11px 23px #a2a3a5, -11px -11px 23px #ffffff',
-        color: '#ff9605',
-        hoveredAltBackground: '#ff9605',
-        hoveredColor: '#f6f7fa',
-        backgroundAltInner: 'linear-gradient(145deg, #ffa105, #e68705)',
-        shadowsAlt: '22px 22px 49px #a86303, -22px -22px 49px #ffc907',
-        shadowsHoveredAlt: 'inset 22px 22px 49px #a86303, inset -22px -22px 49px #ffc907',
-    },
-    {
-        background: '#ff9605',
-        backgroundOuter: 'linear-gradient(145deg, #ffa105, #e68705)',
-        shadows: '22px 22px 49px #a86303, -22px -22px 49px #ffc907',
-        shadowsHovered: 'inset 22px 22px 49px #a86303, inset -22px -22px 49px #ffc907',
-        innerShadows: '11px 11px 23px #a86303, -11px -11px 23px #ffc907',
-        color: '#f6f7fa',
-        hoveredAltBackground: '#f6f7fa',
-        hoveredColor: '#ff9605',
-        backgroundAltInner: 'linear-gradient(145deg, #dddee1, #ffffff)',
-        shadowsAlt: '22px 22px 49px #a2a3a5, -22px -22px 49px #ffffff',
-        shadowsHoveredAlt: 'inset 22px 22px 49px #a2a3a5, inset -22px -22px 49px #ffffff',
-    }
-];
-
-const AllLists = styled(animated.div)<{ height: number }>`
+const AllLists = styled(animated.div)`
   position: relative;
   transform-style: preserve-3d;
   width: 70vw;
-  height: ${props => props.height}px;
 `;
 
 const TodoListContainer = styled(animated.div)<{ width: number }>` 
@@ -65,11 +24,17 @@ const TodoListContainer = styled(animated.div)<{ width: number }>`
   width: ${props => props.width}px;
 `;
 
+const CloseButtonAnimatedWrapper = styled(animated.div)`
+  position: absolute;
+  border-radius: 100%;
+`;
+
 const ScrollableWrapper = styled(animated.div)`
   position: absolute;
   transform-style: preserve-3d;
   width: 100%;
   height: 100%;
+  z-index: 1;
 `;
 
 type GridItemsType = {
@@ -100,24 +65,22 @@ const TodoListsContainer: React.FC = () => {
         return () => console.log('unmounting...');
     }, [])
 
-    const addTodoList = (title: string) => {
-        const id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-            .replace(/[xy]/g, (c, r) => ('x' == c ? (r = Math.random() * 16 | 0) : (r & 0x3 | 0x8)).toString(16));
-        const newList = {
-            id,
-            title,
-            tasks: []
-        }
-        dispatch(actions.addTodoList(newList));
-    };
-
-    const wrapperAnimation = useSpring({
-        x: editable ? '30vw' : '0vw',
-        rotateX: editable ? 0 : 45,
-        rotateZ: editable ? 0 : 45,
-        y: editable ? 0 : 275,
+    const [wrapperAnimation, setWrapperAnimation] = useSpring(() => ({
+        x: '0vw',
+        rotateX: 45,
+        rotateZ: 45,
+        y: 275,
+        height: 0,
         config: {tension: 100, friction: 60, clamp: true},
-    });
+    }));
+    useEffect(() => {
+        setWrapperAnimation({
+            x: editable ? '30vw' : '0vw',
+            rotateX: editable ? 0 : 45,
+            rotateZ: editable ? 0 : 45,
+            y: editable ? 0 : 275,
+        })
+    }, [editable])
 
     // child height calculation logic
     const temporaryValue = useRef<Array<{ height: number, id: string }>>([]);
@@ -147,9 +110,15 @@ const TodoListsContainer: React.FC = () => {
     const gridItems = useRef<Array<GridItemsType>>([]);
 
     const [springs, setSprings] = useSprings(todoLists.length, i => {
-        if (gridItems.current.length === 0) return {x: 0, y: 0, zIndex: 3};
+        if (gridItems.current.length === 0) return {x: 0, y: 0, zIndex: 3, opacity: 1, display: 'block'};
         const currentSettings = gridItems.current.find((list) => list.index === i);
-        return {x: currentSettings ? currentSettings.x : 0, y: currentSettings ? currentSettings.y : 0}
+        return {
+            x: currentSettings ? currentSettings.x : 0,
+            y: currentSettings ? currentSettings.y : 0,
+            opacity: 1,
+            zIndex: 3,
+            display: 'block'
+        }
     })
 
     //resize logic
@@ -163,8 +132,9 @@ const TodoListsContainer: React.FC = () => {
     useEffect(() => {
         recalculateMeasures();
         setSprings(i => {
-            const currentSettings = gridItems.current.find((list) => list.index === i)!;
-            return {x: currentSettings.x, y: currentSettings.y}
+            const currentSettings = gridItems.current.find((list) => list.index === i);
+            if (currentSettings) return {x: currentSettings.x, y: currentSettings.y};
+            return {x: 0, y: 0}
         })
     }, [width, columns, currWidth]);
     console.log(width, columns, currWidth);
@@ -217,6 +187,7 @@ const TodoListsContainer: React.FC = () => {
                     return {x, y, height, id: item.id, botY, rightX, horizontalCenter, verticalCenter, index}
                 });
             height.current = Math.max(...newHeights);
+            setWrapperAnimation({height: height.current})
         }
         if (gridItems.current.length < todoLists.length) {
             gridItems.current = [{
@@ -260,6 +231,7 @@ const TodoListsContainer: React.FC = () => {
             return {...item, x, y, rightX, botY, horizontalCenter, verticalCenter, height}
         });
         height.current = Math.max(...newHeights);
+        setWrapperAnimation({height: height.current})
     }
 
     const reorder = (oldIndex: number, newIndex: number) => {
@@ -275,6 +247,8 @@ const TodoListsContainer: React.FC = () => {
             return {...item, x, y, rightX, botY, horizontalCenter, verticalCenter}
         });
         height.current = Math.max(...newHeights);
+        setWrapperAnimation({height: height.current})
+        ;
     }
 
     const calculatePositions = (x: number, y: number) => {
@@ -351,28 +325,14 @@ const TodoListsContainer: React.FC = () => {
         }
     }, {filterTaps: true});
 
-    const findListIndex = (id: string) => {
-        const item = gridItems.current.find(item => item.id === id)
-        return item ? item.index : 0;
-    }
-
-    //hover animation logic
-
-    /*const hoverBind = useHover(({args: [index],hovering, first}) => {
-        if (first) {
-            const
-            dispatch(actions.setBackground(neumorphColors[index].background));
-
-        }
-
-    })*/
+    //scroll logic
     const [scrollingAnimation, setScroll] = useSpring(() => ({
         y: 0
     }));
     const scrolledY = useRef<number>(0);
 
     useWheel(({delta: [, y], active, event}) => {
-        const border = height.current -window.innerHeight;
+        const border = height.current - window.innerHeight;
         console.log(y, border, scrolledY.current);
         scrolledY.current = scrolledY.current - y > -border && scrolledY.current - y < 0 ? scrolledY.current - y
             : scrolledY.current;
@@ -385,34 +345,105 @@ const TodoListsContainer: React.FC = () => {
             y: scrolledY.current + y
         });
         scrolledY.current = y
-    }, {domTarget: window, filterTaps: true})
+    }, {domTarget: window, filterTaps: true});
+
+    //close look animations logic
+    const [closeButtonAnimation, setCloseButtonAnimation] = useSpring(() => ({
+        x: 0,
+        y: 0,
+        opacity: 0,
+        display: 'none'
+    }));
+    const indexOfLookedList = useRef<number>(0);
+
+    const closeLook = async (index: number) => {
+        if (editable) return;
+        indexOfLookedList.current = index;
+        const currItem = gridItems.current.find(item => item.index === index)!;
+        await setSprings(i => {
+            if (i !== index) return {
+                to: async animate => {
+                    await animate({opacity: 0});
+                    await animate({display: 'none'})
+                }
+            };
+            return {to: false}
+        });
+        setWrapperAnimation({
+            height: window.innerHeight,
+            x: '0vw',
+            rotateX: 0,
+            rotateZ: 0,
+            y: 0,
+        });
+        await setSprings(i => {
+            if (i !== index) return {to: false};
+            return {
+                y: window.innerHeight / 2 - currItem.height / 2,
+                x: width / 2 - (width / columns) / 2
+            }
+        });
+        setCloseButtonAnimation({
+            to: async animate => {
+                await animate({
+                    y: window.innerHeight / 2 - currItem.height / 2 - 60,
+                    x: width / 2 + (width / columns) / 2 + 20,
+                    display: 'block',
+                    immediate: true
+                });
+                await animate({opacity: 1, immediate: false})
+            }
+        })
+    };
+
+    const returnFromCloseLook = async () => {
+        setCloseButtonAnimation({
+            to: async animate => {
+                await animate({opacity: 0});
+                await animate({display: 'none'})
+            }
+        });
+        setSprings(i => {
+            if (i !== indexOfLookedList.current) return {to: false};
+            const currItem = gridItems.current.find(item => item.index === i)!
+            return {x: currItem.x, y: currItem.y}
+        });
+        await setWrapperAnimation({
+            x: '0vw',
+            rotateX: 45,
+            rotateZ: 45,
+            y: 275,
+            height: height.current,
+            immediate: (prop) => prop === 'height'
+        });
+        dispatch(actions.setCurrentPaletteIndex(null));
+        setSprings(i => {
+            if (i !== indexOfLookedList.current) return {opacity: 1, display: 'block'};
+            return {to: false}
+        });
+    }
 
     return (
         // @ts-ignore
         <ReactResizeDetector handleWidth onResize={onResize} refreshMode="debounce" targetRef={measuredRef}>
-            {() => <AllLists height={height.current} style={wrapperAnimation} ref={measuredRef}>
-                <ScrollableWrapper style={scrollingAnimation}>
-                    {todoLists.length !== 0 && todoLists.map((list, i) =>
-                        <TodoListContainer style={springs[i]} /*{...hoverBind((todoLists.length-i)%3)}*/
-                                           {...editable && {...gesture(i)}}
-                                           width={currWidth} key={list.id}>
-                            <TodoList id={list.id} index={todoLists.length - i}
-                                      deleteList={deleteList} setNewHeights={setNewHeights}
-                                      listTitle={list.title} listTasks={list.tasks}
-                                      newTasksId={collectedNewTasksId.find(item => item.todoListId === list.id)}/>
-                        </TodoListContainer>)}
-                </ScrollableWrapper>
-                <div style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    zIndex: 20,
-                    backgroundColor: 'black',
-                    width: 10,
-                    height: 10
-                }}
-                     onClick={() => addTodoList('www')}/>
-            </AllLists>}
+            {() =>
+                <AllLists style={wrapperAnimation} ref={measuredRef}>
+                    <ScrollableWrapper style={scrollingAnimation}>
+                        <CloseButtonAnimatedWrapper style={closeButtonAnimation} onClick={returnFromCloseLook}>
+                            <ClosingButton/>
+                        </CloseButtonAnimatedWrapper>
+                        {todoLists.length !== 0 && todoLists.map((list, i) =>
+                            <TodoListContainer style={springs[i]} /*{...hoverBind((todoLists.length-i)%3)}*/
+                                               {...editable && {...gesture(i)}}
+                                               onClick={() => closeLook(i)}
+                                               width={currWidth} key={list.id}>
+                                <TodoList id={list.id} colorPalette={(todoLists.length - i) % neumorphColors.length}
+                                          deleteList={deleteList} setNewHeights={setNewHeights}
+                                          listTitle={list.title} listTasks={list.tasks}
+                                          newTasksId={collectedNewTasksId.find(item => item.todoListId === list.id)}/>
+                            </TodoListContainer>)}
+                    </ScrollableWrapper>
+                </AllLists>}
         </ReactResizeDetector>
     );
 }

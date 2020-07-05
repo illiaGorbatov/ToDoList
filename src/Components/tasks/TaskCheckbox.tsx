@@ -3,6 +3,7 @@ import {TaskType} from "../../redux/entities";
 import styled from "styled-components/macro";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {animated, useSpring, useSprings} from "react-spring";
+import {NeumorphColorsType} from "../neumorphColors";
 
 const CheckboxWrapper = styled(animated.div)`
     width: 31px;
@@ -73,9 +74,10 @@ type PropsType = {
     task: TaskType;
     changeDoneStatus: (e: React.ChangeEvent<HTMLInputElement>) => void,
     editable: boolean,
+    palette: NeumorphColorsType
 }
 
-const TaskCheckbox: React.FC<PropsType> = ({task, changeDoneStatus, editable}) => {
+const TaskCheckbox: React.FC<PropsType> = ({task, changeDoneStatus, editable, palette}) => {
 
     const animation = useSpring({
         left: editable ? -32 : 0,

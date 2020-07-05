@@ -25,3 +25,24 @@
   font-weight: 300;
   font-style: normal;
 }
+
+@font-face {
+  font-family: 'NunitoSans-ExtraLight';
+  src: url('fonts/NunitoSans-ExtraLight.ttf') format('ttf');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'NunitoSans-Light';
+  src: url('fonts/NunitoSans-Light.ttf') format('ttf');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'NunitoSans-Regular';
+  src: url('fonts/NunitoSans-Regular.ttf') format('ttf');
+  font-weight: 300;
+  font-style: normal;
+}

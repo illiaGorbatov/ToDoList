@@ -6,6 +6,7 @@ import cloneDeep from "lodash-es/cloneDeep";
 import {movePos} from "../hooks/movePos";
 import {swap} from "../hooks/swap";
 import {findIndex} from "lodash-es";
+import {neumorphColors} from "../Components/neumorphColors";
 
 type InitialStateType = {
     todoLists: Array<TodoListType>,
@@ -16,8 +17,8 @@ type InitialStateType = {
     newListsId: Array<{ oldId: string, newId: string }>,
     newTasksId: Array<{ oldId: string, newId: string, todoListId: string }>,
     errorsNumber: number,
-    backgroundImage: string,
-    focusedStatus: boolean
+    focusedStatus: boolean,
+    currentPaletteIndex: number | null
 };
 
 const initialState = {
@@ -29,18 +30,18 @@ const initialState = {
     newListsId: [],
     newTasksId: [],
     errorsNumber: 0,
-    backgroundImage: '#FFFFFF',
-    focusedStatus: false
+    focusedStatus: false,
+    currentPaletteIndex: null
 };
 
-const reducer = (state: InitialStateType = initialState, action: ActionsTypes): InitialStateType => {
+const functionalReducer = (state: InitialStateType = initialState, action: ActionsTypes): InitialStateType => {
     switch (action.type) {
-        case 'reducer/SET_TODO_LISTS':
+        case 'functionalReducer/SET_TODO_LISTS':
             return {
                 ...state,
                 todoLists: action.todoLists
             };
-        case 'reducer/SET_TASKS':
+        case 'functionalReducer/SET_TASKS':
             return {
                 ...state,
                 todoLists: state.todoLists.map(list => {
@@ -49,12 +50,12 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                     } else return list
                 }),
             };
-        case 'reducer/ADD_TODO_LIST':
+        case 'functionalReducer/ADD_TODO_LIST':
             return {
                 ...state,
                 todoLists: [action.newTodoList, ...state.todoLists],
             };
-        case 'reducer/ADD_TASK':
+        case 'functionalReducer/ADD_TASK':
             return {
                 ...state,
                 todoLists: state.todoLists.map(list => {
@@ -63,7 +64,7 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                     } else return list
                 }),
             };
-        case 'reducer/CHANGE_TASK':
+        case 'functionalReducer/CHANGE_TASK':
             return {
                 ...state,
                 todoLists: state.todoLists.map(list => {
@@ -78,12 +79,12 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                     } else return list
                 }),
             };
-        case 'reducer/DELETE_TODO_LIST':
+        case 'functionalReducer/DELETE_TODO_LIST':
             return {
                 ...state,
                 todoLists: state.todoLists.filter(list => list.id !== action.todoListId),
             };
-        case 'reducer/DELETE_TASK':
+        case 'functionalReducer/DELETE_TASK':
             return {
                 ...state,
                 todoLists: state.todoLists.map(list => {
@@ -92,7 +93,7 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                     } else return list
                 }),
             };
-        case 'reducer/CHANGE_TODO_LIST_TITLE':
+        case 'functionalReducer/CHANGE_TODO_LIST_TITLE':
             return {
                 ...state,
                 todoLists: state.todoLists.map(list => {
@@ -101,12 +102,12 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                     } else return list
                 }),
             };
-        case "reducer/SWAP_TODO_LISTS":
+        case "functionalReducer/SWAP_TODO_LISTS":
             return {
                 ...state,
                 listsOrder: action.newListsOrder
             }
-        case "reducer/SWAP_TASKS":
+        case "functionalReducer/SWAP_TASKS":
             const index = state.tasksOrder.findIndex(item => item.todoListId === action.todoListId);
             const newSwappedTasks = index !== -1 ? state.tasksOrder.map((item, i) => {
                 if (i === index) return {todoListId: action.todoListId, newTasksOrder: action.newTasksOrder}
@@ -116,7 +117,7 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                 ...state,
                 tasksOrder: newSwappedTasks
             }
-        case "reducer/ENABLE_EDIT_MODE": //глянуть
+        case "functionalReducer/ENABLE_EDIT_MODE": //глянуть
             return {
                 ...state,
                 editable: true,
@@ -125,40 +126,48 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
                 errorsNumber: 0,
                 deepCopy: cloneDeep(state.todoLists)
             };
-        case "reducer/DISABLE_EDIT_MODE":
+        case "functionalReducer/DISABLE_EDIT_MODE":
             return {
                 ...state,
                 editable: false
             }
-        case "reducer/SET_ERROR":
+        case "functionalReducer/SET_ERROR":
             return {
                 ...state,
                 errorsNumber: state.errorsNumber + 1
             };
-        case "reducer/SET_BACKGROUND":
-            return {
-                ...state,
-                backgroundImage: action.background
-            };
-        case "reducer/SET_FOCUSED_STATUS":
+        case "functionalReducer/SET_FOCUSED_STATUS":
             return {
                 ...state,
                 focusedStatus: action.status
             };
-        case "reducer/SET_NEW_ID":
+        case "functionalReducer/SET_NEW_ID":
             return {
                 ...state,
                 todoLists: action.newTodoLists
             };
-        case "reducer/SET_NEW_LISTS_ID":
+        case "functionalReducer/SET_NEW_LISTS_ID":
             return {
                 ...state,
                 newListsId: action.newListsId
             }
-        case "reducer/SET_NEW_TASKS_ID":
+        case "functionalReducer/SET_NEW_TASKS_ID":
             return {
                 ...state,
                 newTasksId: action.newTasksId
+            }
+        case "functionalReducer/SET_CURRENT_PALETTE_INDEX":
+            return {
+                ...state,
+                currentPaletteIndex: action.index
+            }
+        case "functionalReducer/REJECT_ALL_CHANGES":
+            return {
+                ...state,
+                todoLists: state.deepCopy,
+                editable: false,
+                listsOrder: [],
+                tasksOrder: [],
             }
         default:
             return state;
@@ -168,38 +177,39 @@ const reducer = (state: InitialStateType = initialState, action: ActionsTypes): 
 type ActionsTypes = InferActionTypes<typeof actions>;
 
 export const actions = {
-    addTodoList: (newTodoList: TodoListType) => ({type: 'reducer/ADD_TODO_LIST', newTodoList} as const),
-    addTask: (newTask: TaskType, todoListId: string) => ({type: 'reducer/ADD_TASK', newTask, todoListId} as const),
-    changeTask: (task: TaskType) => ({type: 'reducer/CHANGE_TASK', task} as const),
-    deleteTodoList: (todoListId: string) => ({type: 'reducer/DELETE_TODO_LIST', todoListId} as const),
-    deleteTask: (todoListId: string, taskId: string) => ({type: 'reducer/DELETE_TASK', taskId, todoListId} as const),
-    restoreTodoList: (todoLists: TodoListType[]) => ({type: 'reducer/SET_TODO_LISTS', todoLists} as const),
+    addTodoList: (newTodoList: TodoListType) => ({type: 'functionalReducer/ADD_TODO_LIST', newTodoList} as const),
+    addTask: (newTask: TaskType, todoListId: string) => ({type: 'functionalReducer/ADD_TASK', newTask, todoListId} as const),
+    changeTask: (task: TaskType) => ({type: 'functionalReducer/CHANGE_TASK', task} as const),
+    deleteTodoList: (todoListId: string) => ({type: 'functionalReducer/DELETE_TODO_LIST', todoListId} as const),
+    deleteTask: (todoListId: string, taskId: string) => ({type: 'functionalReducer/DELETE_TASK', taskId, todoListId} as const),
+    restoreTodoList: (todoLists: TodoListType[]) => ({type: 'functionalReducer/SET_TODO_LISTS', todoLists} as const),
     restoreTasks: (tasks: TaskType[], todoListId: string) => ({
-        type: 'reducer/SET_TASKS',
+        type: 'functionalReducer/SET_TASKS',
         tasks,
         todoListId
     } as const),
     changeTodoListTitle: (todoListId: string, todoListTitle: string) => ({
-        type: 'reducer/CHANGE_TODO_LIST_TITLE',
+        type: 'functionalReducer/CHANGE_TODO_LIST_TITLE',
         todoListId,
         todoListTitle
     } as const),
-    enableEditMode: () => ({type: 'reducer/ENABLE_EDIT_MODE'} as const),
-    disableEditMode: () => ({type: 'reducer/DISABLE_EDIT_MODE'} as const),
-    setError: () => ({type: 'reducer/SET_ERROR'} as const),
-    setBackground: (background: string) => ({type: 'reducer/SET_BACKGROUND', background} as const),
-    setFocusedStatus: (status: boolean) => ({type: 'reducer/SET_FOCUSED_STATUS', status} as const),
+    enableEditMode: () => ({type: 'functionalReducer/ENABLE_EDIT_MODE'} as const),
+    disableEditMode: () => ({type: 'functionalReducer/DISABLE_EDIT_MODE'} as const),
+    setError: () => ({type: 'functionalReducer/SET_ERROR'} as const),
+    setFocusedStatus: (status: boolean) => ({type: 'functionalReducer/SET_FOCUSED_STATUS', status} as const),
     swapTasks: (todoListId: string, newTasksOrder: Array<string>) => ({
-        type: 'reducer/SWAP_TASKS', todoListId, newTasksOrder
+        type: 'functionalReducer/SWAP_TASKS', todoListId, newTasksOrder
     } as const),
-    swapTodoLists: (newListsOrder: Array<string>) => ({type: 'reducer/SWAP_TODO_LISTS', newListsOrder} as const),
-    setTodoLists: (newTodoLists: Array<TodoListType>) => ({type: 'reducer/SET_NEW_ID', newTodoLists} as const),
+    swapTodoLists: (newListsOrder: Array<string>) => ({type: 'functionalReducer/SWAP_TODO_LISTS', newListsOrder} as const),
+    setTodoLists: (newTodoLists: Array<TodoListType>) => ({type: 'functionalReducer/SET_NEW_ID', newTodoLists} as const),
     setNewListsId: (newListsId: Array<{ oldId: string, newId: string }>) => ({
-        type: 'reducer/SET_NEW_LISTS_ID', newListsId
+        type: 'functionalReducer/SET_NEW_LISTS_ID', newListsId
     } as const),
     setNewTasksId: (newTasksId: Array<{ oldId: string, newId: string, todoListId: string }>) => ({
-        type: 'reducer/SET_NEW_TASKS_ID', newTasksId
+        type: 'functionalReducer/SET_NEW_TASKS_ID', newTasksId
     } as const),
+    setCurrentPaletteIndex: (index: number | null) => ({type: 'functionalReducer/SET_CURRENT_PALETTE_INDEX', index} as const),
+    rejectAllChanges: () => ({type: 'functionalReducer/REJECT_ALL_CHANGES'} as const)
 }
 
 type ThunkType = ThunkAction<void, AppStateType, unknown, ActionsTypes>;
@@ -711,4 +721,4 @@ export const submitAllChanges = (): ThunkType =>
         dispatch(actions.disableEditMode())
     };
 
-export default reducer
+export default functionalReducer

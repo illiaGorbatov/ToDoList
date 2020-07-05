@@ -6,6 +6,7 @@ import {animated, useSpring} from "react-spring";
 import {library} from "@fortawesome/fontawesome-svg-core";
 import {far} from "@fortawesome/free-regular-svg-icons";
 import {fas} from "@fortawesome/free-solid-svg-icons";
+import {neumorphColors} from "./neumorphColors";
 
 library.add(far, fas);
 
@@ -18,14 +19,15 @@ const Background = styled(animated.div)`
 
 const AnimatedBackground:React.FC = () => {
 
-    const backgroundImage = useSelector((store: AppStateType) => store.todoList.backgroundImage, shallowEqual);
+    const currentPalette = useSelector((store: AppStateType) => store.todoList.currentPaletteIndex, shallowEqual);
 
     const [animateBackground, setBackground] = useSpring(() => ({
-        background: `${backgroundImage}`
+        background: '#FFFFFF'
     }));
     useEffect(() => {
-        setBackground({background: `${backgroundImage}`})
-    }, [backgroundImage])
+        setBackground({background: `${typeof currentPalette === 'number' ? 
+                neumorphColors[currentPalette].background : '#FFFFFF'}`})
+    }, [currentPalette])
 
     return <Background style={animateBackground}/>
 }

@@ -6,14 +6,13 @@ import {useDrag} from "react-use-gesture";
 import styled from "styled-components/macro";
 import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import {AppStateType} from "../../redux/store";
-import {actions} from "../../redux/reducer";
+import {actions} from "../../redux/functionalReducer";
 import {movePos} from "../../hooks/movePos";
 import isEqual from "react-fast-compare";
-import {NeumorphColorsType} from "../todolists/TodoList";
+import { NeumorphColorsType } from "../neumorphColors";
 
 const TasksWrapper = styled.div`
   user-select: none;
-  font-family: 'Raleway', sans-serif;
   position: relative;
 `;
 
@@ -30,11 +29,11 @@ type PropsType = {
     todoListId: string;
     tasks: TaskType[],
     setHeight: () => void,
-    colors: NeumorphColorsType
+    palette: NeumorphColorsType
     newTasksId: {todoListId: string, tasks: Array<{oldId: string, newId: string, todoListId: string}>} | undefined
 };
 
-const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, colors,
+const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palette,
                                                 newTasksId}) => {
 
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
@@ -47,7 +46,7 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, color
                     scale: 1.2,
                     zIndex: 2,
                     y: (initialY.current[index] || 0) + (y || 0),
-                    immediate: (n: string): boolean => n === 'zIndex' || n === 'y',
+                    immediate: (prop: string): boolean => prop === 'zIndex' || prop === 'y',
                 }
                 : {
                     scale: 1,
@@ -161,14 +160,15 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, color
                 })();
             } else setSprings(settings(down, originalIndex, y))
         }
-    }, {eventOptions: {capture: true}, filterTaps: true});
+    }, {filterTaps: true});
     console.log(`${todoListId} tasks render`)
+
     return (
         <TasksWrapper>
             {tasks.map((task, i) =>
                 <TaskWrapper {...editable && {...gesture(i)}} key={i} style={springs[i]}
                              ref={elementsRef.current[i]}>
-                    <TodoListTask task={task} todoListId={todoListId} colors={colors}/>
+                    <TodoListTask task={task} todoListId={todoListId} palette={palette}/>
                 </TaskWrapper>)}
         </TasksWrapper>
     );

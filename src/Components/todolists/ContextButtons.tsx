@@ -2,7 +2,7 @@ import React from "react";
 import '../../App.css';
 import styled from "styled-components/macro";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {NeumorphColorsType} from "./TodoList";
+import { NeumorphColorsType } from "../neumorphColors";
 
 export const ButtonWrapper = styled.div`
     z-index: 0;
@@ -17,7 +17,7 @@ export const ButtonWrapper = styled.div`
     transition: opacity .6s cubic-bezier(0.25, 0, 0, 1), width 0s linear .6s, height 0s linear .6s;
 `;
 
-const Button = styled.div<{ background: NeumorphColorsType }>`
+export const Button = styled.div<{ styles: NeumorphColorsType }>`
     display: grid;
     place-items: center;
     position: absolute;
@@ -26,14 +26,14 @@ const Button = styled.div<{ background: NeumorphColorsType }>`
     border-radius: 100%;
     cursor: pointer;
     font-size: 20px;
-    background: ${props => props.background.background};
-    color: ${props => props.background.color};
-    box-shadow: ${props => props.background.shadows};;
+    background: ${props => props.styles.background};
+    color: ${props => props.styles.color};
+    box-shadow: ${props => props.styles.innerShadows};;
     transform: translate(-50%, -50%);
     transition: .25s cubic-bezier(0.25, 0, 0, 1);
     &:hover {
-        background-color: ${props => props.background.hoveredAltBackground};
-        color: ${props => props.background.hoveredColor};
+        background-color: ${props => props.styles.hoveredAltBackground};
+        color: ${props => props.styles.hoveredColor};
     }
     &:first-child:nth-last-child(3),
         &:first-child:nth-last-child(3) ~ * {
@@ -63,15 +63,15 @@ const ContextButtons: React.FC<PropsType> = ({colors, deleteTodoList, addTask, e
 
     return (
         <ButtonWrapper>
-            <Button background={colors}
+            <Button styles={colors}
                     onClick={addTask}>
                 <FontAwesomeIcon icon="plus"/>
             </Button>
-            <Button background={colors}
+            <Button styles={colors}
                     onClick={deleteTodoList}>
                 <FontAwesomeIcon icon="trash"/>
             </Button>
-            <Button background={colors}
+            <Button styles={colors}
                     onClick={editList}>
                 <FontAwesomeIcon icon="edit"/>
             </Button>

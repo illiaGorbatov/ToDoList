@@ -1,12 +1,11 @@
-import React, {useEffect, useLayoutEffect, useRef, useState} from "react";
+import React from "react";
 import styled, {createGlobalStyle} from "styled-components/macro";
 import {library} from "@fortawesome/fontawesome-svg-core";
 import {far} from "@fortawesome/free-regular-svg-icons";
 import {fas} from "@fortawesome/free-solid-svg-icons";
-import BigText from "./BigText";
-import EditButton from "./SwitchEditStateButton";
 import TodoListsContainer from "./todolists/TodolistsContainer";
 import AnimatedBackground from "./AnimatedBackground";
+import MainInterface from "./MainInterface";
 
 library.add(far, fas);
 
@@ -45,8 +44,7 @@ const App: React.FC = () => {
             <GlobalStyles/>
             <AnimatedBackground/>
             <Wrapper>
-                <BigText/>
-                <EditButton/>
+                <MainInterface/>
                 <TodoListsContainer/>
             </Wrapper>
         </>

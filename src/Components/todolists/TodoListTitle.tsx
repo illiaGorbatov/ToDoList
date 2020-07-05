@@ -2,14 +2,13 @@ import React, {useEffect, useRef, useState} from "react";
 import '../../App.css';
 import styled from "styled-components/macro";
 import {useDispatch} from "react-redux";
-import {actions} from "../../redux/reducer";
+import {actions} from "../../redux/functionalReducer";
 import {animated, useSpring} from "react-spring";
-import {NeumorphColorsType} from "./TodoList";
+import { NeumorphColorsType } from "../neumorphColors";
 
-const ListTitle = styled(animated.div)<{background: string, color: string, shadows: string}>`
-  font-family: 'DINNextLTPro-Bold';
-  background-color: ${props => props.background};
-  color: ${props => props.color};
+const ListTitle = styled(animated.div)<{$background: string, $color: string, $shadows: string}>`
+  background-image: ${props => props.$background};
+  color: ${props => props.$color};
   position: relative;
   font-size: 25px;
   text-align: center;
@@ -29,7 +28,7 @@ const ListTitle = styled(animated.div)<{background: string, color: string, shado
       bottom: 0;
       left: 0;
       right: 0;
-      box-shadow: ${props => props.shadows};
+      box-shadow: ${props => props.$shadows};
   }
 `;
 
@@ -38,10 +37,10 @@ type PropsType = {
     id: string,
     switchTitleMode: () => void,
     isTitleEditable: boolean,
-    colors: NeumorphColorsType
+    palette: NeumorphColorsType
 };
 
-const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable, switchTitleMode, colors}) => {
+const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable, switchTitleMode, palette}) => {
 
     const dispatch = useDispatch();
 
@@ -65,7 +64,8 @@ const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable, swi
     };
 
     const onKeyPressHandler = (e: React.KeyboardEvent) => {
-        if (e.key === ("Enter" || "Esc")) {
+        if (e.key === "Enter" ) {
+            e.preventDefault();
             ref.current!.blur()
         }
     };
@@ -85,8 +85,8 @@ const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable, swi
         <ListTitle contentEditable={isTitleEditable} ref={ref} style={editModeAnimation}
                    onInput={e => onChangeHandler(e)} onKeyPress={e => onKeyPressHandler(e)}
                    onBlur={onBlurHandler}
-                   background={colors.background}
-                   color={colors.color} shadows={colors.innerShadows}/>
+                   $background={palette.backgroundOuter}
+                   $color={palette.color} $shadows={palette.shadowsFocused}/>
     );
 }
 
