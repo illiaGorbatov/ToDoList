@@ -107,12 +107,12 @@ type PropsType = {
     colorPalette: number,
     setNewHeights: (height: number, id: string) => void,
     deleteList: (id: string) => void,
-    newTasksId: { todoListId: string, tasks: Array<{ oldId: string, newId: string, todoListId: string }> } | undefined
+    /*newTasksId: { todoListId: string, tasks: Array<{ oldId: string, newId: string, todoListId: string }> } | undefined*/
 };
 
 const TodoList: React.FC<PropsType> = ({
                                            id, listTitle, listTasks, colorPalette,
-                                           setNewHeights, deleteList, newTasksId
+                                           setNewHeights, deleteList, /*newTasksId*/
                                        }) => {
 
     const dispatch = useDispatch();
@@ -205,7 +205,7 @@ const TodoList: React.FC<PropsType> = ({
                 <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable}
                                switchTitleMode={switchTitleMode} palette={neumorphColors[colorPalette]}/>
                 <TodoListTasks todoListId={id} tasks={tasks} setHeight={setHeight} palette={neumorphColors[colorPalette]}
-                               newTasksId={newTasksId}/>
+                               /*newTasksId={newTasksId}*//>
                 {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}
                 {/*<DetailsWrapper>
                     more details...

@@ -4,7 +4,9 @@ import {ThunkAction, ThunkDispatch} from "redux-thunk";
 import {AppStateType, InferActionTypes} from "./store";
 import cloneDeep from "lodash-es/cloneDeep";
 import {movePos} from "../hooks/movePos";
-import {endsWith} from "lodash-es";
+import {swap} from "../hooks/swap";
+import {findIndex} from "lodash-es";
+import {neumorphColors} from "../Components/neumorphColors";
 
 type InitialStateType = {
     todoLists: Array<TodoListType>,
@@ -16,9 +18,7 @@ type InitialStateType = {
     newTasksId: Array<{ oldId: string, newId: string, todoListId: string }>,
     errorsNumber: number,
     focusedStatus: boolean,
-    currentPaletteIndex: number | null,
-    initialLoadingState: boolean,
-    pendingState: boolean
+    currentPaletteIndex: number | null
 };
 
 const initialState = {
@@ -31,9 +31,7 @@ const initialState = {
     newTasksId: [],
     errorsNumber: 0,
     focusedStatus: false,
-    currentPaletteIndex: null,
-    initialLoadingState: true,
-    pendingState: false
+    currentPaletteIndex: null
 };
 
 const functionalReducer = (state: InitialStateType = initialState, action: ActionsTypes): InitialStateType => {
@@ -148,7 +146,7 @@ const functionalReducer = (state: InitialStateType = initialState, action: Actio
                 ...state,
                 todoLists: action.newTodoLists
             };
-        /*case "functionalReducer/SET_NEW_LISTS_ID":
+        case "functionalReducer/SET_NEW_LISTS_ID":
             return {
                 ...state,
                 newListsId: action.newListsId
@@ -157,7 +155,7 @@ const functionalReducer = (state: InitialStateType = initialState, action: Actio
             return {
                 ...state,
                 newTasksId: action.newTasksId
-            }*/
+            }
         case "functionalReducer/SET_CURRENT_PALETTE_INDEX":
             return {
                 ...state,
@@ -170,16 +168,6 @@ const functionalReducer = (state: InitialStateType = initialState, action: Actio
                 editable: false,
                 listsOrder: [],
                 tasksOrder: [],
-            }
-        case "functionalReducer/COMPLETE_INITIAL_LOADING_STATE":
-            return {
-                ...state,
-                initialLoadingState: false
-            }
-        case "functionalReducer/SET_PENDING_STATE":
-            return {
-                ...state,
-                pendingState: action.pendingState
             }
         default:
             return state;
@@ -214,16 +202,14 @@ export const actions = {
     } as const),
     swapTodoLists: (newListsOrder: Array<string>) => ({type: 'functionalReducer/SWAP_TODO_LISTS', newListsOrder} as const),
     setTodoLists: (newTodoLists: Array<TodoListType>) => ({type: 'functionalReducer/SET_NEW_ID', newTodoLists} as const),
-    /*setNewListsId: (newListsId: Array<{ oldId: string, newId: string }>) => ({
+    setNewListsId: (newListsId: Array<{ oldId: string, newId: string }>) => ({
         type: 'functionalReducer/SET_NEW_LISTS_ID', newListsId
     } as const),
     setNewTasksId: (newTasksId: Array<{ oldId: string, newId: string, todoListId: string }>) => ({
         type: 'functionalReducer/SET_NEW_TASKS_ID', newTasksId
-    } as const),*/
+    } as const),
     setCurrentPaletteIndex: (index: number | null) => ({type: 'functionalReducer/SET_CURRENT_PALETTE_INDEX', index} as const),
-    rejectAllChanges: () => ({type: 'functionalReducer/REJECT_ALL_CHANGES'} as const),
-    completeInitialLoadingState: () => ({type: 'functionalReducer/COMPLETE_INITIAL_LOADING_STATE'} as const),
-    setPendingState: (pendingState: boolean) => ({type: 'functionalReducer/SET_PENDING_STATE', pendingState} as const),
+    rejectAllChanges: () => ({type: 'functionalReducer/REJECT_ALL_CHANGES'} as const)
 }
 
 type ThunkType = ThunkAction<void, AppStateType, unknown, ActionsTypes>;
@@ -444,9 +430,6 @@ export const getStateFromServer = (): ThunkType => async (dispatch: ThunkActionT
 
 export const submitAllChanges = (): ThunkType =>
     async (dispatch: ThunkActionType, getState: () => AppStateType) => {
-
-        dispatch(actions.disableEditMode())
-
         const oldTodoLists = getState().todoList.deepCopy;
         const newTodoLists = getState().todoList.todoLists;
         let listsOrder = getState().todoList.listsOrder;
@@ -600,9 +583,9 @@ export const submitAllChanges = (): ThunkType =>
                 return {...list, tasks}
             })
         }
-        /*if (newListsId.length !== 0 || newTasksId.length !== 0) {
+        if (newListsId.length !== 0 || newTasksId.length !== 0) {
             dispatch(actions.setTodoLists(todoListsWithNewId))
-        }*/
+        }
 
         //swap all items
         if (listsOrder.length !== 0 || addedLists.length > 1) {
@@ -706,11 +689,15 @@ export const submitAllChanges = (): ThunkType =>
                 return {todoListId: curItem.id, tasks: curItem.tasks.map(task => task.id)}
             });
 
+            /*console.log(requiredOrder, currentOrder)*/
+
             const swapOrder: Array<{ todoListId: string, swappedId: string, beforeSwappedId: string | null }> = [];
             requiredOrder.forEach(newOrder => {
                 let currOrder = currentOrder.find(item => item.todoListId === newOrder.todoListId)!.tasks;
+                console.log('it', newOrder, currOrder)
                 newOrder.tasks.forEach((newTaskPosId, index) => {
                     if (newTaskPosId !== currOrder[index]) {
+                        console.log('here', newTaskPosId, currOrder[index], index, currOrder)
                         if (index === 0) swapOrder.push({
                             todoListId: newOrder.todoListId, swappedId: newTaskPosId, beforeSwappedId: null
                         });
@@ -723,34 +710,15 @@ export const submitAllChanges = (): ThunkType =>
                     }
                 })
             });
-            const groupedSwapOrder: Array<{todoListId: string, swapOrder: Array<{swappedId: string, beforeSwappedId: string | null}>}> = [];
-            swapOrder.forEach(task => {
-                const currentList = groupedSwapOrder.find(item => item.todoListId === task.todoListId);
-                if (currentList) groupedSwapOrder.map(item => item.todoListId === currentList.todoListId ?
-                    item.swapOrder.push({swappedId: task.swappedId, beforeSwappedId: task.todoListId}) : item
-                );
-                groupedSwapOrder.push({
-                    todoListId: task.todoListId,
-                    swapOrder: [{swappedId: task.swappedId, beforeSwappedId: task.beforeSwappedId}]
-                })
-            });
-            const swapOrderPending = groupedSwapOrder.map(async (item) => {
-                const consistentSwapOrder = item.swapOrder
-                for (let order of consistentSwapOrder) {
-                    await api.swapTasks(item.todoListId, order.swappedId, order.beforeSwappedId).then(data => {
-                        if (data.resultCode !== 0) dispatch(actions.setError())
-                    })
-                }
-            });
-            await Promise.all(swapOrderPending)
-           /* for (let item of swapOrder) {
+            console.log(swapOrder)
+            for (let item of swapOrder) {
                 await api.swapTasks(item.todoListId, item.swappedId, item.beforeSwappedId).then(data => {
                     if (data.resultCode !== 0) dispatch(actions.setError())
                 })
-            }*/
+            }
         }
 
-        dispatch(getStateFromServer())
+        dispatch(actions.disableEditMode())
     };
 
 export default functionalReducer

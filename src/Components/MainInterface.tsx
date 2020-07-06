@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect} from "react";
 import styled from "styled-components/macro";
 import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import {AppStateType} from "../redux/store";
@@ -114,6 +114,8 @@ const MainInterface = () => {
     const dispatch = useDispatch();
     const editable = useSelector((state: AppStateType) => state.todoList.editable);
     const currentPalette = useSelector((state: AppStateType) => state.todoList.currentPaletteIndex, shallowEqual);
+    const pendingState = useSelector((state: AppStateType) => state.todoList.pendingState);
+    const initialLoading = useSelector((state: AppStateType) => state.todoList.initialLoadingState);
 
     const switchEditMode = () => {
         if (!editable) dispatch(actions.enableEditMode());
@@ -136,31 +138,44 @@ const MainInterface = () => {
     };
 
     //animation logic
-    const {wrapperX, medX, medY, x, y} = useSpring({
-        wrapperX: editable ? '50%' : '10%',
-        medX: editable ? '125%' : '50%',
-        medY: editable ? '125%' : '50%',
-        x: editable ? '-50%' : '50%',
-        y: editable ? '150%' : '50%',
-    });
+    const [spring, setSpring] = useSpring(() => ({
+        wrapperX: '10%',
+        medX: '50%',
+        medY: '50%',
+        x: '50%',
+        y: '50%',
+    }));
+
+    useEffect(() => {
+        if (editable) {
+            setSpring({
+                wrapperX: '50%',
+                medX: '125%',
+                medY: '125%',
+                x: '-50%',
+                y: '150%',
+            })
+        }
+
+    }, [editable])
 
     console.log('interface render')
 
     return(
-        <Wrapper style={{x: wrapperX}}>
+        <Wrapper style={{x: spring.wrapperX}}>
             <EditButton onClick={switchEditMode} $currentPalette={currentPalette}>
                 <InnerEditButtonText>
                     Edit
                 </InnerEditButtonText>
             </EditButton>
             <SmallerButton onClick={addTodoList} $currentPalette={currentPalette}
-                           style={{x, y, translateX: '-50%', translateY: '-50%'}}>
+                           style={{x: spring.x, y: spring.y, translateX: '-50%', translateY: '-50%'}}>
                 <InnerSmallerButtonText>
                     Add list
                 </InnerSmallerButtonText>
             </SmallerButton>
             <MediumButton onClick={rejectAllChanges} $currentPalette={currentPalette}
-                          style={{x: medX, y: medY, translateX: '-50%', translateY: '-50%'}}>
+                          style={{x: spring.medX, y: spring.medY, translateX: '-50%', translateY: '-50%'}}>
                 <InnerSmallerButtonText>
                     remove changes
                 </InnerSmallerButtonText>

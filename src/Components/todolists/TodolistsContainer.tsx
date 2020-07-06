@@ -53,8 +53,8 @@ const TodoListsContainer: React.FC = () => {
 
     const editable = useSelector((store: AppStateType) => store.todoList.editable, shallowEqual);
     const todoLists = useSelector((store: AppStateType) => store.todoList.todoLists, isEqual);
-    const newListsId = useSelector((store: AppStateType) => store.todoList.newListsId, isEqual);
-    const newTasksId = useSelector((store: AppStateType) => store.todoList.newTasksId, isEqual);
+    /*const newListsId = useSelector((store: AppStateType) => store.todoList.newListsId, isEqual);
+    const newTasksId = useSelector((store: AppStateType) => store.todoList.newTasksId, isEqual);*/
     const dispatch = useDispatch();
 
     useEffect(() => {
@@ -100,7 +100,7 @@ const TodoListsContainer: React.FC = () => {
                 return {x: currentSettings.x, y: currentSettings.y}
             })
         }
-    }, [todoLists, newListsId]);
+    }, [todoLists/*, newListsId*/]);
 
     const deleteList = useCallback((id: string) => {
         temporaryValue.current = temporaryValue.current.filter(item => item.id !== id)
@@ -140,7 +140,7 @@ const TodoListsContainer: React.FC = () => {
     console.log(width, columns, currWidth);
 
     //changing id of added lists
-    useEffect(() => {
+    /*useEffect(() => {
         if (newListsId.length !== 0) {
             temporaryValue.current = temporaryValue.current.map(item => {
                 const newList = newListsId.find(newList => newList.oldId === item.id);
@@ -153,10 +153,10 @@ const TodoListsContainer: React.FC = () => {
                 return item
             });
         }
-    }, [newListsId]);
+    }, [newListsId]);*/
 
     //changing id of added tasks
-    const collectedNewTasksId = useMemo(() => {
+    /*const collectedNewTasksId = useMemo(() => {
         const collectedNewListsId: Array<string> = [];
         newTasksId.map(task => {
             const listId = collectedNewListsId.find(item => item === task.todoListId)
@@ -166,7 +166,7 @@ const TodoListsContainer: React.FC = () => {
             const tasks = newTasksId.filter(task => task.todoListId === item);
             return {todoListId: item, tasks}
         })
-    }, [newTasksId]);
+    }, [newTasksId]);*/
 
     //swap animation logic
     useEffect(() => {
@@ -440,7 +440,7 @@ const TodoListsContainer: React.FC = () => {
                                 <TodoList id={list.id} colorPalette={(todoLists.length - i) % neumorphColors.length}
                                           deleteList={deleteList} setNewHeights={setNewHeights}
                                           listTitle={list.title} listTasks={list.tasks}
-                                          newTasksId={collectedNewTasksId.find(item => item.todoListId === list.id)}/>
+                                          /*newTasksId={collectedNewTasksId.find(item => item.todoListId === list.id)}*//>
                             </TodoListContainer>)}
                     </ScrollableWrapper>
                 </AllLists>}
