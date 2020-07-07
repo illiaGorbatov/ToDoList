@@ -433,6 +433,7 @@ export const changeTodoListTitleTC = (todoListId: string, todoListTitle: string)
 
 export const getStateFromServer = (): ThunkType => async (dispatch: ThunkActionType) => {
     const authState = await api.getAuthState();
+    console.log(authState)
     if (!authState.data.id) {
         await api.logIn()
     }

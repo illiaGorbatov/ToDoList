@@ -25,20 +25,15 @@ type GetMeType = {
 
 export const api = {
     getAuthState: () => {
-        return instance.get<CommonResponseType<GetMeType>>('auth/me').then(res => res.data)
+        return axios.get<CommonResponseType<GetMeType>>('https://social-network.samuraijs.com/api/1.1/auth/me').then(res => res.data)
     },
     logIn: () => {
-        return instance.post<CommonResponseType<{userId: string}>>('auth/login', {
+        return axios.post<CommonResponseType<{userId: string}>>('https://social-network.samuraijs.com/api/1.1/auth/login', {
             email: "npikolist@gmail.com",
             password: "512347",
             rememberMe: false,
             captcha: false
-        }).then(res => {
-            if (res.status !== 200) {
-                  api.logIn()
-            }
-            return res.data
-        })
+        }).then(res =>  res.data)
     },
     restoreState: () => {
         return instance.get<TodoListType[]>('').then(res => {

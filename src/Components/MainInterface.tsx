@@ -13,6 +13,9 @@ const Wrapper = styled(animated.div)`
   box-sizing: border-box;
   display: grid;
   place-items: center;
+  min-height: min-content;
+  max-height: min-content;
+  z-index: 999;
 `;
 
 const EditButton = styled.div<{ $currentPalette: number | null }>`
@@ -46,6 +49,8 @@ const EditButton = styled.div<{ $currentPalette: number | null }>`
 //calc([minimum size] + ([maximum size] - [minimum size]) * ((100vw - [minimum viewport width]) / ([maximum viewport width] - [minimum viewport width])));
 const InnerEditButtonText = styled(animated.div)`
   text-align: center;
+  position: absolute;
+  top: 50%;
   font-size: calc(15px + (50 - 15) * ((100vw - 100px) / (1200 - 100)));
 `;
 
@@ -140,7 +145,7 @@ const MainInterface = () => {
 
     //animation logic
     const [spring, setSpring] = useSpring(() => ({
-        wrapperX: '0%',
+        wrapperX: '0vw',
         height: '100%',
         width: '100%',
         medX: '50%',
@@ -152,13 +157,14 @@ const MainInterface = () => {
     useEffect(() => {
         if (!initialLoading && !editable && !pendingState) {
             setSpring({
-                wrapperX: '10%',
-                height: '0%',
-                width: '0%',
+                height: '15vw',
+                width: '15vw',
+                wrapperX: '10vw',
+                config: {friction: 50 }
             })
         } else if (editable) {
             setSpring({
-                wrapperX: '50%',
+                wrapperX: '50vw',
                 medX: '125%',
                 medY: '125%',
                 x: '-50%',
@@ -176,9 +182,10 @@ const MainInterface = () => {
         , [editable, pendingState, initialLoading]);
 
     const textTransition = useTransition(actionMessage, {
-        from: {opacity: 1, y: -100},
-        enter: {opacity: 1, y: 0},
-        leave: {opacity: 0, y: 100},
+        from: {opacity: 1, y: '-100%'},
+        enter: {opacity: 1, y: '0%'},
+        leave: {opacity: 0, y: '100%'},
+
     })
 
     console.log('interface render')
@@ -187,7 +194,7 @@ const MainInterface = () => {
         <Wrapper style={{x: spring.wrapperX, width: spring.width, height: spring.height}}>
             <EditButton onClick={switchEditMode} $currentPalette={currentPalette}>
                 {textTransition((style) =>
-                    <InnerEditButtonText style={style}>
+                    <InnerEditButtonText style={{...style, translateY: '-50%'}}>
                         {actionMessage}
                     </InnerEditButtonText>)}
             </EditButton>

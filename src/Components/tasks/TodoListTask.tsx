@@ -105,13 +105,11 @@ const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId, palette
     const setNewTask = () => {
         setEditableState(false);
         dispatch(actions.setFocusedStatus(false));
-        const isValid = validate(title, 'Task');
+        const isValid = validate(title);
         if (isValid) {
             let newTask = {...task, title, editStatus: false};
             dispatch(actions.changeTask(newTask));
-        } else {
-
-        }
+        } else deleteTask()
     };
 
     const onKeyPressHandler = (e: React.KeyboardEvent) => {
