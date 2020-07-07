@@ -429,7 +429,13 @@ export const changeTodoListTitleTC = (todoListId: string, todoListTitle: string)
         }
         dispatch(actions.disableEditMode())
     };*/
+
+
 export const getStateFromServer = (): ThunkType => async (dispatch: ThunkActionType) => {
+    const authState = await api.getAuthState();
+    if (!authState.data.id) {
+        await api.logIn()
+    }
     const lists = await api.restoreState();
     let listsWithTasks = lists;
     const getTasks = lists.map(async (item) => {
@@ -439,13 +445,15 @@ export const getStateFromServer = (): ThunkType => async (dispatch: ThunkActionT
         })
     });
     await Promise.all(getTasks)
-    dispatch(actions.setTodoLists(listsWithTasks))
-}
+    dispatch(actions.setTodoLists(listsWithTasks));
+    dispatch(actions.completeInitialLoadingState())
+};
 
 export const submitAllChanges = (): ThunkType =>
     async (dispatch: ThunkActionType, getState: () => AppStateType) => {
 
-        dispatch(actions.disableEditMode())
+        dispatch(actions.disableEditMode());
+        /*dispatch(actions.setPendingState(true))*/
 
         const oldTodoLists = getState().todoList.deepCopy;
         const newTodoLists = getState().todoList.todoLists;

@@ -17,10 +17,36 @@ type RestoreTasksResponseType = {
     totalCount: number;
     error?: string
 };
+type GetMeType = {
+    id: number,
+    email: string,
+    login: string
+};
 
 export const api = {
+    getAuthState: () => {
+        return instance.get<CommonResponseType<GetMeType>>('auth/me').then(res => res.data)
+    },
+    logIn: () => {
+        return instance.post<CommonResponseType<{userId: string}>>('auth/login', {
+            email: "npikolist@gmail.com",
+            password: "512347",
+            rememberMe: false,
+            captcha: false
+        }).then(res => {
+            if (res.status !== 200) {
+                  api.logIn()
+            }
+            return res.data
+        })
+    },
     restoreState: () => {
-        return instance.get<TodoListType[]>('').then(res => res.data)
+        return instance.get<TodoListType[]>('').then(res => {
+            if (res.status !== 200) {
+                api.restoreState()
+            }
+            return res.data
+        })
     },
     addTodoList: (title: string) => {
         return instance.post<CommonResponseType<{item: TodoListType}>>("", {title}).then(res => res.data)

@@ -66,17 +66,17 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
 
     const [forceRerender, rerender] = useState<number>(0);
     useEffect(() => {
-        if (tasks.length !== 0) {
+        if (!editable && tasks.length !== 0) {
             elementsRef.current = tasks.map(() => React.createRef());
             order.current = tasks.map((task, i) => ({ taskId: task.id, index: i }));
             initialY.current = tasks.map(() => 0);
         }
-        if (tasks.length > elementsRef.current.length) {
+        if (editable && tasks.length > elementsRef.current.length) {
             elementsRef.current = [React.createRef(), ...elementsRef.current];
             order.current = [{taskId: tasks[0].id, index: tasks.length - 1}, ...order.current];
             initialY.current = [0, ...initialY.current]
         }
-        if (tasks.length < elementsRef.current.length) {
+        if (editable && tasks.length < elementsRef.current.length) {
             const deletedTask = order.current.find(task => tasks.findIndex(item => item.id === task.taskId) === -1 )!;
             order.current = order.current.filter(task => task.taskId !== deletedTask.taskId)
         }
@@ -84,15 +84,15 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
     }, [tasks]);
 
     useLayoutEffect(() => {
-        if (tasks.length !== 0) {
+        if (!editable && tasks.length !== 0) {
             heights.current = elementsRef.current.map(ref => ref.current!.offsetHeight);
             setSprings(settings())
         }
-        if (tasks.length > heights.current.length) {
+        if (editable && tasks.length > heights.current.length) {
             heights.current = elementsRef.current.map(ref => ref.current!.offsetHeight);
             setSprings(settings())
         }
-        if (tasks.length < heights.current.length) {
+        if (editable && tasks.length < heights.current.length) {
             heights.current = elementsRef.current.map(ref => ref.current!.offsetHeight);
             setSprings(settings())
         }

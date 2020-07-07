@@ -170,7 +170,7 @@ const TodoListsContainer: React.FC = () => {
 
     //swap animation logic
     useEffect(() => {
-        if (gridItems.current.length === 0) {
+        if (!editable && gridItems.current.length === 0) {
             const newHeights = new Array(columns).fill(0);
             gridItems.current = todoLists.map(
                 (item, i) => {
@@ -189,7 +189,7 @@ const TodoListsContainer: React.FC = () => {
             height.current = Math.max(...newHeights);
             setWrapperAnimation({height: height.current})
         }
-        if (gridItems.current.length < todoLists.length) {
+        if (editable && gridItems.current.length < todoLists.length) {
             gridItems.current = [{
                 x: 0, y: 0, height: 0, id: todoLists[0].id, botY: 0,
                 rightX: 0, horizontalCenter: 0, verticalCenter: 0, index: 0
@@ -199,7 +199,7 @@ const TodoListsContainer: React.FC = () => {
             })
             recalculateMeasures()
         }
-        if (gridItems.current.length > todoLists.length) {
+        if (editable && gridItems.current.length > todoLists.length) {
             const deletedListIndex = gridItems.current.findIndex(item =>
                 todoLists.findIndex(list => list.id === item.id) === -1);
             const deletedList = gridItems.current[deletedListIndex];
@@ -209,7 +209,7 @@ const TodoListsContainer: React.FC = () => {
             }).filter((item, i) => i !== deletedListIndex);
             recalculateMeasures()
         }
-        if (gridItems.current.length === todoLists.length) recalculateMeasures();
+        if (editable && gridItems.current.length === todoLists.length) recalculateMeasures();
         setSprings(i => {
             const currentSettings = gridItems.current.find((list) => list.index === i)!;
             return {x: currentSettings.x, y: currentSettings.y}

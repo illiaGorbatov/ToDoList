@@ -1,9 +1,9 @@
-import React, {useEffect} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import styled from "styled-components/macro";
 import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import {AppStateType} from "../redux/store";
 import {actions, submitAllChanges} from "../redux/functionalReducer";
-import {animated, useSpring} from "react-spring";
+import {animated, useSpring, useTransition} from "react-spring";
 import {neumorphColors} from "./neumorphColors";
 
 const Wrapper = styled(animated.div)`
@@ -18,6 +18,7 @@ const Wrapper = styled(animated.div)`
 const EditButton = styled.div<{ $currentPalette: number | null }>`
   cursor: pointer;
   position: relative;
+  overflow: hidden;
   z-index: 3;
   width: 15vw;
   height: 15vw;
@@ -28,22 +29,22 @@ const EditButton = styled.div<{ $currentPalette: number | null }>`
   border-radius: 100%;
   display: grid;
   place-items: center;
-  box-shadow: ${ props => typeof props.$currentPalette === 'number' ? neumorphColors[props.$currentPalette].innerShadows : 
+  box-shadow: ${props => typeof props.$currentPalette === 'number' ? neumorphColors[props.$currentPalette].innerShadows :
     '11px 11px 23px rgba(0, 0, 0, .4), -11px -11px 23px rgba(255, 255, 255, .4)'} ;
-  background: ${ props => typeof props.$currentPalette === 'number' ? 
+  background: ${props => typeof props.$currentPalette === 'number' ?
     neumorphColors[props.$currentPalette].background : 'white'};
-  color: ${ props => typeof props.$currentPalette === 'number' ?
+  color: ${props => typeof props.$currentPalette === 'number' ?
     neumorphColors[props.$currentPalette].color : 'black'};
   transition: 0.3s cubic-bezier(0.25, 0, 0, 1);
   &:hover {
-    background: ${ props => typeof props.$currentPalette === 'number' ?
-        neumorphColors[props.$currentPalette].hoveredAltBackground : 'black'};
-    color: ${ props => typeof props.$currentPalette === 'number' ?
-        neumorphColors[props.$currentPalette].hoveredColor : 'white'};
+    background: ${props => typeof props.$currentPalette === 'number' ?
+    neumorphColors[props.$currentPalette].hoveredAltBackground : 'black'};
+    color: ${props => typeof props.$currentPalette === 'number' ?
+    neumorphColors[props.$currentPalette].hoveredColor : 'white'};
   }
 `;
- //calc([minimum size] + ([maximum size] - [minimum size]) * ((100vw - [minimum viewport width]) / ([maximum viewport width] - [minimum viewport width])));
-const InnerEditButtonText = styled.div`
+//calc([minimum size] + ([maximum size] - [minimum size]) * ((100vw - [minimum viewport width]) / ([maximum viewport width] - [minimum viewport width])));
+const InnerEditButtonText = styled(animated.div)`
   text-align: center;
   font-size: calc(15px + (50 - 15) * ((100vw - 100px) / (1200 - 100)));
 `;
@@ -61,18 +62,18 @@ const SmallerButton = styled(animated.div)<{ $currentPalette: number | null }>`
   border-radius: 100%;
   display: grid;
   place-items: center;
-  box-shadow: ${ props => typeof props.$currentPalette === 'number' ? neumorphColors[props.$currentPalette].innerShadows :
+  box-shadow: ${props => typeof props.$currentPalette === 'number' ? neumorphColors[props.$currentPalette].innerShadows :
     '11px 11px 23px rgba(0, 0, 0, .4), -11px -11px 23px rgba(255, 255, 255, .4)'} ;
-  background: ${ props => typeof props.$currentPalette === 'number' ?
+  background: ${props => typeof props.$currentPalette === 'number' ?
     neumorphColors[props.$currentPalette].background : 'white'};
-  color: ${ props => typeof props.$currentPalette === 'number' ?
+  color: ${props => typeof props.$currentPalette === 'number' ?
     neumorphColors[props.$currentPalette].color : 'black'};
   transition: 0.3s cubic-bezier(0.25, 0, 0, 1);
   &:hover {
-    background: ${ props => typeof props.$currentPalette === 'number' ?
-        neumorphColors[props.$currentPalette].hoveredAltBackground : 'black'};
-    color: ${ props => typeof props.$currentPalette === 'number' ?
-        neumorphColors[props.$currentPalette].hoveredColor : 'white'};
+    background: ${props => typeof props.$currentPalette === 'number' ?
+    neumorphColors[props.$currentPalette].hoveredAltBackground : 'black'};
+    color: ${props => typeof props.$currentPalette === 'number' ?
+    neumorphColors[props.$currentPalette].hoveredColor : 'white'};
   }
 `;
 
@@ -89,18 +90,18 @@ const MediumButton = styled(animated.div)<{ $currentPalette: number | null }>`
   border-radius: 100%;
   display: grid;
   place-items: center;
-  box-shadow: ${ props => typeof props.$currentPalette === 'number'  ? neumorphColors[props.$currentPalette].innerShadows :
+  box-shadow: ${props => typeof props.$currentPalette === 'number' ? neumorphColors[props.$currentPalette].innerShadows :
     '11px 11px 23px rgba(0, 0, 0, .4), -11px -11px 23px rgba(255, 255, 255, .4)'} ;
-  background: ${ props => typeof props.$currentPalette === 'number' ?
+  background: ${props => typeof props.$currentPalette === 'number' ?
     neumorphColors[props.$currentPalette].background : 'white'};
-  color: ${ props => typeof props.$currentPalette === 'number' ? 
+  color: ${props => typeof props.$currentPalette === 'number' ?
     neumorphColors[props.$currentPalette].color : 'black'};
   transition: 0.3s cubic-bezier(0.25, 0, 0, 1);
   &:hover {
-    background: ${ props => typeof props.$currentPalette === 'number' ?
-        neumorphColors[props.$currentPalette].hoveredAltBackground : 'black'};
-    color: ${ props => typeof props.$currentPalette === 'number' ?
-        neumorphColors[props.$currentPalette].hoveredColor : 'white'};
+    background: ${props => typeof props.$currentPalette === 'number' ?
+    neumorphColors[props.$currentPalette].hoveredAltBackground : 'black'};
+    color: ${props => typeof props.$currentPalette === 'number' ?
+    neumorphColors[props.$currentPalette].hoveredColor : 'white'};
   }
 `;
 
@@ -139,7 +140,9 @@ const MainInterface = () => {
 
     //animation logic
     const [spring, setSpring] = useSpring(() => ({
-        wrapperX: '10%',
+        wrapperX: '0%',
+        height: '100%',
+        width: '100%',
         medX: '50%',
         medY: '50%',
         x: '50%',
@@ -147,7 +150,13 @@ const MainInterface = () => {
     }));
 
     useEffect(() => {
-        if (editable) {
+        if (!initialLoading && !editable && !pendingState) {
+            setSpring({
+                wrapperX: '10%',
+                height: '0%',
+                width: '0%',
+            })
+        } else if (editable) {
             setSpring({
                 wrapperX: '50%',
                 medX: '125%',
@@ -155,18 +164,32 @@ const MainInterface = () => {
                 x: '-50%',
                 y: '150%',
             })
+        } else if (pendingState) {
+
         }
 
-    }, [editable])
+    }, [editable, pendingState, initialLoading]);
+
+    const actionMessage = useMemo(() =>
+            initialLoading ? 'Loading' : editable ? 'Submit changes' : pendingState ? 'Send data'
+                : 'Edit'
+        , [editable, pendingState, initialLoading]);
+
+    const textTransition = useTransition(actionMessage, {
+        from: {opacity: 1, y: -100},
+        enter: {opacity: 1, y: 0},
+        leave: {opacity: 0, y: 100},
+    })
 
     console.log('interface render')
 
-    return(
-        <Wrapper style={{x: spring.wrapperX}}>
+    return (
+        <Wrapper style={{x: spring.wrapperX, width: spring.width, height: spring.height}}>
             <EditButton onClick={switchEditMode} $currentPalette={currentPalette}>
-                <InnerEditButtonText>
-                    Edit
-                </InnerEditButtonText>
+                {textTransition((style) =>
+                    <InnerEditButtonText style={style}>
+                        {actionMessage}
+                    </InnerEditButtonText>)}
             </EditButton>
             <SmallerButton onClick={addTodoList} $currentPalette={currentPalette}
                            style={{x: spring.x, y: spring.y, translateX: '-50%', translateY: '-50%'}}>
