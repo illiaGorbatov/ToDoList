@@ -431,12 +431,17 @@ export const changeTodoListTitleTC = (todoListId: string, todoListTitle: string)
     };*/
 
 
-export const getStateFromServer = (): ThunkType => async (dispatch: ThunkActionType) => {
+export const initialization = (): ThunkType => async (dispatch: ThunkActionType) => {
     const authState = await api.getAuthState();
     console.log(authState)
     if (!authState.data.id) {
         await api.logIn()
     }
+    dispatch(getStateFromServer());
+    dispatch(actions.completeInitialLoadingState())
+};
+
+const getStateFromServer = (): ThunkType => async (dispatch: ThunkActionType) => {
     const lists = await api.restoreState();
     let listsWithTasks = lists;
     const getTasks = lists.map(async (item) => {
@@ -447,7 +452,6 @@ export const getStateFromServer = (): ThunkType => async (dispatch: ThunkActionT
     });
     await Promise.all(getTasks)
     dispatch(actions.setTodoLists(listsWithTasks));
-    dispatch(actions.completeInitialLoadingState())
 };
 
 export const submitAllChanges = (): ThunkType =>
@@ -759,7 +763,9 @@ export const submitAllChanges = (): ThunkType =>
             }*/
         }
 
-        dispatch(getStateFromServer())
+        if (addedLists.length !== 0 || addedTasks.length !== 0) {
+            dispatch(getStateFromServer())
+        }
     };
 
 export default functionalReducer

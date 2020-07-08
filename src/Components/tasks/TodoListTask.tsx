@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useLayoutEffect, useRef, useState} from "react";
 import {shallowEqual, useDispatch, useSelector} from 'react-redux';
 import {actions} from "../../redux/functionalReducer";
 import {TaskType} from "../../redux/entities";
@@ -73,6 +73,7 @@ const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId, palette
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const focusedStatus = useSelector((state: AppStateType) => state.todoList.focusedStatus, shallowEqual);
 
+
     const [isTaskEditable, setEditableState] = useState<boolean>(false);
     const editTask = () => {
         setEditableState(true);
@@ -87,10 +88,11 @@ const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId, palette
         dispatch(actions.deleteTask(todoListId, task.id))
     };
 
-    const [title, setTitle] = useState<string>(task.title);
-    useEffect(() => {
+    const [title, setTitle] = useState<string>('');
+    useLayoutEffect(() => {
         textRef.current!.textContent = task.title;
-    }, [task.title])
+        setTitle(task.title)
+    }, [task.title]);
 
     const changeDoneStatus = (e: React.ChangeEvent<HTMLInputElement>) => {
         let newTask = {...task, status: e.currentTarget.checked ? 2 : 0};
@@ -113,7 +115,6 @@ const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId, palette
     };
 
     const onKeyPressHandler = (e: React.KeyboardEvent) => {
-        console.log(e)
         if (e.key ===  "Enter") {
             e.preventDefault();
             textRef.current!.blur()
@@ -126,8 +127,6 @@ const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId, palette
 
     const priority = task.priority === 0 ? 'Low' : 1 ? 'Middle' : 2 ?
         'High' : 3 ? 'Urgently' : 'Later';
-
-    console.log(task.title)
 
     return (
         <TaskWrapper $editable={editable && !focusedStatus}>

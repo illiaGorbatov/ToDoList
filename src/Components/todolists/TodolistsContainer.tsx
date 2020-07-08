@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import TodoList from "./TodoList";
-import {actions, getStateFromServer} from "../../redux/functionalReducer";
+import {actions, initialization} from "../../redux/functionalReducer";
 import {shallowEqual, useDispatch, useSelector} from 'react-redux';
 import {AppStateType} from "../../redux/store";
 import styled from "styled-components/macro";
@@ -58,7 +58,7 @@ const TodoListsContainer: React.FC = () => {
     const dispatch = useDispatch();
 
     useEffect(() => {
-        dispatch(getStateFromServer());
+        dispatch(initialization());
     }, []);
     useEffect(() => {
         console.log('mounted');
@@ -80,7 +80,26 @@ const TodoListsContainer: React.FC = () => {
             rotateZ: editable ? 0 : 45,
             y: editable ? 0 : 275,
         })
-    }, [editable])
+    }, [editable]);
+
+    //resize logic
+    const [width, setWidth] = useState<number>(0);
+    const onResize = (width: number) => setWidth(width);
+    const columns = useMemo(() => {
+        return width >= 2000 ? 5 : width >= 1400 ? 4 : width >= 900 ? 3 : width >= 600 ? 2 : 1
+    }, [width]);
+    const currWidth = useMemo(() => width / columns, [width]);
+    const measuredRef = useRef<HTMLDivElement>(null);
+    /* useEffect(() => {
+         recalculateMeasures();
+         setSprings(i => {
+             const currentSettings = gridItems.current.find((list) => list.index === i);
+             if (currentSettings) return {x: currentSettings.x, y: currentSettings.y};
+             return {x: 0, y: 0}
+         })
+     }, [width, columns, currWidth]);*/
+    console.log(width, columns, currWidth);
+
 
     // child height calculation logic
     const temporaryValue = useRef<Array<{ height: number, id: string }>>([]);
@@ -92,15 +111,16 @@ const TodoListsContainer: React.FC = () => {
                 return item
             });
         temporaryValue.current = newHeightsArray
+        console.log(gridItems.current)
         if (newHeightsArray.length === todoLists.length) {
+            console.log(gridItems.current, width, columns)
             recalculateMeasures();
-            console.log(gridItems.current)
             setSprings(i => {
                 const currentSettings = gridItems.current.find((list) => list.index === i)!;
                 return {x: currentSettings.x, y: currentSettings.y}
             })
         }
-    }, [todoLists/*, newListsId*/]);
+    }, [todoLists, width, columns, currWidth,/*, newListsId*/]);
 
     const deleteList = useCallback((id: string) => {
         temporaryValue.current = temporaryValue.current.filter(item => item.id !== id)
@@ -119,25 +139,7 @@ const TodoListsContainer: React.FC = () => {
             zIndex: 3,
             display: 'block'
         }
-    })
-
-    //resize logic
-    const [width, setWidth] = useState<number>(0);
-    const onResize = (width: number) => setWidth(width);
-    const columns = useMemo(() => {
-        return width >= 2000 ? 5 : width >= 1400 ? 4 : width >= 900 ? 3 : width >= 600 ? 2 : 1
-    }, [width]);
-    const currWidth = useMemo(() => width / columns, [width]);
-    const measuredRef = useRef<HTMLDivElement>(null);
-    useEffect(() => {
-        recalculateMeasures();
-        setSprings(i => {
-            const currentSettings = gridItems.current.find((list) => list.index === i);
-            if (currentSettings) return {x: currentSettings.x, y: currentSettings.y};
-            return {x: 0, y: 0}
-        })
-    }, [width, columns, currWidth]);
-    console.log(width, columns, currWidth);
+    }, [todoLists])
 
     //changing id of added lists
     /*useEffect(() => {
@@ -209,12 +211,13 @@ const TodoListsContainer: React.FC = () => {
             }).filter((item, i) => i !== deletedListIndex);
             recalculateMeasures()
         }
-        if (editable && gridItems.current.length === todoLists.length) recalculateMeasures();
+        if (gridItems.current.length === todoLists.length) recalculateMeasures();
         setSprings(i => {
             const currentSettings = gridItems.current.find((list) => list.index === i)!;
             return {x: currentSettings.x, y: currentSettings.y}
         })
-    }, [todoLists]);
+        console.log(gridItems.current)
+    }, [todoLists, width, columns, currWidth]);
 
     const recalculateMeasures = () => {
         const newHeights = new Array(columns).fill(0);

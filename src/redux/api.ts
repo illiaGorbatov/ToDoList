@@ -32,16 +32,10 @@ export const api = {
             email: "npikolist@gmail.com",
             password: "512347",
             rememberMe: false,
-            captcha: false
         }).then(res =>  res.data)
     },
     restoreState: () => {
-        return instance.get<TodoListType[]>('').then(res => {
-            if (res.status !== 200) {
-                api.restoreState()
-            }
-            return res.data
-        })
+        return instance.get<TodoListType[]>('').then(res =>  res.data)
     },
     addTodoList: (title: string) => {
         return instance.post<CommonResponseType<{item: TodoListType}>>("", {title}).then(res => res.data)
