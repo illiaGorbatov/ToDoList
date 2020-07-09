@@ -193,7 +193,7 @@ const TodoList: React.FC<PropsType> = ({
         setTitleEditMode(!isTitleEditable)
     };
 
-    console.log(`${listTitle} render`)
+    /*console.log(`${listTitle} render`)*/
     return (
         <SingleListWrapper {...!closeLookState && {...bind()}} ref={ref} onClick={() => setCloseLookState(!closeLookState)}>
             <SingleListBottomLayer $palette={colorPalette} style={spring}

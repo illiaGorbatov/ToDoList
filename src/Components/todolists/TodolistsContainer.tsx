@@ -98,7 +98,7 @@ const TodoListsContainer: React.FC = () => {
              return {x: 0, y: 0}
          })
      }, [width, columns, currWidth]);*/
-    console.log(width, columns, currWidth);
+    /*console.log(width, columns, currWidth);*/
 
 
     // child height calculation logic
@@ -111,9 +111,9 @@ const TodoListsContainer: React.FC = () => {
                 return item
             });
         temporaryValue.current = newHeightsArray
-        console.log(gridItems.current)
+        /*console.log(gridItems.current)*/
         if (newHeightsArray.length === todoLists.length) {
-            console.log(gridItems.current, width, columns)
+            /*console.log(gridItems.current, width, columns)*/
             recalculateMeasures();
             setSprings(i => {
                 const currentSettings = gridItems.current.find((list) => list.index === i)!;

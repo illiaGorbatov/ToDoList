@@ -188,7 +188,7 @@ const MainInterface = () => {
 
     })
 
-    console.log('interface render')
+    /*console.log('interface render')*/
 
     return (
         <Wrapper style={{x: spring.wrapperX, width: spring.width, height: spring.height}}>

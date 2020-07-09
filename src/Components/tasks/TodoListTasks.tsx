@@ -38,19 +38,20 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const dispatch = useDispatch();
 
-    const settings = (down?: boolean, originalIndex?: number, y?: number): any =>
-        (index: number) => (
+    const settings = (down?: boolean, originalIndex?: number, y?: number): any => (index: number) => (
             down && index === originalIndex
                 ? {
                     scale: 1.2,
                     zIndex: 2,
                     y: (initialY.current[index] || 0) + (y || 0),
+                    opacity: 1,
                     immediate: (prop: string): boolean => prop === 'zIndex' || prop === 'y',
                 }
                 : {
                     scale: 1,
                     y: initialY.current[index] || 0,
                     zIndex: 1,
+                    opacity: 1,
                     immediate: false,
                 }
         );
@@ -67,7 +68,7 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
     const elementsRef = useRef<Array<RefObject<HTMLDivElement>>>([]);
 
     const [springs, setSprings] = useSprings(tasks.length, settings(), [tasks]);
-    console.log(springs, tasks.length)
+    console.log(springs, 'springs')
 
     const [forceRerender, rerender] = useState<number>(0);
     useEffect(() => {
@@ -87,17 +88,52 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
                 .map(item => item > deletedTaskIndex ? item-1 : item);
             initialY.current = initialY.current.filter((_, index) => index !== deletedTaskIndex);
         }
-        memoizedTasksId.current = tasks.map(item => item.id);
         rerender(forceRerender + 1);
-        console.log(tasks.length, memoizedTasksId.current.length, order.current, initialY.current)
     }, [tasks]);
 
     useLayoutEffect(() => {
-        if (tasks.length !== 0) {
+        if (editable && tasks.length > memoizedTasksId.current.length) {
+            setSprings(i =>
+                i === 0 ? {opacity: 0, immediate: true} : {to: false}
+            )
+        }
+    }, [tasks])
+
+    useLayoutEffect(() => {
+        if (!editable && tasks.length !== 0) {
             heights.current = elementsRef.current.map(ref => ref.current!.offsetHeight);
             setSprings(settings())
         }
+        if (editable && tasks.length > memoizedTasksId.current.length) {
+            heights.current = elementsRef.current.map(ref => ref.current!.offsetHeight);
+            setSprings(i => {
+                if (i === 0) return {
+                    to: async animate => {
+                        await animate({y: initialY.current[i], immediate: true});
+                        await animate({opacity: 1, immediate: false})
+                    }
+                }
+                return {
+                    to: async animate => {
+                        await animate({y: initialY.current[i] - heights.current[0], immediate: true});
+                        await animate({y: initialY.current[i], immediate: false})
+                    }
+                }
+            });
+        }
+        if (editable && tasks.length < memoizedTasksId.current.length) {
+            heights.current = elementsRef.current.map(ref => ref.current!.offsetHeight);
+            setSprings(i => {
+                return {
+                    scale: 1,
+                    y: initialY.current[i] || 0,
+                    zIndex: 1,
+                    immediate: true,
+                }
+            });
+        }
         setHeight();
+        memoizedTasksId.current = tasks.map(item => item.id);
     }, [forceRerender]);
 
     const getNewIndex = (index: number, y: number) => {

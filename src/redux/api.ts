@@ -25,49 +25,158 @@ type GetMeType = {
 
 export const api = {
     getAuthState: () => {
-        return axios.get<CommonResponseType<GetMeType>>('https://social-network.samuraijs.com/api/1.1/auth/me').then(res => res.data)
+        return axios.get<CommonResponseType<GetMeType>>('https://social-network.samuraijs.com/api/1.1/auth/me').then(async res => {
+            if (res.status !== 200) {
+                let response = res;
+                while (response.status !== 200) {
+                    response = await axios.get<CommonResponseType<GetMeType>>('https://social-network.samuraijs.com/api/1.1/auth/me')
+                }
+                return response.data
+            }
+            return res.data
+        })
     },
     logIn: () => {
-        return axios.post<CommonResponseType<{userId: string}>>('https://social-network.samuraijs.com/api/1.1/auth/login', {
-            email: "npikolist@gmail.com",
-            password: "512347",
-            rememberMe: false,
-        }).then(res =>  res.data)
+        const requestObject = {email: "npikolist@gmail.com", password: "512347", rememberMe: false};
+        return axios.post<CommonResponseType<{userId: string}>>('https://social-network.samuraijs.com/api/1.1/auth/login', requestObject)
+            .then(async res => {
+            if (res.status !== 200) {
+                let response = res;
+                while (response.status !== 200) {
+                    response = await axios.post<CommonResponseType<{userId: string}>>
+                    ('https://social-network.samuraijs.com/api/1.1/auth/login', requestObject)
+                }
+                return response.data
+            }
+            return res.data
+        })
     },
     restoreState: () => {
-        return instance.get<TodoListType[]>('').then(res =>  res.data)
+        return instance.get<Array<TodoListType>>('') .then(async res => {
+            if (res.status !== 200) {
+                let response = res;
+                while (response.status !== 200) {
+                    response = await instance.get<Array<TodoListType>>('')
+                }
+                return response.data
+            }
+            return res.data
+        })
     },
     addTodoList: (title: string) => {
-        return instance.post<CommonResponseType<{item: TodoListType}>>("", {title}).then(res => res.data)
+        return instance.post<CommonResponseType<{item: TodoListType}>>("", {title}).then(async res => {
+            if (res.status !== 200) {
+                let response = res;
+                while (response.status !== 200) {
+                    response = await instance.post<CommonResponseType<{item: TodoListType}>>("", {title})
+                }
+                return response.data
+            }
+            return res.data
+        })
     },
     restoreTasks: (todoListId: string) => {
-        return instance.get<RestoreTasksResponseType>(`/${todoListId}/tasks`).then(res => res.data)
+        return instance.get<RestoreTasksResponseType>(`/${todoListId}/tasks`).then(async res => {
+            if (res.status !== 200) {
+                let response = res;
+                while (response.status !== 200) {
+                    response = await instance.get<RestoreTasksResponseType>(`/${todoListId}/tasks`)
+                }
+                return response.data
+            }
+            return res.data
+        })
     },
     addTask: (title: string, todoListId: string) => {
         return instance.post<CommonResponseType<{item: TaskType}>>(`/${todoListId}/tasks`, {title})
-            .then(res => res.data)
+            .then(async res => {
+                if (res.status !== 200) {
+                    let response = res;
+                    while (response.status !== 200) {
+                        response = await instance.post<CommonResponseType<{item: TaskType}>>(`/${todoListId}/tasks`, {title})
+                    }
+                    return response.data
+                }
+                return res.data
+            })
     },
     changeTask: (todoListId: string, taskId: string, newTask: TaskType) => {
         return instance.put<CommonResponseType<{item: TaskType}>>(`/${todoListId}/tasks/${taskId}`, newTask)
-            .then(res => res.data)
+            .then(async res => {
+                if (res.status !== 200) {
+                    let response = res;
+                    while (response.status !== 200) {
+                        response = await instance.put<CommonResponseType<{item: TaskType}>>(`/${todoListId}/tasks/${taskId}`, newTask)
+                    }
+                    return response.data
+                }
+                return res.data
+            })
     },
     deleteTodoList: (todoListId: string) => {
-        return instance.delete<CommonResponseType<{}>>(`/${todoListId}`).then(res => res.data)
+        return instance.delete<CommonResponseType<{}>>(`/${todoListId}`).then(async res => {
+            if (res.status !== 200) {
+                let response = res;
+                while (response.status !== 200) {
+                    response = await instance.delete<CommonResponseType<{}>>(`/${todoListId}`)
+                }
+                return response.data
+            }
+            return res.data
+        })
     },
     deleteTask: (todoListId: string, taskId: string) => {
         return instance.delete<CommonResponseType<{item: TaskType}>>(`/${todoListId}/tasks/${taskId}`)
-            .then(res => res.data)
+            .then(async res => {
+                if (res.status !== 200) {
+                    let response = res;
+                    while (response.status !== 200) {
+                        response = await instance.delete<CommonResponseType<{item: TaskType}>>(`/${todoListId}/tasks/${taskId}`)
+                    }
+                    return response.data
+                }
+                return res.data
+            })
     },
     changeTodoListTitle: (todoListId:string, newTitle: string) => {
         return instance.put<CommonResponseType<TodoListType>>(`/${todoListId}`, {title: newTitle})
-            .then(res => res.data)
+            .then(async res => {
+                if (res.status !== 200) {
+                    let response = res;
+                    while (response.status !== 200) {
+                        response = await instance.put<CommonResponseType<TodoListType>>(`/${todoListId}`, {title: newTitle})
+                    }
+                    return response.data
+                }
+                return res.data
+            })
     },
     swapTasks: (todoListId: string, swappedTask: string, beforeSwappedTask: string | null) => {
         return instance.put<CommonResponseType<{}>>(`/${todoListId}/tasks/${swappedTask}/reorder`, {putAfterItemId: beforeSwappedTask})
-            .then(res => res.data)
+            .then(async res => {
+                if (res.status !== 200) {
+                    let response = res;
+                    while (response.status !== 200) {
+                        response = await instance.put<CommonResponseType<{}>>(`/${todoListId}/tasks/${swappedTask}/reorder`,
+                            {putAfterItemId: beforeSwappedTask})
+                    }
+                    return response.data
+                }
+                return res.data
+            })
     },
     swapTodoList: (swappedList: string, beforeSwappedList: string| null) => {
         return instance.put<CommonResponseType<{}>>(`/${swappedList}/reorder`, {putAfterItemId: beforeSwappedList})
-            .then(res => res.data)
+            .then(async res => {
+                if (res.status !== 200) {
+                    let response = res;
+                    while (response.status !== 200) {
+                        response = await instance.put<CommonResponseType<{}>>(`/${swappedList}/reorder`,
+                            {putAfterItemId: beforeSwappedList})
+                    }
+                    return response.data
+                }
+                return res.data
+            })
     }
 };
