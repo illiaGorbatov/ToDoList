@@ -438,7 +438,6 @@ export const initialization = (): ThunkType => async (dispatch: ThunkActionType)
         await api.logIn()
     }
     dispatch(getStateFromServer());
-    dispatch(actions.completeInitialLoadingState())
 };
 
 const getStateFromServer = (): ThunkType => async (dispatch: ThunkActionType) => {
@@ -452,6 +451,7 @@ const getStateFromServer = (): ThunkType => async (dispatch: ThunkActionType) =>
     });
     await Promise.all(getTasks)
     dispatch(actions.setTodoLists(listsWithTasks));
+    dispatch(actions.completeInitialLoadingState())
 };
 
 export const submitAllChanges = (): ThunkType =>
