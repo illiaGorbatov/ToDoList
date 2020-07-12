@@ -4,7 +4,6 @@ import {ThunkAction, ThunkDispatch} from "redux-thunk";
 import {AppStateType, InferActionTypes} from "./store";
 import cloneDeep from "lodash-es/cloneDeep";
 import {movePos} from "../hooks/movePos";
-import {endsWith} from "lodash-es";
 
 type InitialStateType = {
     todoLists: Array<TodoListType>,
@@ -18,7 +17,8 @@ type InitialStateType = {
     focusedStatus: boolean,
     currentPaletteIndex: number | null,
     initialLoadingState: boolean,
-    pendingState: boolean
+    pendingState: boolean,
+    height: number
 };
 
 const initialState = {
@@ -33,7 +33,8 @@ const initialState = {
     focusedStatus: false,
     currentPaletteIndex: null,
     initialLoadingState: true,
-    pendingState: false
+    pendingState: false,
+    height: 0
 };
 
 const functionalReducer = (state: InitialStateType = initialState, action: ActionsTypes): InitialStateType => {
@@ -148,16 +149,6 @@ const functionalReducer = (state: InitialStateType = initialState, action: Actio
                 ...state,
                 todoLists: action.newTodoLists
             };
-        /*case "functionalReducer/SET_NEW_LISTS_ID":
-            return {
-                ...state,
-                newListsId: action.newListsId
-            }
-        case "functionalReducer/SET_NEW_TASKS_ID":
-            return {
-                ...state,
-                newTasksId: action.newTasksId
-            }*/
         case "functionalReducer/SET_CURRENT_PALETTE_INDEX":
             return {
                 ...state,
@@ -180,6 +171,11 @@ const functionalReducer = (state: InitialStateType = initialState, action: Actio
             return {
                 ...state,
                 pendingState: action.pendingState
+            }
+        case "functionalReducer/SET_HEIGHT":
+            return {
+                ...state,
+                height: action.height
             }
         default:
             return state;
@@ -214,16 +210,11 @@ export const actions = {
     } as const),
     swapTodoLists: (newListsOrder: Array<string>) => ({type: 'functionalReducer/SWAP_TODO_LISTS', newListsOrder} as const),
     setTodoLists: (newTodoLists: Array<TodoListType>) => ({type: 'functionalReducer/SET_NEW_ID', newTodoLists} as const),
-    /*setNewListsId: (newListsId: Array<{ oldId: string, newId: string }>) => ({
-        type: 'functionalReducer/SET_NEW_LISTS_ID', newListsId
-    } as const),
-    setNewTasksId: (newTasksId: Array<{ oldId: string, newId: string, todoListId: string }>) => ({
-        type: 'functionalReducer/SET_NEW_TASKS_ID', newTasksId
-    } as const),*/
     setCurrentPaletteIndex: (index: number | null) => ({type: 'functionalReducer/SET_CURRENT_PALETTE_INDEX', index} as const),
     rejectAllChanges: () => ({type: 'functionalReducer/REJECT_ALL_CHANGES'} as const),
     completeInitialLoadingState: () => ({type: 'functionalReducer/COMPLETE_INITIAL_LOADING_STATE'} as const),
     setPendingState: (pendingState: boolean) => ({type: 'functionalReducer/SET_PENDING_STATE', pendingState} as const),
+    setHeight: (height: number) => ({type: 'functionalReducer/SET_HEIGHT', height} as const)
 }
 
 type ThunkType = ThunkAction<void, AppStateType, unknown, ActionsTypes>;
@@ -613,9 +604,6 @@ export const submitAllChanges = (): ThunkType =>
                 return {...list, tasks}
             })
         }
-        /*if (newListsId.length !== 0 || newTasksId.length !== 0) {
-            dispatch(actions.setTodoLists(todoListsWithNewId))
-        }*/
 
         //swap all items
         if (listsOrder.length !== 0 || addedLists.length > 1) {
@@ -756,11 +744,6 @@ export const submitAllChanges = (): ThunkType =>
                 }
             });
             await Promise.all(swapOrderPending)
-           /* for (let item of swapOrder) {
-                await api.swapTasks(item.todoListId, item.swappedId, item.beforeSwappedId).then(data => {
-                    if (data.resultCode !== 0) dispatch(actions.setError())
-                })
-            }*/
         }
 
         if (addedLists.length !== 0 || addedTasks.length !== 0) {

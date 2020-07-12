@@ -46,7 +46,7 @@ const SingleListBottomLayer = styled(animated.div)<{
   padding: 25px;
   background: ${props => neumorphColors[props.$palette].backgroundOuter};
   position: relative;
-  ${props => (props.$closeLookState || props.$hovered) &&
+  ${props => (props.$closeLookState || props.$hovered && props.$editable) &&
     `&:before {
       border-radius: 30px;
       content: "";
@@ -58,6 +58,19 @@ const SingleListBottomLayer = styled(animated.div)<{
       right: 0;
       border: 5px solid transparent;
       box-shadow: ${neumorphColors[props.$palette].shadows};
+  }`};
+  ${props => (props.$hovered && !props.$editable && !props.$closeLookState) &&
+    `&:before {
+      border-radius: 30px;
+      content: "";
+      position: absolute;
+      top: 0;
+      z-index: -1;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      border: 5px solid transparent;
+      box-shadow: ${neumorphColors[props.$palette].shadowsHovered};
   }`};
   ${props => props.$closeLookState === false && props.$hovered === false &&
     `&:after {
@@ -107,12 +120,12 @@ type PropsType = {
     colorPalette: number,
     setNewHeights: (height: number, id: string) => void,
     deleteList: (id: string) => void,
-    /*newTasksId: { todoListId: string, tasks: Array<{ oldId: string, newId: string, todoListId: string }> } | undefined*/
+    closeLook: boolean
 };
 
 const TodoList: React.FC<PropsType> = ({
                                            id, listTitle, listTasks, colorPalette,
-                                           setNewHeights, deleteList, /*newTasksId*/
+                                           setNewHeights, deleteList, closeLook
                                        }) => {
 
     const dispatch = useDispatch();
@@ -185,7 +198,6 @@ const TodoList: React.FC<PropsType> = ({
     });
 
     //close look animations
-    const [closeLookState, setCloseLookState] = useState<boolean>(false);
     const [hoveredState, setHoveredState] = useState<boolean>(false);
 
     const [isTitleEditable, setTitleEditMode] = useState<boolean>(false);
@@ -195,17 +207,16 @@ const TodoList: React.FC<PropsType> = ({
 
     /*console.log(`${listTitle} render`)*/
     return (
-        <SingleListWrapper {...!closeLookState && {...bind()}} ref={ref} onClick={() => setCloseLookState(!closeLookState)}>
+        <SingleListWrapper {...!closeLook && {...bind()}} ref={ref}>
             <SingleListBottomLayer $palette={colorPalette} style={spring}
                                    $editable={editable && !focusedStatus}
-                                   $closeLookState={closeLookState}
+                                   $closeLookState={closeLook}
                                    $hovered={hoveredState}>
                 <ContextButtons colors={neumorphColors[colorPalette]} deleteTodoList={deleteTodoList}
                                 addTask={addTask} editList={switchTitleMode}/>
                 <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable}
                                switchTitleMode={switchTitleMode} palette={neumorphColors[colorPalette]}/>
-                <TodoListTasks todoListId={id} tasks={tasks} setHeight={setHeight} palette={neumorphColors[colorPalette]}
-                               /*newTasksId={newTasksId}*//>
+                <TodoListTasks todoListId={id} tasks={tasks} setHeight={setHeight} palette={neumorphColors[colorPalette]}/>
                 {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}
                 {/*<DetailsWrapper>
                     more details...

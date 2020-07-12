@@ -18,10 +18,22 @@ const Wrapper = styled(animated.div)`
   z-index: 999;
 `;
 
+const ButtonsWrapper = styled.div`
+  position: absolute;
+  width: 15vw;
+  height: 15vw;
+  max-width: 210px;
+  min-width: 150px;
+  max-height: 210px;
+  min-height: 150px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+`;
+
 const EditButton = styled.div<{ $currentPalette: number | null }>`
   cursor: pointer;
   position: relative;
-  overflow: hidden;
   z-index: 3;
   width: 15vw;
   height: 15vw;
@@ -29,27 +41,54 @@ const EditButton = styled.div<{ $currentPalette: number | null }>`
   min-width: 150px;
   max-height: 210px;
   min-height: 150px;
-  border-radius: 100%;
+  border-radius: 50%;
   display: grid;
   place-items: center;
   box-shadow: ${props => typeof props.$currentPalette === 'number' ? neumorphColors[props.$currentPalette].innerShadows :
     '11px 11px 23px rgba(0, 0, 0, .4), -11px -11px 23px rgba(255, 255, 255, .4)'} ;
   background: ${props => typeof props.$currentPalette === 'number' ?
     neumorphColors[props.$currentPalette].background : 'white'};
+`;
+
+const ProgressBackground = styled(animated.div)`
+  width: 110%;
+  height: 110%;
+  border-radius: 50%;
+  top: -5%;
+  left: -5%;
+  background-color: red;
+  display: grid;
+  place-items: center;
+  position: absolute;
+  
+`;
+
+const InnerBackground = styled.div<{ $currentPalette: number | null }>`
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  background: ${props => typeof props.$currentPalette === 'number' ?
+    neumorphColors[props.$currentPalette].background : 'white'};
   color: ${props => typeof props.$currentPalette === 'number' ?
     neumorphColors[props.$currentPalette].color : 'black'};
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
   transition: 0.3s cubic-bezier(0.25, 0, 0, 1);
   &:hover {
     background: ${props => typeof props.$currentPalette === 'number' ?
     neumorphColors[props.$currentPalette].hoveredAltBackground : 'black'};
     color: ${props => typeof props.$currentPalette === 'number' ?
     neumorphColors[props.$currentPalette].hoveredColor : 'white'};
-  }
+  };
 `;
+
 //calc([minimum size] + ([maximum size] - [minimum size]) * ((100vw - [minimum viewport width]) / ([maximum viewport width] - [minimum viewport width])));
 const InnerEditButtonText = styled(animated.div)`
+  z-index: 12;
   text-align: center;
   position: absolute;
+  overflow: hidden;
   top: 50%;
   font-size: calc(15px + (50 - 15) * ((100vw - 100px) / (1200 - 100)));
 `;
@@ -64,7 +103,7 @@ const SmallerButton = styled(animated.div)<{ $currentPalette: number | null }>`
   min-width: 70px;
   max-height: 105px;
   min-height: 70px;
-  border-radius: 100%;
+  border-radius: 50%;
   display: grid;
   place-items: center;
   box-shadow: ${props => typeof props.$currentPalette === 'number' ? neumorphColors[props.$currentPalette].innerShadows :
@@ -92,7 +131,7 @@ const MediumButton = styled(animated.div)<{ $currentPalette: number | null }>`
   min-width: 100px;
   max-height: 160px;
   min-height: 100px;
-  border-radius: 100%;
+  border-radius: 50%;
   display: grid;
   place-items: center;
   box-shadow: ${props => typeof props.$currentPalette === 'number' ? neumorphColors[props.$currentPalette].innerShadows :
@@ -114,6 +153,37 @@ const InnerSmallerButtonText = styled.div`
   text-align: center;
   font-size: calc(10px + (20 - 10) * ((100vw - 50px) / (1200 - 50)));
 `;
+
+const calculateClipPath = (progress: number) => {
+    const deg = 360 * progress / 100;
+    const degToCoords = 50 / 45;
+    let addedValues = ''
+    const point45 = `${100}% ${0}%`;
+    const point135 = `${100}% ${100}%`;
+    const point225 = `${0}% ${100}%`;
+    const point315 = `${0}% ${0}%`;
+    if (deg <= 45 && deg >= 0) {
+        const coords = `${50 + deg * degToCoords}% ${0}%`
+        addedValues = `${coords}, ${coords}, ${coords}, ${coords}, ${coords}`;
+    }
+    if (deg > 45 && deg <= 135) {
+        const coords = `${100}% ${(deg - 45) * degToCoords}%`;
+        addedValues = `${point45}, ${coords}, ${coords}, ${coords}, ${coords}`;
+    }
+    if (deg > 135 && deg <= 225) {
+        const coords = `${100 - (deg - 135) * degToCoords}% ${100}%`;
+        addedValues = `${point45}, ${point135}, ${coords}, ${coords}, ${coords}`;
+    }
+    if (deg > 225 && deg <= 315) {
+        const coords = `${0}% ${100 - (deg - 225) * degToCoords}%`;
+        addedValues = `${point45}, ${point135}, ${point225}, ${coords}, ${coords}`;
+    }
+    if (deg > 315 && deg <= 360) {
+        const coords = `${(deg - 315) * degToCoords}% ${0}%`;
+        addedValues = `${point45}, ${point135}, ${point225}, ${point315}, ${coords}`;
+    }
+    return `polygon( 50% 50%, 50% 0%, ${addedValues} )`
+}
 
 const MainInterface = () => {
 
@@ -154,13 +224,19 @@ const MainInterface = () => {
         y: '50%',
     }));
 
+    const [progress, setProgress] = useState<number>(0);
+
+    const [progressBarrAnimation] = useSpring({
+        clipPath: calculateClipPath(progress)
+    }, [progress])
+
     useEffect(() => {
         if (!initialLoading && !editable && !pendingState) {
             setSpring({
-                height: '15vw',
-                width: '15vw',
+                height: '15%',
+                width: '15%',
                 wrapperX: '10vw',
-                config: {friction: 50 }
+                config: {friction: 50}
             })
         } else if (editable) {
             setSpring({
@@ -177,7 +253,7 @@ const MainInterface = () => {
     }, [editable, pendingState, initialLoading]);
 
     const actionMessage = useMemo(() =>
-            initialLoading ? 'Loading' : editable ? 'Submit changes' : pendingState ? 'Send data'
+            initialLoading ? 'Loading' : editable ? 'Submit' : pendingState ? 'Sending data'
                 : 'Edit'
         , [editable, pendingState, initialLoading]);
 
@@ -192,24 +268,29 @@ const MainInterface = () => {
 
     return (
         <Wrapper style={{x: spring.wrapperX, width: spring.width, height: spring.height}}>
-            <EditButton onClick={switchEditMode} $currentPalette={currentPalette}>
-                {textTransition((style) =>
-                    <InnerEditButtonText style={{...style, translateY: '-50%'}}>
-                        {actionMessage}
-                    </InnerEditButtonText>)}
-            </EditButton>
-            <SmallerButton onClick={addTodoList} $currentPalette={currentPalette}
-                           style={{x: spring.x, y: spring.y, translateX: '-50%', translateY: '-50%'}}>
-                <InnerSmallerButtonText>
-                    Add list
-                </InnerSmallerButtonText>
-            </SmallerButton>
-            <MediumButton onClick={rejectAllChanges} $currentPalette={currentPalette}
-                          style={{x: spring.medX, y: spring.medY, translateX: '-50%', translateY: '-50%'}}>
-                <InnerSmallerButtonText>
-                    remove changes
-                </InnerSmallerButtonText>
-            </MediumButton>
+            <ButtonsWrapper>
+                <EditButton onClick={switchEditMode} $currentPalette={currentPalette}>
+                    <ProgressBackground style={progressBarrAnimation}/>
+                    <InnerBackground $currentPalette={currentPalette}>
+                        {textTransition((style) =>
+                            <InnerEditButtonText style={{...style, translateY: '-50%'}}>
+                                {actionMessage}
+                            </InnerEditButtonText>)}
+                    </InnerBackground>
+                </EditButton>
+                <SmallerButton onClick={addTodoList} $currentPalette={currentPalette}
+                               style={{x: spring.x, y: spring.y, translateX: '-50%', translateY: '-50%'}}>
+                    <InnerSmallerButtonText>
+                        Add list
+                    </InnerSmallerButtonText>
+                </SmallerButton>
+                <MediumButton onClick={rejectAllChanges} $currentPalette={currentPalette}
+                              style={{x: spring.medX, y: spring.medY, translateX: '-50%', translateY: '-50%'}}>
+                    <InnerSmallerButtonText>
+                        remove changes
+                    </InnerSmallerButtonText>
+                </MediumButton>
+            </ButtonsWrapper>
         </Wrapper>
     )
 };

@@ -1,31 +1,21 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import TodoList from "./TodoList";
-import {actions, initialization} from "../../redux/functionalReducer";
-import {shallowEqual, useDispatch, useSelector} from 'react-redux';
-import {AppStateType} from "../../redux/store";
-import styled from "styled-components/macro";
-import {animated, useSpring, useSprings} from "react-spring";
-import {useDrag, useWheel} from "react-use-gesture";
+import {animated, useSprings, SpringStartFn, useSpring} from "react-spring";
 import {swap} from "../../hooks/swap";
-import isEqual from "react-fast-compare";
-import ReactResizeDetector from 'react-resize-detector';
+import {useDrag} from "react-use-gesture";
+import {actions} from "../../redux/functionalReducer";
+import styled from "styled-components/macro";
+import TodoList from "./TodoList";
 import {neumorphColors} from "../neumorphColors";
+import {shallowEqual, useDispatch, useSelector} from "react-redux";
+import {AppStateType} from "../../redux/store";
+import isEqual from "react-fast-compare";
 import ClosingButton from "./CloseButton";
-import ScrollBar from "./ScrollBar";
 
-const AllLists = styled(animated.div)`
-  position: relative;
-  transform-style: preserve-3d;
-  width: 70vw;
-  @media screen and (max-width: 800px) {
-    top: -50vh
-  }
-`;
 
-const TodoListContainer = styled(animated.div)<{ width: number }>` 
+const TodoListContainer = styled(animated.div)<{ $width: number }>` 
   transform-style: preserve-3d;
   position: absolute;
-  width: ${props => props.width}px;
+  width: ${props => props.$width}px;
 `;
 
 const CloseButtonAnimatedWrapper = styled(animated.div)`
@@ -33,13 +23,10 @@ const CloseButtonAnimatedWrapper = styled(animated.div)`
   border-radius: 100%;
 `;
 
-const ScrollableWrapper = styled(animated.div)`
-  position: absolute;
-  transform-style: preserve-3d;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-`;
+type PropsType = {
+    setWrapperAnimation: SpringStartFn<{ x: string, rotateX: number, rotateZ: number, y: number, height: number }>,
+    width: number
+}
 
 type GridItemsType = {
     x: number,
@@ -53,45 +40,17 @@ type GridItemsType = {
     index: number,
 }
 
-const TodoListsContainer: React.FC = () => {
+const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width}) => {
+//resize logic
 
     const editable = useSelector((store: AppStateType) => store.todoList.editable, shallowEqual);
     const todoLists = useSelector((store: AppStateType) => store.todoList.todoLists, isEqual);
     const dispatch = useDispatch();
 
-    useEffect(() => {
-        dispatch(initialization());
-    }, []);
-    useEffect(() => {
-        console.log('mounted');
-        return () => console.log('unmounting...');
-    }, [])
-
-    const [wrapperAnimation, setWrapperAnimation] = useSpring(() => ({
-        x: '0vw',
-        rotateX: 45,
-        rotateZ: 45,
-        y: 275,
-        height: 0,
-        config: {tension: 100, friction: 60, clamp: true},
-    }));
-    useEffect(() => {
-        setWrapperAnimation({
-            x: editable ? '0vw' : '-15vw',
-            rotateX: editable ? 0 : 45,
-            rotateZ: editable ? 0 : 45,
-            y: editable ? 0 : 275,
-        })
-    }, [editable]);
-
-    //resize logic
-    const [width, setWidth] = useState<number>(0);
-    const onResize = (width: number) => setWidth(width);
     const columns = useMemo(() => {
         return width >= 2000 ? 5 : width >= 1400 ? 4 : width >= 900 ? 3 : width >= 600 ? 2 : 1
     }, [width]);
     const currWidth = useMemo(() => width / columns, [width]);
-    const measuredRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         recalculateMeasures();
         setSprings(i => {
@@ -101,7 +60,7 @@ const TodoListsContainer: React.FC = () => {
     }, [width, columns, currWidth]);
 
 
-    // child height calculation logic
+// child height calculation logic
     const temporaryValue = useRef<Array<{ height: number, id: string }>>([]);
     const setNewHeights = useCallback((height: number, id: string) => {
         const findHeight = temporaryValue.current.findIndex(item => item.id === id);
@@ -142,7 +101,7 @@ const TodoListsContainer: React.FC = () => {
     }, [todoLists])
 
 
-    //swap animation logic
+//swap animation logic
     useEffect(() => {
         if (!editable && gridItems.current.length === 0) {
             const newHeights = new Array(columns).fill(0);
@@ -161,6 +120,7 @@ const TodoListsContainer: React.FC = () => {
                     return {x, y, height, id: item.id, botY, rightX, horizontalCenter, verticalCenter, index}
                 });
             height.current = Math.max(...newHeights);
+            dispatch(actions.setHeight(height.current));
             setWrapperAnimation({height: height.current})
         }
         if (editable && gridItems.current.length < todoLists.length) {
@@ -206,8 +166,11 @@ const TodoListsContainer: React.FC = () => {
             const verticalCenter = y + height / 2;
             return {...item, x, y, rightX, botY, horizontalCenter, verticalCenter, height}
         });
-        height.current = Math.max(...newHeights);
-        setWrapperAnimation({height: height.current})
+        if (Math.max(...newHeights) !== height.current) {
+            height.current = Math.max(...newHeights);
+            setWrapperAnimation({height: height.current});
+            dispatch(actions.setHeight(height.current));
+        }
     }
 
     const reorder = (oldIndex: number, newIndex: number) => {
@@ -222,9 +185,11 @@ const TodoListsContainer: React.FC = () => {
             const verticalCenter = y + item.height / 2;
             return {...item, x, y, rightX, botY, horizontalCenter, verticalCenter}
         });
-        height.current = Math.max(...newHeights);
-        setWrapperAnimation({height: height.current})
-        ;
+        if (Math.max(...newHeights) !== height.current) {
+            height.current = Math.max(...newHeights);
+            setWrapperAnimation({height: height.current});
+            dispatch(actions.setHeight(height.current));
+        }
     }
 
     const calculatePositions = (x: number, y: number) => {
@@ -301,50 +266,9 @@ const TodoListsContainer: React.FC = () => {
         }
     }, {filterTaps: true});
 
-    //scroll logic
-    const [scrollingAnimation, setScroll] = useSpring(() => ({
-        y: 0
-    }));
-    const scrolledY = useRef<number>(0);
-
-    useWheel(({delta: [, y], active, event}) => {
-        const border = height.current - window.innerHeight < 0 ? 0.5 * height.current : height.current - window.innerHeight / 2;
-        console.log(y, border, scrolledY.current);
-        scrolledY.current = scrolledY.current - y > -border && scrolledY.current - y < 0 ? scrolledY.current - y
-            : scrolledY.current;
-        setScroll({
-            y: scrolledY.current
-        });
-    }, {domTarget: window, eventOptions: {capture: true}});
-    useDrag(({offset: [, y], active, event}) => {
-        setScroll({
-            y: scrolledY.current + y
-        });
-        scrolledY.current = y
-    }, {domTarget: window, filterTaps: true});
-
-    //scroller
-    const onScrollHandler = (scrolledPercentage: number) => {
-        const border = height.current - window.innerHeight < 0 ? 0.5 * height.current : height.current - window.innerHeight / 2;
-        scrolledY.current = border * scrolledPercentage;
-        setScroll({
-            y: scrolledY.current
-        });
-    }
-
-
-    //close look animations logic
-    const [closeButtonAnimation, setCloseButtonAnimation] = useSpring(() => ({
-        x: 0,
-        y: 0,
-        opacity: 0,
-        display: 'none'
-    }));
-    const indexOfLookedList = useRef<number>(0);
-
+    const [indexOfLookedList, setIndexOfLookedList] = useState<number | null>(null);
     const closeLook = async (index: number) => {
         if (editable) return;
-        indexOfLookedList.current = index;
         const currItem = gridItems.current.find(item => item.index === index)!;
         await setSprings(i => {
             if (i !== index) return {
@@ -357,11 +281,13 @@ const TodoListsContainer: React.FC = () => {
         });
         setWrapperAnimation({
             height: window.innerHeight,
-            x: '0vw',
+            x: '15vw',
             rotateX: 0,
             rotateZ: 0,
             y: 0,
         });
+        dispatch(actions.setCurrentPaletteIndex((todoLists.length - index) % neumorphColors.length))
+        setIndexOfLookedList(index);
         await setSprings(i => {
             if (i !== index) return {to: false};
             return {
@@ -390,12 +316,12 @@ const TodoListsContainer: React.FC = () => {
             }
         });
         setSprings(i => {
-            if (i !== indexOfLookedList.current) return {to: false};
+            if (i !== indexOfLookedList) return {to: false};
             const currItem = gridItems.current.find(item => item.index === i)!
             return {x: currItem.x, y: currItem.y}
         });
         await setWrapperAnimation({
-            x: '0vw',
+            x: '-15vw',
             rotateX: 45,
             rotateZ: 45,
             y: 275,
@@ -403,37 +329,36 @@ const TodoListsContainer: React.FC = () => {
             immediate: (prop) => prop === 'height'
         });
         dispatch(actions.setCurrentPaletteIndex(null));
+        setIndexOfLookedList(null);
         setSprings(i => {
-            if (i !== indexOfLookedList.current) return {opacity: 1, display: 'block'};
+            if (i !== indexOfLookedList) return {opacity: 1, display: 'block'};
             return {to: false}
         });
     };
 
+    const [closeButtonAnimation, setCloseButtonAnimation] = useSpring(() => ({
+        x: 0,
+        y: 0,
+        opacity: 0,
+        display: 'none'
+    }));
+
     return (
-        // @ts-ignore
-        <ReactResizeDetector handleWidth onResize={onResize} refreshMode="debounce" targetRef={measuredRef}>
-            {() =>
-                <>
-                    <AllLists style={wrapperAnimation} ref={measuredRef}>
-                        <ScrollableWrapper style={scrollingAnimation}>
-                            <CloseButtonAnimatedWrapper style={closeButtonAnimation} onClick={returnFromCloseLook}>
-                                <ClosingButton/>
-                            </CloseButtonAnimatedWrapper>
-                            {todoLists.length !== 0 && todoLists.map((list, i) =>
-                                <TodoListContainer style={springs[i]} {...editable && {...gesture(i)}}
-                                                   onClick={() => closeLook(i)}
-                                                   width={currWidth} key={list.id}>
-                                    <TodoList id={list.id} colorPalette={(todoLists.length - i) % neumorphColors.length}
-                                              deleteList={deleteList} setNewHeights={setNewHeights}
-                                              listTitle={list.title} listTasks={list.tasks}/>
-                                </TodoListContainer>)}
-                        </ScrollableWrapper>
-                    </AllLists>
-                    <ScrollBar onScrollHandler={onScrollHandler} scrolledY={scrolledY}/>
-                </>}
-        </ReactResizeDetector>
-    );
+        <>
+            <CloseButtonAnimatedWrapper onClick={returnFromCloseLook}
+                style={closeButtonAnimation}>
+                <ClosingButton/>
+            </CloseButtonAnimatedWrapper>
+            {todoLists.length !== 0 && todoLists.map((list, i) =>
+                <TodoListContainer style={springs[i]} {...editable && {...gesture(i)}}
+                                   onClick={() => closeLook(i)}
+                                   $width={currWidth} key={list.id}>
+                    <TodoList id={list.id} colorPalette={(todoLists.length - i) % neumorphColors.length}
+                              deleteList={deleteList} setNewHeights={setNewHeights} closeLook={i === indexOfLookedList}
+                              listTitle={list.title} listTasks={list.tasks}/>
+                </TodoListContainer>)}
+        </>
+    )
 }
 
-export default TodoListsContainer;
-
+export default React.memo(MappedLists, isEqual)

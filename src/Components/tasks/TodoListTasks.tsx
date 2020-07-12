@@ -30,7 +30,6 @@ type PropsType = {
     tasks: TaskType[],
     setHeight: () => void,
     palette: NeumorphColorsType
-    /*newTasksId: {todoListId: string, tasks: Array<{oldId: string, newId: string, todoListId: string}>} | undefined*/
 };
 
 const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palette}) => {
@@ -68,11 +67,9 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
     const elementsRef = useRef<Array<RefObject<HTMLDivElement>>>([]);
 
     const [springs, setSprings] = useSprings(tasks.length, settings(), [tasks]);
-    console.log(springs, 'springs')
 
     const [forceRerender, rerender] = useState<number>(0);
     useEffect(() => {
-        console.log(tasks.length, memoizedTasksId.current.length)
         elementsRef.current = tasks.map(() => React.createRef());
         if (!editable && tasks.length !== 0) {
             order.current = tasks.map((_, i) => i);

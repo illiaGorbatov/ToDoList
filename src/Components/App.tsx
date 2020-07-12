@@ -3,7 +3,7 @@ import styled, {createGlobalStyle} from "styled-components/macro";
 import {library} from "@fortawesome/fontawesome-svg-core";
 import {far} from "@fortawesome/free-regular-svg-icons";
 import {fas} from "@fortawesome/free-solid-svg-icons";
-import TodoListsContainer from "./todolists/TodolistsContainer";
+import ScrollWrapper from "./todolists/ScrollWrapper";
 import AnimatedBackground from "./AnimatedBackground";
 import MainInterface from "./MainInterface";
 
@@ -45,7 +45,7 @@ const App: React.FC = () => {
             <AnimatedBackground/>
             <Wrapper>
                 <MainInterface/>
-                <TodoListsContainer/>
+                <ScrollWrapper/>
             </Wrapper>
         </>
     );
