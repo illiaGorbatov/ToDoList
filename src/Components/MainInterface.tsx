@@ -20,8 +20,8 @@ const Wrapper = styled(animated.div)`
 
 const ButtonsWrapper = styled.div`
   position: absolute;
-  width: 15vw;
-  height: 15vw;
+  width: 16vw;
+  height: 16vw;
   max-width: 210px;
   min-width: 150px;
   max-height: 210px;
@@ -63,24 +63,27 @@ const ProgressBackground = styled(animated.div)`
   
 `;
 
-const InnerBackground = styled.div<{ $currentPalette: number | null }>`
+const InnerBackground = styled.div<{ $currentPalette: number | null, $altBackground: boolean }>`
   width: 100%;
   height: 100%;
   position: absolute;
-  background: ${props => typeof props.$currentPalette === 'number' ?
-    neumorphColors[props.$currentPalette].background : 'white'};
-  color: ${props => typeof props.$currentPalette === 'number' ?
-    neumorphColors[props.$currentPalette].color : 'black'};
+  background: ${props => typeof props.$currentPalette === 'number' && !props.$altBackground ?
+    neumorphColors[props.$currentPalette].background : typeof props.$currentPalette === 'number' && props.$altBackground ?
+        neumorphColors[props.$currentPalette].hoveredAltBackground : props.$altBackground ? 'black' : 'white'};
+  color: ${props => typeof props.$currentPalette === 'number' && !props.$altBackground ?
+    neumorphColors[props.$currentPalette].color : typeof props.$currentPalette === 'number' && props.$altBackground ?
+        neumorphColors[props.$currentPalette].hoveredColor : props.$altBackground ? 'white' : 'black'};
   display: grid;
   place-items: center;
   border-radius: 50%;
   transition: 0.3s cubic-bezier(0.25, 0, 0, 1);
-  &:hover {
-    background: ${props => typeof props.$currentPalette === 'number' ?
-    neumorphColors[props.$currentPalette].hoveredAltBackground : 'black'};
-    color: ${props => typeof props.$currentPalette === 'number' ?
-    neumorphColors[props.$currentPalette].hoveredColor : 'white'};
-  };
+  ${props => !props.$altBackground && 
+    `&:hover {
+        background: ${typeof props.$currentPalette === 'number' ?
+        neumorphColors[props.$currentPalette].hoveredAltBackground : 'black'};
+        color: ${typeof props.$currentPalette === 'number' ?
+        neumorphColors[props.$currentPalette].hoveredColor : 'white'};
+  }`}
 `;
 
 //calc([minimum size] + ([maximum size] - [minimum size]) * ((100vw - [minimum viewport width]) / ([maximum viewport width] - [minimum viewport width])));
@@ -155,7 +158,7 @@ const InnerSmallerButtonText = styled.div`
 `;
 
 const calculateClipPath = (progress: number) => {
-    const deg = 360 * progress / 100;
+    const deg = 360 * progress;
     const degToCoords = 50 / 45;
     let addedValues = ''
     const point45 = `${100}% ${0}%`;
@@ -188,10 +191,14 @@ const calculateClipPath = (progress: number) => {
 const MainInterface = () => {
 
     const dispatch = useDispatch();
-    const editable = useSelector((state: AppStateType) => state.todoList.editable);
+    const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const currentPalette = useSelector((state: AppStateType) => state.todoList.currentPaletteIndex, shallowEqual);
-    const pendingState = useSelector((state: AppStateType) => state.todoList.pendingState);
-    const initialLoading = useSelector((state: AppStateType) => state.todoList.initialLoadingState);
+    const pendingState = useSelector((state: AppStateType) => state.todoList.pendingState, shallowEqual);
+    const initialLoading = useSelector((state: AppStateType) => state.todoList.initialLoadingState, shallowEqual);
+    const swapState = useSelector((state: AppStateType) => state.todoList.swapState, shallowEqual);
+    const allTasks = useSelector((state: AppStateType) => state.todoList.allTasks, shallowEqual);
+    const completedTasks = useSelector((state: AppStateType) => state.todoList.completedTasks, shallowEqual);
+    const fetching = useSelector((state: AppStateType) => state.todoList.fetchingState, shallowEqual);
 
     const switchEditMode = () => {
         if (!editable) dispatch(actions.enableEditMode());
@@ -224,17 +231,28 @@ const MainInterface = () => {
         y: '50%',
     }));
 
-    const [progress, setProgress] = useState<number>(0);
+    const [progressBarrAnimation, setProgressBar] = useSpring(() => ({
+        clipPath: calculateClipPath(0)
+    }));
 
-    const [progressBarrAnimation] = useSpring({
-        clipPath: calculateClipPath(progress)
-    }, [progress])
+    const setProgress = ( e:  React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            console.log(e.currentTarget.value)
+            const pro = +e.currentTarget.value;
+            setProgressBar({clipPath: calculateClipPath(pro)})
+        }
+    }
+
+    useEffect(() => {
+        const progress = allTasks === 0 ? 0 : completedTasks / allTasks;
+        setProgressBar({clipPath: calculateClipPath(progress)})
+    }, [allTasks, completedTasks])
 
     useEffect(() => {
         if (!initialLoading && !editable && !pendingState) {
             setSpring({
-                height: '15%',
-                width: '15%',
+                height: '16%',
+                width: '16%',
                 wrapperX: '10vw',
                 config: {friction: 50}
             })
@@ -248,14 +266,15 @@ const MainInterface = () => {
             })
         } else if (pendingState) {
 
-        }
+        } else if (swapState) {
 
-    }, [editable, pendingState, initialLoading]);
+        }
+    }, [editable, pendingState, initialLoading, swapState, fetching]);
 
     const actionMessage = useMemo(() =>
             initialLoading ? 'Loading' : editable ? 'Submit' : pendingState ? 'Sending data'
                 : 'Edit'
-        , [editable, pendingState, initialLoading]);
+        , [editable, pendingState, initialLoading, swapState, fetching]);
 
     const textTransition = useTransition(actionMessage, {
         from: {opacity: 1, y: '-100%'},
@@ -271,7 +290,8 @@ const MainInterface = () => {
             <ButtonsWrapper>
                 <EditButton onClick={switchEditMode} $currentPalette={currentPalette}>
                     <ProgressBackground style={progressBarrAnimation}/>
-                    <InnerBackground $currentPalette={currentPalette}>
+                    <InnerBackground $currentPalette={currentPalette}
+                                     $altBackground={pendingState || initialLoading || swapState || fetching}>
                         {textTransition((style) =>
                             <InnerEditButtonText style={{...style, translateY: '-50%'}}>
                                 {actionMessage}
@@ -291,6 +311,7 @@ const MainInterface = () => {
                     </InnerSmallerButtonText>
                 </MediumButton>
             </ButtonsWrapper>
+            <input onKeyPress={(e) => setProgress(e)} style={{position: 'absolute', top: '100%'}}/>
         </Wrapper>
     )
 };

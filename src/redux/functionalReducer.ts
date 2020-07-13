@@ -4,6 +4,7 @@ import {ThunkAction, ThunkDispatch} from "redux-thunk";
 import {AppStateType, InferActionTypes} from "./store";
 import cloneDeep from "lodash-es/cloneDeep";
 import {movePos} from "../hooks/movePos";
+import {act} from "react-dom/test-utils";
 
 type InitialStateType = {
     todoLists: Array<TodoListType>,
@@ -18,7 +19,11 @@ type InitialStateType = {
     currentPaletteIndex: number | null,
     initialLoadingState: boolean,
     pendingState: boolean,
-    height: number
+    swapState: boolean,
+    fetchingState: boolean,
+    height: number,
+    allTasks: number,
+    completedTasks: number
 };
 
 const initialState = {
@@ -34,7 +39,11 @@ const initialState = {
     currentPaletteIndex: null,
     initialLoadingState: true,
     pendingState: false,
-    height: 0
+    swapState: false,
+    fetchingState: false,
+    height: 0,
+    allTasks: 0,
+    completedTasks: 0
 };
 
 const functionalReducer = (state: InitialStateType = initialState, action: ActionsTypes): InitialStateType => {
@@ -177,6 +186,21 @@ const functionalReducer = (state: InitialStateType = initialState, action: Actio
                 ...state,
                 height: action.height
             }
+        case "functionalReducer/SET_ALL_TASKS":
+            return {
+                ...state,
+                allTasks: action.tasks
+            }
+        case "functionalReducer/SET_COMPLETED_TASK":
+            return {
+                ...state,
+                completedTasks: action.restore ? 0 : state.completedTasks+1
+            }
+        case "functionalReducer/SET_SWAP_STATE":
+            return {
+                ...state,
+                swapState: action.state
+            }
         default:
             return state;
     }
@@ -214,7 +238,11 @@ export const actions = {
     rejectAllChanges: () => ({type: 'functionalReducer/REJECT_ALL_CHANGES'} as const),
     completeInitialLoadingState: () => ({type: 'functionalReducer/COMPLETE_INITIAL_LOADING_STATE'} as const),
     setPendingState: (pendingState: boolean) => ({type: 'functionalReducer/SET_PENDING_STATE', pendingState} as const),
-    setHeight: (height: number) => ({type: 'functionalReducer/SET_HEIGHT', height} as const)
+    setHeight: (height: number) => ({type: 'functionalReducer/SET_HEIGHT', height} as const),
+    setAllTasks: (tasks: number) => ({type: 'functionalReducer/SET_ALL_TASKS', tasks} as const),
+    setCompletedTask: (restore: boolean) => ({type: 'functionalReducer/SET_COMPLETED_TASK', restore} as const),
+    setSwapState: (state: boolean) => ({type: 'functionalReducer/SET_SWAP_STATE', state} as const),
+    setFetchingState: (state: boolean) => ({type: 'functionalReducer/SET_FETCHING_STATE', state} as const),
 }
 
 type ThunkType = ThunkAction<void, AppStateType, unknown, ActionsTypes>;
@@ -428,27 +456,35 @@ export const initialization = (): ThunkType => async (dispatch: ThunkActionType)
     if (!authState.data.id) {
         await api.logIn()
     }
-    dispatch(getStateFromServer());
+    dispatch(getStateFromServer(true));
 };
 
-const getStateFromServer = (): ThunkType => async (dispatch: ThunkActionType) => {
+const getStateFromServer = (initial: boolean): ThunkType => async (dispatch: ThunkActionType) => {
+    if (!initial) dispatch(actions.setFetchingState(true));
     const lists = await api.restoreState();
     let listsWithTasks = lists;
-    const getTasks = lists.map(async (item) => {
-        return await api.restoreTasks(item.id).then(data => {
-            const index = listsWithTasks.findIndex(list => item.id === list.id);
-            listsWithTasks[index] = {...item, tasks: data.items}
-        })
-    });
-    await Promise.all(getTasks)
+    if (lists.length !== 0) {
+        dispatch(actions.setAllTasks(lists.length));
+        dispatch(actions.setCompletedTask(true))
+        const getTasks = lists.map(async (item) => {
+            return await api.restoreTasks(item.id).then(data => {
+                const index = listsWithTasks.findIndex(list => item.id === list.id);
+                listsWithTasks[index] = {...item, tasks: data.items};
+                dispatch(actions.setCompletedTask(false))
+            })
+        });
+        await Promise.all(getTasks)
+    }
     dispatch(actions.setTodoLists(listsWithTasks));
-    dispatch(actions.completeInitialLoadingState())
+    if (initial) dispatch(actions.completeInitialLoadingState());
+    if (!initial) dispatch(actions.setFetchingState(true));
 };
 
 export const submitAllChanges = (): ThunkType =>
     async (dispatch: ThunkActionType, getState: () => AppStateType) => {
 
         dispatch(actions.disableEditMode());
+        dispatch(actions.setPendingState(true))
         /*dispatch(actions.setPendingState(true))*/
 
         const oldTodoLists = getState().todoList.deepCopy;
@@ -504,31 +540,43 @@ export const submitAllChanges = (): ThunkType =>
             }
         })
 
+        //progress bar logic
+        let allTasks = 0;
+        if (deletedLists.length !== 0) allTasks = allTasks + deletedLists.length;
+        if (deletedTasks.length !== 0) allTasks = allTasks + deletedTasks.length;
+        if (addedLists.length !== 0) allTasks = allTasks + addedLists.length;
+        if (addedTasks.length !== 0) allTasks = allTasks + addedTasks.length;
+        if (editedLists.length !== 0) allTasks = allTasks + editedLists.length;
+        if (editedTasks.length !== 0) allTasks = allTasks + editedTasks.length;
+        dispatch(actions.setAllTasks(allTasks));
+
+        //queries
+        dispatch(actions.setCompletedTask(true))
         if (deletedLists.length !== 0) {
             deletedLists.map(list => {
                 api.deleteTodoList(list.id).then(data => {
-                    if (data.resultCode !== 0) dispatch(actions.setError())
+                    if (data.resultCode === 0) dispatch(actions.setCompletedTask(false))
                 })
             })
         }
         if (deletedTasks.length !== 0) {
             deletedTasks.map(task => {
                 api.deleteTask(task.todoListId, task.id).then(data => {
-                    if (data.resultCode !== 0) dispatch(actions.setError())
+                    if (data.resultCode === 0) dispatch(actions.setCompletedTask(false))
                 })
             })
         }
         if (editedLists.length !== 0) {
             editedLists.map(list => {
                 api.changeTodoListTitle(list.id, list.title).then(data => {
-                    if (data.resultCode !== 0) dispatch(actions.setError())
+                    if (data.resultCode === 0) dispatch(actions.setCompletedTask(false))
                 })
             })
         }
         if (editedTasks.length !== 0) {
             editedTasks.map(task => {
                 api.changeTask(task.todoListId, task.id, task).then(data => {
-                    if (data.resultCode !== 0) dispatch(actions.setError())
+                    if (data.resultCode === 0) dispatch(actions.setCompletedTask(false))
                 })
             })
         }
@@ -542,7 +590,7 @@ export const submitAllChanges = (): ThunkType =>
                             oldId: task.id,
                             todoListId: data.data.item.todoListId
                         })
-                        if (data.resultCode !== 0) dispatch(actions.setError())
+                        if (data.resultCode === 0) dispatch(actions.setCompletedTask(false))
                     });
                 })
                 await Promise.all(tasksPromises);
@@ -563,8 +611,10 @@ export const submitAllChanges = (): ThunkType =>
         if (addedLists.length !== 0) {
             const listPromises = addedLists.map(async (list) => {
                 return await api.addTodoList(list.title).then(data => {
-                    if (data.resultCode === 0) newListsId.push({newId: data.data.item.id, oldId: list.id})
-                    if (data.resultCode !== 0) dispatch(actions.setError())
+                    if (data.resultCode === 0) {
+                        newListsId.push({newId: data.data.item.id, oldId: list.id});
+                        dispatch(actions.setCompletedTask(false))
+                    }
                 })
 
             })
@@ -586,6 +636,10 @@ export const submitAllChanges = (): ThunkType =>
             await createAndChangeIdOfTasksInOrderList()
         } else await createAndChangeIdOfTasksInOrderList();
 
+        //swap progress
+        dispatch(actions.setPendingState(false));
+        dispatch(actions.setSwapState(true))
+
         //changing id
         if (newListsId.length !== 0) {
             todoListsWithNewId = newTodoLists.map(list => {
@@ -605,7 +659,7 @@ export const submitAllChanges = (): ThunkType =>
             })
         }
 
-        //swap all items
+        //swap items
         if (listsOrder.length !== 0 || addedLists.length > 1) {
             if (deletedLists.length !== 0 && listsOrder.length !== 0) {
                 listsOrder = listsOrder.filter(list => todoListsWithNewId.findIndex(item => item.id === list) !== -1)
@@ -668,11 +722,11 @@ export const submitAllChanges = (): ThunkType =>
                 } else return undefined
             })() : undefined;
 
-            console.log(currentListsStateOnServer,
+            /*console.log(currentListsStateOnServer,
                 todoListsWithNewId.find(item => item.id === currentListsStateOnServer![0].todoListId)!
                     .tasks.map(item => item.id),
                 todoListsWithNewId.find(item => item.id === currentListsStateOnServer![0].todoListId)!
-                    .tasks.map(item => item.title))
+                    .tasks.map(item => item.title))*/
 
             let requiredOrder: Array<{ todoListId: string, tasks: Array<string> }> = [];
             if (currentListsStateOnServer && tasksOrder.length !== 0) {
@@ -745,9 +799,11 @@ export const submitAllChanges = (): ThunkType =>
             });
             await Promise.all(swapOrderPending)
         }
+        dispatch(actions.setSwapState(false));
+
 
         if (addedLists.length !== 0 || addedTasks.length !== 0) {
-            dispatch(getStateFromServer())
+            dispatch(getStateFromServer(false))
         }
     };
 

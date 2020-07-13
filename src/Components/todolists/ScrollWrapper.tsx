@@ -29,14 +29,14 @@ const ScrollableWrapper = styled(animated.div)`
   z-index: 1;
 `;
 
-const ScrollBarWrapper = styled.div<{$palette: number | null, $visible: boolean}>`
+const ScrollBarWrapper = styled(animated.div)<{$palette: number | null, $visible: boolean}>`
   position: absolute;
   width: 30px;
   height: 100vh;
   top: 0;
   right: 0;
   overflow: hidden;
-  transition: background-color 0.3s cubic-bezier(0.25, 0, 0, 1);
+  transition: background-color, opacity 0.3s cubic-bezier(0.25, 0, 0, 1);
   background-color: ${props => typeof props.$palette === 'number' ?
     neumorphColors[props.$palette].hoveredAltBackground : 'black'};
 `;
@@ -69,9 +69,10 @@ const ScrollWrapper: React.FC = () => {
         return () => console.log('unmounting...');
     }, []);
 
-    const [visible, setVisible] = useState<boolean>(true);
+    const [visible, setVisible] = useState<boolean>(false);
     useEffect(() => {
         if (height < window.innerHeight) setVisible(false)
+        else setVisible(true)
     }, [height])
 
     const [width, setWidth] = useState<number>(0);
@@ -108,6 +109,14 @@ const ScrollWrapper: React.FC = () => {
         top: `0%`,
         immediate: false
     }));
+
+    const visibilityOfScrollBar = useSpring({
+        from: {opacity: 0, right: 0, display: 'none'},
+        to: async animate => {
+            await animate(visible ? {display: 'block'} : {opacity: 0, right: -50});
+            await animate(visible ? {opacity: 1, right: 0} : {display: 'none'})
+        }
+    });
 
     const border = height - window.innerHeight < 0 ? 0.5 * height : height - window.innerHeight / 2;
     const scrollBarHeight = !height ? 0 : (window.innerHeight - 275) / height * 100;
@@ -158,7 +167,7 @@ const ScrollWrapper: React.FC = () => {
                     </AllLists>
                 }
             </ReactResizeDetector>
-            <ScrollBarWrapper $palette={currentPalette} $visible={visible}>
+            <ScrollBarWrapper $palette={currentPalette} $visible={visible} style={visibilityOfScrollBar}>
                 <ScrollBarThing $palette={currentPalette} style={{top: scrollingAnimation.top}} {...!isMobile && {...bindDraggedScrollBar()}}
                                 $height={scrollBarHeight}/>
             </ScrollBarWrapper>
