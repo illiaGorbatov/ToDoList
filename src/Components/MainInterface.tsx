@@ -158,14 +158,14 @@ const InnerSmallerButtonText = styled.div`
 `;
 
 const calculateClipPath = (progress: number) => {
-    const deg = 360 * progress;
+    /*const deg = 360 * progress;
     const degToCoords = 50 / 45;
     let addedValues = ''
     const point45 = `${100}% ${0}%`;
     const point135 = `${100}% ${100}%`;
     const point225 = `${0}% ${100}%`;
-    const point315 = `${0}% ${0}%`;
-    if (deg <= 45 && deg >= 0) {
+    const point315 = `${0}% ${0}%`;*/
+    /*if (deg <= 45 && deg >= 0) {
         const coords = `${50 + deg * degToCoords}% ${0}%`
         addedValues = `${coords}, ${coords}, ${coords}, ${coords}, ${coords}`;
     }
@@ -184,8 +184,36 @@ const calculateClipPath = (progress: number) => {
     if (deg > 315 && deg <= 360) {
         const coords = `${(deg - 315) * degToCoords}% ${0}%`;
         addedValues = `${point45}, ${point135}, ${point225}, ${point315}, ${coords}`;
+    }*/
+    /*return `polygon( 50% 50%, 50% 0%, ${addedValues} )`*/
+    const deg = 360 * progress;
+    const degToCoords = 50 / 45;
+    let addedValues = ['50% 50%', '50% 0%'];
+    const point45 = `${100}% ${0}%`;
+    const point135 = `${100}% ${100}%`;
+    const point225 = `${0}% ${100}%`;
+    const point315 = `${0}% ${0}%`;
+    if (deg <= 45 && deg >= 0) {
+        const coords = `${50 + deg * degToCoords}% ${0}%`
+        addedValues.push(coords, coords, coords, coords, coords) ;
     }
-    return `polygon( 50% 50%, 50% 0%, ${addedValues} )`
+    if (deg > 45 && deg <= 135) {
+        const coords = `${100}% ${(deg - 45) * degToCoords}%`;
+        addedValues.push(point45, coords, coords, coords, coords)
+    }
+    if (deg > 135 && deg <= 225) {
+        const coords = `${100 - (deg - 135) * degToCoords}% ${100}%`;
+        addedValues.push(point45, point135, coords, coords, coords)
+    }
+    if (deg > 225 && deg <= 315) {
+        const coords = `${0}% ${100 - (deg - 225) * degToCoords}%`;
+        addedValues.push(point45, point135, point225, coords, coords)
+    }
+    if (deg > 315 && deg <= 360) {
+        const coords = `${(deg - 315) * degToCoords}% ${0}%`;
+        addedValues.push(point45, point135, point225, point315, coords)
+    }
+    return addedValues
 }
 
 const MainInterface = () => {
@@ -232,20 +260,34 @@ const MainInterface = () => {
     }));
 
     const [progressBarrAnimation, setProgressBar] = useSpring(() => ({
-        clipPath: calculateClipPath(0)
+        clipPath: `polygon( 50% 50%, 50% 0%, 50% 0%, 50% 0%, 50% 0%, 50% 0%, 50% 0%)`
     }));
 
     const setProgress = ( e:  React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             console.log(e.currentTarget.value)
             const pro = +e.currentTarget.value;
-            setProgressBar({clipPath: calculateClipPath(pro)})
+            const v = calculateClipPath(pro);
+            console.log(v)
+            setProgressBar({
+                to: async animate => {
+                    await animate({clipPath: `polygon( ${v[0]}, ${v[1]}, ${v[2]}, ${v[2]}, ${v[2]}, ${v[2]}, ${v[2]} )`})
+                    await animate({clipPath: `polygon( ${v[0]}, ${v[1]}, ${v[2]}, ${v[3]}, ${v[3]}, ${v[3]}, ${v[3]} )`})
+                    await animate({clipPath: `polygon( ${v[0]}, ${v[1]}, ${v[2]}, ${v[3]}, ${v[4]}, ${v[4]}, ${v[4]} )`})
+                    await animate({clipPath: `polygon( ${v[0]}, ${v[1]}, ${v[2]}, ${v[3]}, ${v[4]}, ${v[5]}, ${v[5]} )`})
+                    await animate({clipPath: `polygon( ${v[0]}, ${v[1]}, ${v[2]}, ${v[3]}, ${v[4]}, ${v[5]}, ${v[6]} )`})
+                    /*let i = 2;
+                    while (v[i] !== v[i-1] && i <= v.length-1) {
+                        await animate({clipPath: `polygon( ${v[1]}, ${v[2]}, ${v[3]}, ${v[3]}, ${v[3]}, ${v[3]}, ${v[3]} )`})
+                    }*/
+                }
+            })
         }
     }
 
     useEffect(() => {
         const progress = allTasks === 0 ? 0 : completedTasks / allTasks;
-        setProgressBar({clipPath: calculateClipPath(progress)})
+        /*setProgressBar({clipPath: calculateClipPath(progress)})*/
     }, [allTasks, completedTasks])
 
     useEffect(() => {

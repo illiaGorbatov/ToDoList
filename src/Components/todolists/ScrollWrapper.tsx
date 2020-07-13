@@ -99,9 +99,6 @@ const ScrollWrapper: React.FC = () => {
     const measuredRef = useRef<HTMLDivElement>(null);
 
     //scroll logic
-    useEffect(() => {
-        console.log(-scrolledY.current)
-    })
     const scrolledY = useRef<number>(0);
     const scrolledPercent = useRef<number>(0);
     const [scrollingAnimation, setScroll] = useSpring(() => ({
@@ -143,11 +140,13 @@ const ScrollWrapper: React.FC = () => {
     }, {domTarget: window, filterTaps: true});
 
     //scroller
-    const bindDraggedScrollBar = useDrag(({offset: [, y], event}) => {
+    const bindDraggedScrollBar = useDrag(({delta: [, y], event}) => {
         event?.stopPropagation();
-        const absY = y/border * (100 - scrollBarHeight);
-        scrolledPercent.current = absY > 0 && absY < 100 - scrollBarHeight? absY : absY < 0 ? 0 : 100 - scrollBarHeight;
+        const absY = y/window.innerHeight * 100;
+        scrolledPercent.current = scrolledPercent.current + absY > 0 && scrolledPercent.current + absY < 100 - scrollBarHeight ?
+            scrolledPercent.current + absY : scrolledPercent.current + absY <= 0 ? 0 : 100 - scrollBarHeight;
         scrolledY.current = border * scrolledPercent.current / (100 - scrollBarHeight);
+        console.log(scrolledPercent.current)
         setScroll({
             y: -scrolledY.current,
             top: `${scrolledPercent.current}%`,
