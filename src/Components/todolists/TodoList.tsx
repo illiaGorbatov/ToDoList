@@ -134,14 +134,16 @@ const TodoList: React.FC<PropsType> = ({
 
     const currHeight = useRef<number>(0);
     const ref = useRef<HTMLDivElement>(null);
-    const setHeight = useCallback(() => {
-        if (ref.current) {
-            const height = ref.current.offsetHeight;
-            if (currHeight.current !== height) {
-                setNewHeights(height, id);
-            }
+    const setHeight = useCallback((height: number) => {
+        if (currHeight.current === 0 && ref.current) {
+            currHeight.current = ref.current.offsetHeight
         }
-    }, [])
+        if (currHeight.current !== height) {
+            setNewHeights(height+currHeight.current, id);
+        }
+    }, []);
+
+
     const [filterValue, setFilterValue] = useState<string>('All');
 
     const changeFilter = (newFilterValue: string) => {
