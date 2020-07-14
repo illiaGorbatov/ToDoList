@@ -11,7 +11,7 @@ import {animated, useSpring} from "react-spring";
 import {useHover} from "react-use-gesture";
 import ContextButtons, {ButtonWrapper} from "./ContextButtons";
 import isEqual from "react-fast-compare";
-import {neumorphColors} from "../neumorphColors";
+import {defaultPalette, neumorphColors} from "../neumorphColors";
 
 const SingleListWrapper = styled(animated.div)`
   position: relative;
@@ -44,7 +44,7 @@ const SingleListBottomLayer = styled(animated.div)<{
   transform-style: preserve-3d;
   transform-origin: 50% 100%;
   padding: 25px;
-  background: ${props => neumorphColors[props.$palette].backgroundOuter};
+  background: ${props => neumorphColors[props.$palette].concaveBackground};
   position: relative;
   ${props => (props.$closeLookState || props.$hovered && props.$editable) &&
     `&:before {
@@ -70,7 +70,7 @@ const SingleListBottomLayer = styled(animated.div)<{
       left: 0;
       right: 0;
       border: 5px solid transparent;
-      box-shadow: ${neumorphColors[props.$palette].shadowsHovered};
+      box-shadow: ${neumorphColors[props.$palette].shadows};
   }`};
   ${props => props.$closeLookState === false && props.$hovered === false &&
     `&:after {
@@ -100,7 +100,7 @@ const SingleListBottomLayer = styled(animated.div)<{
       transition: border .3s linear;
     }
     &:hover:after {
-          border: 5px solid ${neumorphColors[props.$palette].hoveredAltBackground}
+          border: 5px solid ${neumorphColors[props.$palette].background}
     }`
   };
   ${props => props.$editable &&
@@ -117,14 +117,14 @@ type PropsType = {
     id: string,
     listTitle: string,
     listTasks?: TaskType[],
-    colorPalette: number,
+    paletteIndex: number,
     setNewHeights: (height: number, id: string) => void,
     deleteList: (id: string) => void,
     closeLook: boolean
 };
 
 const TodoList: React.FC<PropsType> = ({
-                                           id, listTitle, listTasks, colorPalette,
+                                           id, listTitle, listTasks, paletteIndex,
                                            setNewHeights, deleteList, closeLook
                                        }) => {
 
@@ -186,12 +186,12 @@ const TodoList: React.FC<PropsType> = ({
 
     const bind = useHover(({hovering}) => {
         if (hovering) {
-            dispatch(actions.setCurrentPaletteIndex(colorPalette));
+            dispatch(actions.setPalette(neumorphColors[paletteIndex]));
             setHoveredState(true);
             setSpring({z: 100})
         }
         if (!hovering) {
-            dispatch(actions.setCurrentPaletteIndex(null));
+            dispatch(actions.setPalette(defaultPalette));
             setHoveredState(false);
             setSpring({z: 0});
         }
@@ -208,15 +208,15 @@ const TodoList: React.FC<PropsType> = ({
     /*console.log(`${listTitle} render`)*/
     return (
         <SingleListWrapper {...!closeLook && {...bind()}} ref={ref}>
-            <SingleListBottomLayer $palette={colorPalette} style={spring}
+            <SingleListBottomLayer $palette={paletteIndex} style={spring}
                                    $editable={editable && !focusedStatus}
                                    $closeLookState={closeLook}
                                    $hovered={hoveredState}>
-                <ContextButtons colors={neumorphColors[colorPalette]} deleteTodoList={deleteTodoList}
+                <ContextButtons colors={neumorphColors[paletteIndex]} deleteTodoList={deleteTodoList}
                                 addTask={addTask} editList={switchTitleMode}/>
                 <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable}
-                               switchTitleMode={switchTitleMode} palette={neumorphColors[colorPalette]}/>
-                <TodoListTasks todoListId={id} tasks={tasks} setHeight={setHeight} palette={neumorphColors[colorPalette]}/>
+                               switchTitleMode={switchTitleMode} palette={neumorphColors[paletteIndex]}/>
+                <TodoListTasks todoListId={id} tasks={tasks} setHeight={setHeight} palette={neumorphColors[paletteIndex]}/>
                 {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}
                 {/*<DetailsWrapper>
                     more details...

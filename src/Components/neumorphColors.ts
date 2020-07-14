@@ -1,4 +1,4 @@
-export const neumorphColors = [
+/*export const neumorphColors = [
     {
         background: '#1a0b3b',
         backgroundOuter: 'linear-gradient(145deg, #170a35, #1c0c3f)',
@@ -41,19 +41,67 @@ export const neumorphColors = [
         shadowsAlt: '22px 22px 49px #a2a3a5, -22px -22px 49px #ffffff',
         shadowsHoveredAlt: 'inset 22px 22px 49px #a2a3a5, inset -22px -22px 49px #ffffff',
     }
+];*/
+
+export const neumorphColors: Array<NeumorphColorsType> = [
+    {
+        background: '#B5838D',
+        concaveBackground: 'linear-gradient(145deg, #a3767f, #c28c97)',
+        shadows: '20px 20px 40px #9a6f78, -20px -20px 40px #d097a2',
+        innerShadows: 'inset 20px 20px 40px #9a6f78, inset -20px -20px 40px #d097a2',
+        littleShadows: '5px 5px 10px #9a6f78, -5px -5px 10px #d097a2;',
+        innerLittleShadows: 'inset 5px 5px 10px #9a6f78, inset -5px -5px 10px #d097a2',
+        progressBarColor: '#d097a2',
+        color: 'white',
+    },{
+        background: '#E5989B',
+        concaveBackground: 'linear-gradient(145deg, #ce898c, #f5a3a6)',
+        shadows: '20px 20px 40px #c38184, -20px -20px 40px #ffafb2',
+        innerShadows: 'inset 20px 20px 40px #c38184, inset -20px -20px 40px #ffafb2',
+        littleShadows: '5px 5px 10px #c38184, -5px -5px 10px #ffafb2;',
+        innerLittleShadows: 'inset 5px 5px 10px #c38184, inset -5px -5px 10px #ffafb2',
+        progressBarColor: '#ffafb2',
+        color: 'white',
+    },{
+        background: '#FFB4A2',
+        concaveBackground: 'linear-gradient(145deg, #e6a292, #ffc1ad)',
+        shadows: '20px 20px 40px #d49586, -20px -20px 40px #ffd3be',
+        innerShadows: 'inset 20px 20px 40px #d49586, inset -20px -20px 40px #ffd3be',
+        littleShadows: '5px 5px 10px #d49586, -5px -5px 10px #ffd3be;',
+        innerLittleShadows: 'inset 5px 5px 10px #d49586, inset -5px -5px 10px #ffd3be',
+        progressBarColor: '#ffd3be',
+        color: 'white',
+    }, {
+        background: '#FFCDB2',
+        concaveBackground: 'linear-gradient(145deg, #e6b9a0, #ffdbbe)',
+        shadows: '20px 20px 40px #d4aa94, -20px -20px 40px #fff0d0',
+        innerShadows: 'inset 20px 20px 40px #d4aa94, inset -20px -20px 40px #fff0d0',
+        littleShadows: '5px 5px 10px #d4aa94, -5px -5px 10px #fff0d0;',
+        innerLittleShadows: 'inset 5px 5px 10px #d4aa94, inset -5px -5px 10px #fff0d0',
+        progressBarColor: '#fff0d0',
+        color: 'white'
+    }
 ];
+
+export const defaultPalette: NeumorphColorsType = {
+    background: '#6D6875',
+    concaveBackground: 'linear-gradient(145deg, #625e69, #756f7d)',
+    shadows: '20px 20px 40px #5e5965, -20px -20px 40px #7c7785',
+    innerShadows: 'inset 20px 20px 40px #5e5965, inset -20px -20px 40px #7c7785',
+    littleShadows: '5px 5px 10px #5d5863, -5px -5px 10px #7d7887',
+    innerLittleShadows: 'inset 5px 5px 10px #5d5863, inset -5px -5px 10px #7d7887',
+    progressBarColor: '#7c7785',
+    color: 'white',
+};
+
 
 export type NeumorphColorsType = {
     background: string,
-    backgroundOuter: string,
+    concaveBackground: string,
     shadows: string,
-    shadowsFocused: string,
-    shadowsHovered: string,
-    innerShadows: string
+    innerShadows: string,
+    littleShadows: string,
+    innerLittleShadows: string,
+    progressBarColor: string,
     color: string,
-    hoveredAltBackground: string,
-    hoveredColor: string,
-    backgroundAltInner: string,
-    shadowsAlt: string,
-    shadowsHoveredAlt: string,
 };

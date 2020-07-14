@@ -22,11 +22,10 @@ const AnimatedBackground:React.FC = () => {
     const currentPalette = useSelector((store: AppStateType) => store.todoList.currentPaletteIndex, shallowEqual);
 
     const [animateBackground, setBackground] = useSpring(() => ({
-        background: '#FFFFFF'
+        background: currentPalette.background
     }));
     useEffect(() => {
-        setBackground({background: `${typeof currentPalette === 'number' ? 
-                neumorphColors[currentPalette].background : '#FFFFFF'}`})
+        setBackground({background: currentPalette.background})
     }, [currentPalette])
 
     return <Background style={animateBackground}/>

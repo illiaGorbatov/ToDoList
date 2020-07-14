@@ -5,7 +5,7 @@ import {useDrag} from "react-use-gesture";
 import {actions} from "../../redux/functionalReducer";
 import styled from "styled-components/macro";
 import TodoList from "./TodoList";
-import {neumorphColors} from "../neumorphColors";
+import {defaultPalette, neumorphColors} from "../neumorphColors";
 import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import {AppStateType} from "../../redux/store";
 import isEqual from "react-fast-compare";
@@ -286,7 +286,7 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width}) => {
             rotateZ: 0,
             y: 0,
         });
-        dispatch(actions.setCurrentPaletteIndex((todoLists.length - index) % neumorphColors.length))
+        dispatch(actions.setPalette(neumorphColors[(todoLists.length - index) % neumorphColors.length]));
         setIndexOfLookedList(index);
         await setSprings(i => {
             if (i !== index) return {to: false};
@@ -328,7 +328,7 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width}) => {
             height: height.current,
             immediate: (prop) => prop === 'height'
         });
-        dispatch(actions.setCurrentPaletteIndex(null));
+        dispatch(actions.setPalette(defaultPalette));
         setIndexOfLookedList(null);
         setSprings(i => {
             if (i !== indexOfLookedList) return {opacity: 1, display: 'block'};
@@ -353,7 +353,7 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width}) => {
                 <TodoListContainer style={springs[i]} {...editable && {...gesture(i)}}
                                    onClick={() => closeLook(i)}
                                    $width={currWidth} key={list.id}>
-                    <TodoList id={list.id} colorPalette={(todoLists.length - i) % neumorphColors.length}
+                    <TodoList id={list.id} paletteIndex={(todoLists.length - i) % neumorphColors.length}
                               deleteList={deleteList} setNewHeights={setNewHeights} closeLook={i === indexOfLookedList}
                               listTitle={list.title} listTasks={list.tasks}/>
                 </TodoListContainer>)}

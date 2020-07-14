@@ -6,9 +6,9 @@ import {actions} from "../../redux/functionalReducer";
 import {animated, useSpring} from "react-spring";
 import { NeumorphColorsType } from "../neumorphColors";
 
-const ListTitle = styled(animated.div)<{$background: string, $color: string, $shadows: string}>`
-  background-image: ${props => props.$background};
-  color: ${props => props.$color};
+const ListTitle = styled(animated.div)<{$palette: NeumorphColorsType}>`
+  background-image: ${props => props.$palette.background};
+  color: ${props => props.$palette.color};
   position: relative;
   font-size: 25px;
   text-align: center;
@@ -28,7 +28,7 @@ const ListTitle = styled(animated.div)<{$background: string, $color: string, $sh
       bottom: 0;
       left: 0;
       right: 0;
-      box-shadow: ${props => props.$shadows};
+      box-shadow: ${props => props.$palette.innerShadows};
   }
 `;
 
@@ -85,8 +85,7 @@ const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable, swi
         <ListTitle contentEditable={isTitleEditable} ref={ref} style={editModeAnimation}
                    onInput={e => onChangeHandler(e)} onKeyPress={e => onKeyPressHandler(e)}
                    onBlur={onBlurHandler}
-                   $background={palette.backgroundOuter}
-                   $color={palette.color} $shadows={palette.shadowsFocused}/>
+                   $palette={palette}/>
     );
 }
 

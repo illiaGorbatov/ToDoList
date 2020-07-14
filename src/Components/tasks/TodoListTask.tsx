@@ -40,13 +40,13 @@ const TaskBackground = styled(animated.div)<{$palette: NeumorphColorsType, $edit
       left: 0;
       right: 0;
       z-index: -1;
-      box-shadow: ${props => props.$palette.shadows};
+      box-shadow: ${props => props.$palette.littleShadows};
       border: 3px solid transparent;
       transition: border .3s linear;
     };
     ${props => props.$editable &&
     `&:hover:before {
-         border: 3px solid ${props.$palette.hoveredAltBackground}
+         border: 3px solid ${props.$palette.background}
     }`
     }
 `;
@@ -72,7 +72,6 @@ const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId, palette
     const dispatch = useDispatch();
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const focusedStatus = useSelector((state: AppStateType) => state.todoList.focusedStatus, shallowEqual);
-
 
     const [isTaskEditable, setEditableState] = useState<boolean>(false);
     const editTask = () => {

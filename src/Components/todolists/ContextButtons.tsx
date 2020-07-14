@@ -28,12 +28,12 @@ export const Button = styled.div<{ styles: NeumorphColorsType }>`
     font-size: 20px;
     background: ${props => props.styles.background};
     color: ${props => props.styles.color};
-    box-shadow: ${props => props.styles.innerShadows};;
+    box-shadow: ${props => props.styles.littleShadows};;
     transform: translate(-50%, -50%);
     transition: .25s cubic-bezier(0.25, 0, 0, 1);
     &:hover {
-        background-color: ${props => props.styles.hoveredAltBackground};
-        color: ${props => props.styles.hoveredColor};
+        background-color: ${props => props.styles.background};
+        color: ${props => props.styles.color};
     }
     &:first-child:nth-last-child(3),
         &:first-child:nth-last-child(3) ~ * {

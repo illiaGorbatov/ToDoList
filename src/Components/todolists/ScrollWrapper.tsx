@@ -6,9 +6,8 @@ import styled from "styled-components/macro";
 import {animated, useSpring} from "react-spring";
 import {useDrag, useWheel} from "react-use-gesture";
 import ReactResizeDetector from 'react-resize-detector';
-import ClosingButton from "./CloseButton";
 import MappedLists from "./MappedLists";
-import {neumorphColors} from "../neumorphColors";
+import {neumorphColors, NeumorphColorsType} from "../neumorphColors";
 import {isMobile} from 'react-device-detect'
 
 
@@ -29,7 +28,7 @@ const ScrollableWrapper = styled(animated.div)`
   z-index: 1;
 `;
 
-const ScrollBarWrapper = styled(animated.div)<{$palette: number | null, $visible: boolean}>`
+const ScrollBarWrapper = styled(animated.div)<{$palette: NeumorphColorsType, $visible: boolean}>`
   position: absolute;
   width: 30px;
   height: 100vh;
@@ -37,11 +36,10 @@ const ScrollBarWrapper = styled(animated.div)<{$palette: number | null, $visible
   right: 0;
   overflow: hidden;
   transition: background-color, opacity 0.3s cubic-bezier(0.25, 0, 0, 1);
-  background-color: ${props => typeof props.$palette === 'number' ?
-    neumorphColors[props.$palette].hoveredAltBackground : 'black'};
+  background: ${props => props.$palette.progressBarColor};
 `;
 
-const ScrollBarThing = styled(animated.div)<{$palette: number | null, $height: number}>`
+const ScrollBarThing = styled(animated.div)<{$palette: NeumorphColorsType, $height: number}>`
   position: absolute;
   width: 20px;
   left: 50%;
@@ -49,8 +47,7 @@ const ScrollBarThing = styled(animated.div)<{$palette: number | null, $height: n
   height: ${props => props.$height}%;
   border-radius: 10px;
   transition: background-image 0.3s cubic-bezier(0.25, 0, 0, 1);
-  background-image: ${props => typeof props.$palette === 'number' ?
-    neumorphColors[props.$palette].backgroundOuter : 'linear-gradient(145deg, #dddee1, #ffffff)'};
+  background: ${props => props.$palette.background};
 `;
 
 
@@ -146,7 +143,6 @@ const ScrollWrapper: React.FC = () => {
         scrolledPercent.current = scrolledPercent.current + absY > 0 && scrolledPercent.current + absY < 100 - scrollBarHeight ?
             scrolledPercent.current + absY : scrolledPercent.current + absY <= 0 ? 0 : 100 - scrollBarHeight;
         scrolledY.current = border * scrolledPercent.current / (100 - scrollBarHeight);
-        console.log(scrolledPercent.current)
         setScroll({
             y: -scrolledY.current,
             top: `${scrolledPercent.current}%`,

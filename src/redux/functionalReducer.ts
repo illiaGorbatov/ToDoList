@@ -5,6 +5,7 @@ import {AppStateType, InferActionTypes} from "./store";
 import cloneDeep from "lodash-es/cloneDeep";
 import {movePos} from "../hooks/movePos";
 import {act} from "react-dom/test-utils";
+import {defaultPalette, neumorphColors, NeumorphColorsType} from "../Components/neumorphColors";
 
 type InitialStateType = {
     todoLists: Array<TodoListType>,
@@ -16,7 +17,7 @@ type InitialStateType = {
     newTasksId: Array<{ oldId: string, newId: string, todoListId: string }>,
     errorsNumber: number,
     focusedStatus: boolean,
-    currentPaletteIndex: number | null,
+    currentPaletteIndex: NeumorphColorsType,
     initialLoadingState: boolean,
     pendingState: boolean,
     swapState: boolean,
@@ -36,7 +37,7 @@ const initialState = {
     newTasksId: [],
     errorsNumber: 0,
     focusedStatus: false,
-    currentPaletteIndex: null,
+    currentPaletteIndex: defaultPalette,
     initialLoadingState: true,
     pendingState: false,
     swapState: false,
@@ -161,7 +162,7 @@ const functionalReducer = (state: InitialStateType = initialState, action: Actio
         case "functionalReducer/SET_CURRENT_PALETTE_INDEX":
             return {
                 ...state,
-                currentPaletteIndex: action.index
+                currentPaletteIndex: action.palette
             }
         case "functionalReducer/REJECT_ALL_CHANGES":
             return {
@@ -234,7 +235,7 @@ export const actions = {
     } as const),
     swapTodoLists: (newListsOrder: Array<string>) => ({type: 'functionalReducer/SWAP_TODO_LISTS', newListsOrder} as const),
     setTodoLists: (newTodoLists: Array<TodoListType>) => ({type: 'functionalReducer/SET_NEW_ID', newTodoLists} as const),
-    setCurrentPaletteIndex: (index: number | null) => ({type: 'functionalReducer/SET_CURRENT_PALETTE_INDEX', index} as const),
+    setPalette: (palette: NeumorphColorsType) => ({type: 'functionalReducer/SET_CURRENT_PALETTE_INDEX', palette} as const),
     rejectAllChanges: () => ({type: 'functionalReducer/REJECT_ALL_CHANGES'} as const),
     completeInitialLoadingState: () => ({type: 'functionalReducer/COMPLETE_INITIAL_LOADING_STATE'} as const),
     setPendingState: (pendingState: boolean) => ({type: 'functionalReducer/SET_PENDING_STATE', pendingState} as const),
