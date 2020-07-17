@@ -41,8 +41,8 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
     const settings = (order: Array<number>, down?: boolean, originalIndex?: number, curIndex?: number, y?: number): any => (index: number) => {
             /*console.log('calculating')*/
             if (down && index === originalIndex && y !== undefined) {
-                const calcY = y > bounds.current[1] ? bounds.current[1] + (y-bounds.current[1])*0.1 : y < bounds.current[0] ?
-                    bounds.current[0] + (y-bounds.current[0])*0.1 : y;
+                const calcY = y > bounds.current[1] ? bounds.current[1] + (y - bounds.current[1]) * 0.1 : y < bounds.current[0] ?
+                    bounds.current[0] + (y - bounds.current[0]) * 0.1 : y;
                 console.log(calcY)
                 return {
                     scale: 1.2,
@@ -61,6 +61,34 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
         }
     ;
 
+    const initialRender = (index: number) =>{
+        if (!memoizedTasksId.current) return {
+            scale: 1,
+            y: 0,
+            zIndex: 1,
+            opacity: 1,
+            immediate: false,
+        }
+        if (editable && tasks.length > memoizedTasksId.current.length) {
+            const position = initialY.current[order.current.indexOf(index)];
+            /*if (index === 0) return {
+                to: async animate => {
+                    await animate({y: position, opacity: 0, immediate: true});
+                    await animate({opacity: 1, immediate: false})
+                }
+            }
+            return {
+                to: async animate => {
+                    await animate({y: position - heights.current[0], immediate: true});
+                    await animate({y: position, immediate: false})
+                }
+            }*/
+        }
+        if (editable && tasks.length < memoizedTasksId.current.length) {
+
+        }
+    };
+
     const order = useRef<Array<number>>([]);
     const initialYofDragged = useRef<number | null>(0);
     const memoizedOrder = useRef<Array<number>>([]);
@@ -70,7 +98,9 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
     const bounds = useRef<Array<number>>([]);
     const elementsRef = useRef<Array<RefObject<HTMLDivElement>>>([]);
 
+    /*const [springs, setSprings] = useSprings(tasks.length, settings(order.current), [tasks]);*/
     const [springs, setSprings] = useSprings(tasks.length, settings(order.current), [tasks]);
+
     /*const [height, setCurrentHeight] = useState<number>(0);*/
     const [height, setCurrentHeight] = useSpring(() => ({height: 0}))
 

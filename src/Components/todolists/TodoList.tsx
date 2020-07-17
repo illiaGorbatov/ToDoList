@@ -12,6 +12,7 @@ import {useHover} from "react-use-gesture";
 import ContextButtons, {ButtonWrapper} from "./ContextButtons";
 import isEqual from "react-fast-compare";
 import {defaultPalette, neumorphColors} from "../neumorphColors";
+import TodoListTaskCopyTransitions from "../tasks/TodoListTaskCopyTransitions";
 
 const SingleListWrapper = styled(animated.div)`
   position: relative;
@@ -218,7 +219,7 @@ const TodoList: React.FC<PropsType> = ({
                                 addTask={addTask} editList={switchTitleMode}/>
                 <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable}
                                switchTitleMode={switchTitleMode} palette={neumorphColors[paletteIndex]}/>
-                <TodoListTasks todoListId={id} tasks={tasks} setHeight={setHeight} palette={neumorphColors[paletteIndex]}/>
+                <TodoListTaskCopyTransitions todoListId={id} tasks={tasks} setHeight={setHeight} palette={neumorphColors[paletteIndex]}/>
                 {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}
                 {/*<DetailsWrapper>
                     more details...
