@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/01-TodoList/static/css/main.f2d42a10.chunk.css",
-    "main.js": "/01-TodoList/static/js/main.8754d915.chunk.js",
-    "main.js.map": "/01-TodoList/static/js/main.8754d915.chunk.js.map",
+    "main.js": "/01-TodoList/static/js/main.1b2eb64e.chunk.js",
+    "main.js.map": "/01-TodoList/static/js/main.1b2eb64e.chunk.js.map",
     "runtime~main.js": "/01-TodoList/static/js/runtime~main.aee11ace.js",
     "runtime~main.js.map": "/01-TodoList/static/js/runtime~main.aee11ace.js.map",
     "static/js/2.260f1b37.chunk.js": "/01-TodoList/static/js/2.260f1b37.chunk.js",
     "static/js/2.260f1b37.chunk.js.map": "/01-TodoList/static/js/2.260f1b37.chunk.js.map",
     "index.html": "/01-TodoList/index.html",
-    "precache-manifest.620d6168f765ab1d07bff5ab4aded064.js": "/01-TodoList/precache-manifest.620d6168f765ab1d07bff5ab4aded064.js",
+    "precache-manifest.e2c00d4a8f496936600e39e00e934adc.js": "/01-TodoList/precache-manifest.e2c00d4a8f496936600e39e00e934adc.js",
     "service-worker.js": "/01-TodoList/service-worker.js",
     "static/css/main.f2d42a10.chunk.css.map": "/01-TodoList/static/css/main.f2d42a10.chunk.css.map",
     "static/media/App.css": "/01-TodoList/static/media/NunitoSans-Regular.4c8f4470.ttf"
