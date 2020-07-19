@@ -10,13 +10,12 @@ import {actions} from "../../redux/functionalReducer";
 import {movePos} from "../../hooks/movePos";
 import isEqual from "react-fast-compare";
 import {NeumorphColorsType} from "../neumorphColors";
-import {clamp} from "lodash-es";
 
 const TasksWrapper = styled.div<{ $height: number }>`
   user-select: none;
   position: relative;
   height: ${props => props.$height}px;
-  transition: height 0.3s cubic-bezier(0.25, 0, 0, 1);
+  transition: height 0.3s cubic-bezier(0.25, 0, 0, 1) 0.2s;
 `;
 
 const TaskWrapper = styled(animated.div)`
@@ -32,8 +31,9 @@ type TransitionItemType = {
     y: number,
     id: string,
     height: number,
-    initialIndex: number,
-    task: TaskType
+    task: TaskType,
+    bottomBorder: number,
+    middleBorder: number
 };
 
 type PropsType = {
@@ -48,45 +48,30 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const dispatch = useDispatch();
 
-    /*const settings = (down?: boolean, originalIndex?: number, y?: number): any => (index: number) => (
-            down && index === originalIndex
-                ? {
-                    scale: 1.2,
-                    zIndex: 2,
-                    y: (initialY.current[index] || 0) + (y || 0),
-                    opacity: 1,
-                    immediate: (prop: string): boolean => prop === 'zIndex' || prop === 'y',
-                }
-                : {
-                    scale: 1,
-                    y: initialY.current[index] || 0,
-                    zIndex: 1,
-                    opacity: 1,
-                    immediate: false,
-                }
-        );*/
-
-    const [transitionItems, setTransitionItems] = useState<Array<TransitionItemType>>([tasks.map((task, i) => ({
+    const [transitionItems, setTransitionItems] = useState<Array<TransitionItemType>>(tasks.map((task) => ({
         y: 0,
         id: task.id,
         height: 0,
-        initialIndex: i,
-        task: task
-    }))]);
+        task: task,
+        bottomBorder: 0,
+        middleBorder: 0
+    })));
 
-    const order = useRef<Array<number>>([]);
-    const height = useRef<number>(0);
+    const [idOfDragged, setIdOfDragged] = useState<string>('');
+
     const initialYofDragged = useRef<number | null>(0);
-    const memoizedOrder = useRef<Array<number>>([]);
-    const initialY = useRef<Array<number>>([]);
-    const heights = useRef<Array<number>>([]);
+    const initialIndexOfDragged = useRef<number>(0);
+    const height = useRef<number>(0);
+    const memoizedOrder = useRef<Array<TransitionItemType>>([]);
     const bounds = useRef<Array<number>>([]);
     const elementsRef = useRef<Array<RefObject<HTMLDivElement>>>([]);
 
     const [spring, setSpring] = useSpring(() => ({
         scale: 1,
-        y: 0
-    }), [tasks]);
+        y: initialYofDragged.current || 0,
+        zIndex: 5,
+        immediate: (props) => props === 'y'
+    }), []);
 
     const transitions = useTransition(transitionItems, {
         from: ({y}) => ({y, opacity: 0}),
@@ -100,133 +85,139 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
 
     const [forceRerender, rerender] = useState<number>(0);
     useEffect(() => {
-        console.log('useEffect')
         elementsRef.current = tasks.map(() => React.createRef());
         if (tasks.length > transitionItems.length) {
             const newTransitionItems = [{
                 y: 0,
                 id: tasks[0].id,
                 height: 0,
-                initialIndex: 0,
-                task: tasks[0]
+                task: tasks[0],
+                bottomBorder: 0,
+                middleBorder: 0
             }].concat(transitionItems);
-            setTransitionItems(newTransitionItems)
+            setTransitionItems(newTransitionItems);
+            rerender(forceRerender + 1);
         }
         if (tasks.length < transitionItems.length) {
             const deletedTaskIndex = transitionItems.findIndex(item => tasks.findIndex(task => task.id === item.id) === -1);
             const deletedItem = transitionItems[deletedTaskIndex];
             const newTransitionItems = transitionItems.filter((_, index) => index !== deletedTaskIndex)
                 .map((item, index) => {
-                if (index < deletedTaskIndex) return item;
-                else return {
-                    ...item,
-                    y: item.y - deletedItem.height,
-                    initialIndex: item.initialIndex > deletedItem.initialIndex ? item.initialIndex-1 : item.initialIndex
-                }
-            })
-            setTransitionItems(newTransitionItems)
-            console.log(deletedTaskIndex)
-        }
-        rerender(forceRerender + 1);
-        console.log(transitionItems)
+                    if (index < deletedTaskIndex) return item;
+                    else return {
+                        ...item,
+                        y: item.y - deletedItem.height,
+                        bottomBorder: item.bottomBorder - deletedItem.height,
+                        middleBorder: item.middleBorder - deletedItem.height
+                    }
+                })
+            setTransitionItems(newTransitionItems);
+            const heightsSum = newTransitionItems.reduce((sum, item) => sum + item.height, 0);
+            height.current = heightsSum;
+            setHeight(heightsSum);
+
+        } else rerender(forceRerender + 1);
     }, [tasks]);
 
     useLayoutEffect(() => {
-        console.log('useLayoutEffect')
-        heights.current = elementsRef.current.map(ref => ref.current!.offsetHeight);
-        if (tasks.length === transitionItems.length) {
-            const newTransitionsItems = transitionItems.map((item, index) => ({
-                y: heights.current.reduce((total, item, i) => {
-                    if (i !== 0 && i <= index) {
-                        total += heights.current[i - 1]
-                    }
-                    return total
-                }, 0),
-                id: item.id,
-                height: heights.current[index],
-                initialIndex: item.initialIndex,
-                task: item.task
-            }));
-            setTransitionItems(newTransitionsItems)
-        }
-        if (tasks.length > transitionItems.length) {
-            //if (tasks.length === 0)
-            const newTransitionsItems = transitionItems.map((item, index) => {
-                if (index === 0) return {
-                    ...item,
-                    height: heights.current[0],
-                    initialIndex: transitionItems.length - 1
-                };
-                else return {
-                    ...item,
-                    y: item.y + heights.current[0],
-                }
-            })
-            setTransitionItems(newTransitionsItems)
-        }
-        const heightsSum = heights.current.reduce((sum, current) => sum + current, 0);
-        height.current = heightsSum;
-        setHeight(heightsSum);
-        console.log(transitionItems)
-    }, [forceRerender]);
-
-    const getNewIndex = (index: number, y: number) => {
-        if (y > 0) {
-            let newIndex = index;
-            let height = 0;
-            while (y > height + heights.current[index + 1] / 2) {
-                newIndex += 1;
-                height += heights.current[index + 1];
-            }
-            return newIndex > heights.current.length - 1 ? heights.current.length - 1 : newIndex;
-        }
-        if (y < 0) {
-            let newIndex = index;
-            let height = 0;
-            while (Math.abs(y) > height + heights.current[index - 1] / 2) {
-                newIndex -= 1;
-                height += heights.current[index - 1];
-            }
-            return newIndex < 0 ? 0 : newIndex;
-        }
-        return index
-    }
-
-    const gesture = useDrag(({args: [originalIndex], down, movement: [, y], event, first}) => {
-        event!.stopPropagation();
-        const curIndex = transitionItems.findIndex(item => item.initialIndex === originalIndex);
-        if (first) {
-            initialYofDragged.current = transitionItems[originalIndex].y;
-            bounds.current = [-initialYofDragged.current, transitionItems[transitionItems.length - 1].y - initialYofDragged.current];
-            console.log(bounds.current)
-        }
-        const curRow = clamp(getNewIndex(curIndex, y)!, 0, tasks.length - 1);//текущий новый индекс
-        const newOrder = movePos(order.current, curIndex, curRow);// новый порядок
-        const newHeights = movePos(heights.current, curIndex, curRow);//новый массив высот
-        initialY.current = newHeights.map((_, index) => {//новый массив У координат
-            return heights.current.reduce((total, item, i) => {
+        console.log(elementsRef.current);
+        const heights = elementsRef.current.map(ref => ref.current!.offsetHeight)
+        const newTransitionItems = transitionItems.map((item, index) => {
+            const calcY = heights.reduce((total, item, i) => {
                 if (i !== 0 && i <= index) {
-                    total += newHeights[i - 1]
+                    total += heights[i - 1]
                 }
                 return total
-            }, 0)
-        })
-        setSpring({y: y, scale: 1, immediate: false});
+            }, 0);
+            return {
+                ...item,
+                y: calcY,
+                height: heights[index],
+                bottomBorder: heights[index] + calcY,
+                middleBorder: heights[index] / 2 + calcY
+            }
+        });
+        setTransitionItems(newTransitionItems)
+        const heightsSum = newTransitionItems.reduce((sum, item) => sum + item.height, 0);
+        if (heightsSum || heightsSum === 0) {
+            height.current = heightsSum;
+            setHeight(heightsSum);
+        }
+    }, [forceRerender]);
+
+    const getNewIndex = (transitionItem: TransitionItemType, y: number) => {
+        if (y > 0) {
+            const newIndex = transitionItems.findIndex(item => item.bottomBorder > transitionItem.middleBorder+y
+                && item.y < transitionItem.middleBorder+y);
+            return newIndex === -1 ? false : newIndex
+        }
+        if (y < 0) {
+            const newIndex = transitionItems.findIndex(item => item.y < transitionItem.middleBorder+y
+                && item.bottomBorder > transitionItem.middleBorder+y)
+            return newIndex === -1 ? false : newIndex
+        }
+        return false
+    }
+
+    const gesture = useDrag(({args: [transitionItem], down, movement: [, y], event, first, active}) => {
+        event!.stopPropagation();
+        const curIndex = transitionItems.findIndex(item => item.id === transitionItem.id);
+        if (initialYofDragged.current === null) {
+            initialYofDragged.current = transitionItem.y;
+            bounds.current = [-initialYofDragged.current!,
+                transitionItems[transitionItems.length - 1].y - initialYofDragged.current!];
+            memoizedOrder.current = transitionItems;
+            setIdOfDragged(transitionItem.id);
+            initialIndexOfDragged.current = curIndex;
+            setSpring({y: transitionItem.y, scale: 1.2, immediate: (props) => props === 'y'});
+            console.log('first')
+        }
+        if (active) {
+            const curRow = getNewIndex(transitionItem, y);//текущий новый индекс
+            if (curRow !== curIndex && curRow !== false) {
+                console.log(curRow, curIndex);
+                let newTransitionItems = movePos(transitionItems, curIndex, curRow);
+                newTransitionItems = newTransitionItems.map((item, index) => {
+                    const calcY = newTransitionItems.reduce((total, item, i) => {
+                        if (i !== 0 && i <= index) {
+                            total += newTransitionItems[i - 1].height
+                        }
+                        return total
+                    }, 0);
+                    return {
+                        ...item,
+                        y: calcY,
+                        bottomBorder: item.height + calcY,
+                        middleBorder: item.height / 2 + calcY
+                    }
+                });
+                setTransitionItems(newTransitionItems);
+                console.log(newTransitionItems, transitionItems)
+            }
+            const calcY = (y > bounds.current[1] ? bounds.current[1] + (y - bounds.current[1]) * 0.1 : y < bounds.current[0] ?
+                bounds.current[0] + (y - bounds.current[0]) * 0.1 : y) + initialYofDragged.current!;
+            setSpring({y: calcY, scale: 1.2, immediate: (props) => props === 'y'});
+        }
         if (!down) {
-            order.current = newOrder;
-            heights.current = newHeights;
             initialYofDragged.current = null;
-            if (!isEqual(order.current, memoizedOrder.current)) {
-                const newOrder = order.current.map(item => tasks[item].id)
-                dispatch(actions.swapTasks(todoListId, newOrder))
+            setSpring({
+                y: transitionItems[curIndex].y,
+                scale: 1,
+                immediate: false,
+                onRest: () => setIdOfDragged('')});
+            if (!isEqual(transitionItems, memoizedOrder.current)) {
+                const newOrder = transitionItems.map(item => item.id);
+                dispatch(actions.swapTasks(todoListId, newOrder));
             }
         }
     }, {filterTaps: true});
 
+    console.log(idOfDragged)
+
     return (
         <TasksWrapper $height={height.current}>
             {transitions((style, item, t, i) =>
-                <TaskWrapper {...editable && {...gesture(i)}} style={style}
+                <TaskWrapper {...editable && {...gesture(item)}} style={idOfDragged === item.id ? spring : style}
                              ref={elementsRef.current[i]}>
                     <TodoListTask task={item.task} todoListId={todoListId} palette={palette}/>
                 </TaskWrapper>)}

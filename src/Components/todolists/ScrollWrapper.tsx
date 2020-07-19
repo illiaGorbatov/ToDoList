@@ -148,7 +148,26 @@ const ScrollWrapper: React.FC = () => {
             top: `${scrolledPercent.current}%`,
             immediate: (prop) => prop === 'top'
         });
-    })
+    });
+
+    const scrollByListDrugging = (direction: string) => {
+        if (direction === 'bottom' && scrolledY.current < border) {
+            scrolledY.current = scrolledY.current + 5 < border ? scrolledY.current + 5 : border;
+            scrolledPercent.current = scrolledY.current/border * (100 - scrollBarHeight);
+            setScroll({
+                y: -scrolledY.current,
+                top: `${scrolledPercent.current}%`
+            });
+        }
+        if (direction === 'top' && scrolledY.current > 0) {
+            scrolledY.current = scrolledY.current - 5 > 0 ? scrolledY.current - 5 : 0;
+            scrolledPercent.current = scrolledY.current/border * (100 - scrollBarHeight);
+            setScroll({
+                y: -scrolledY.current,
+                top: `${scrolledPercent.current}%`
+            });
+        }
+    }
 
     return (
         <>
@@ -157,7 +176,8 @@ const ScrollWrapper: React.FC = () => {
                 {() =>
                     <AllLists style={wrapperAnimation} ref={measuredRef}>
                         <ScrollableWrapper style={{y: scrollingAnimation.y}}>
-                            <MappedLists setWrapperAnimation={setWrapperAnimation} width={width}/>
+                            <MappedLists setWrapperAnimation={setWrapperAnimation} width={width}
+                                         scrollByListDrugging={scrollByListDrugging}/>
                         </ScrollableWrapper>
                     </AllLists>
                 }
@@ -166,6 +186,7 @@ const ScrollWrapper: React.FC = () => {
                 <ScrollBarThing $palette={currentPalette} style={{top: scrollingAnimation.top}} {...!isMobile && {...bindDraggedScrollBar()}}
                                 $height={scrollBarHeight}/>
             </ScrollBarWrapper>
+            <div style={{position: 'absolute', width: 100, height: 5, background: 'black', top: 790}}/>
         </>
     );
 }

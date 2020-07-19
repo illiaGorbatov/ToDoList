@@ -7,6 +7,12 @@ const instance = axios.create({
     headers: {'API-KEY': 'b4801660-f864-43f9-8acc-579713cc64df'}
 });
 
+const loginInstance = axios.create({
+    baseURL: "https://social-network.samuraijs.com/api/1.1/auth/me",
+    withCredentials: true,
+    headers: {'API-KEY': 'b4801660-f864-43f9-8acc-579713cc64df'}
+});
+
 type CommonResponseType<T> = {
     resultCode: number;
     messages: string[];
@@ -25,11 +31,11 @@ type GetMeType = {
 
 export const api = {
     getAuthState: () => {
-        return axios.get<CommonResponseType<GetMeType>>('https://social-network.samuraijs.com/api/1.1/auth/me').then(async res => {
+        return loginInstance.get<CommonResponseType<GetMeType>>('').then(async res => {
             if (res.status !== 200) {
                 let response = res;
                 while (response.status !== 200) {
-                    response = await axios.get<CommonResponseType<GetMeType>>('https://social-network.samuraijs.com/api/1.1/auth/me')
+                    response = await loginInstance.get<CommonResponseType<GetMeType>>('')
                 }
                 return response.data
             }
@@ -38,13 +44,13 @@ export const api = {
     },
     logIn: () => {
         const requestObject = {email: "npikolist@gmail.com", password: "512347", rememberMe: false};
-        return axios.post<CommonResponseType<{userId: string}>>('https://social-network.samuraijs.com/api/1.1/auth/login', requestObject)
+        return loginInstance.post<CommonResponseType<{userId: string}>>('', requestObject)
             .then(async res => {
             if (res.status !== 200) {
                 let response = res;
                 while (response.status !== 200) {
-                    response = await axios.post<CommonResponseType<{userId: string}>>
-                    ('https://social-network.samuraijs.com/api/1.1/auth/login', requestObject)
+                    response = await loginInstance.post<CommonResponseType<{userId: string}>>
+                    ('', requestObject)
                 }
                 return response.data
             }

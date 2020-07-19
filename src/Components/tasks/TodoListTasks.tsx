@@ -12,9 +12,11 @@ import isEqual from "react-fast-compare";
 import {NeumorphColorsType} from "../neumorphColors";
 import {clamp} from "lodash-es";
 
-const TasksWrapper = styled(animated.div)/*<{$height: number}>*/`
+const TasksWrapper = styled.div<{ $height: number }>`
   user-select: none;
   position: relative;
+  height: ${props => props.$height}px;
+  transition: height 0.3s cubic-bezier(0.25, 0, 0, 1) 0.2s;
 `;
 
 const TaskWrapper = styled(animated.div)`
@@ -38,12 +40,11 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const dispatch = useDispatch();
 
-    const settings = (order: Array<number>, down?: boolean, originalIndex?: number, curIndex?: number, y?: number): any => (index: number) => {
-            /*console.log('calculating')*/
+    const settings = (order: Array<number>, down?: boolean, originalIndex?: number, y?: number): any => (index: number) => {
+        /*console.log(index, originalIndex)*/
             if (down && index === originalIndex && y !== undefined) {
                 const calcY = y > bounds.current[1] ? bounds.current[1] + (y - bounds.current[1]) * 0.1 : y < bounds.current[0] ?
                     bounds.current[0] + (y - bounds.current[0]) * 0.1 : y;
-                console.log(calcY)
                 return {
                     scale: 1.2,
                     zIndex: 2,
@@ -53,41 +54,13 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
                 }
             } else return {
                 scale: 1,
-                y: initialY.current[order.indexOf(index)] || 0,
+                y: initialY.current[order.indexOf(tasks.length-index-1)] || 0,
                 zIndex: 1,
                 opacity: 1,
                 immediate: false,
             }
         }
     ;
-
-    const initialRender = (index: number) =>{
-        if (!memoizedTasksId.current) return {
-            scale: 1,
-            y: 0,
-            zIndex: 1,
-            opacity: 1,
-            immediate: false,
-        }
-        if (editable && tasks.length > memoizedTasksId.current.length) {
-            const position = initialY.current[order.current.indexOf(index)];
-            /*if (index === 0) return {
-                to: async animate => {
-                    await animate({y: position, opacity: 0, immediate: true});
-                    await animate({opacity: 1, immediate: false})
-                }
-            }
-            return {
-                to: async animate => {
-                    await animate({y: position - heights.current[0], immediate: true});
-                    await animate({y: position, immediate: false})
-                }
-            }*/
-        }
-        if (editable && tasks.length < memoizedTasksId.current.length) {
-
-        }
-    };
 
     const order = useRef<Array<number>>([]);
     const initialYofDragged = useRef<number | null>(0);
@@ -97,12 +70,9 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
     const heights = useRef<Array<number>>([]);
     const bounds = useRef<Array<number>>([]);
     const elementsRef = useRef<Array<RefObject<HTMLDivElement>>>([]);
+    const [height, setCurrentHeight] = useState<number>(0)
 
-    /*const [springs, setSprings] = useSprings(tasks.length, settings(order.current), [tasks]);*/
     const [springs, setSprings] = useSprings(tasks.length, settings(order.current), [tasks]);
-
-    /*const [height, setCurrentHeight] = useState<number>(0);*/
-    const [height, setCurrentHeight] = useSpring(() => ({height: 0}))
 
     const [forceRerender, rerender] = useState<number>(0);
     useEffect(() => {
@@ -110,14 +80,6 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
         rerender(forceRerender + 1);
     }, [tasks]);
 
-    /*useLayoutEffect(() => {
-        if (editable && tasks.length > memoizedTasksId.current.length) {
-            setSprings(i =>
-                i === 0 ? {opacity: 0, immediate: true} : {to: false}
-            )
-        }
-    }, [tasks])*/
-    console.log('tasks')
     useLayoutEffect(() => {
         if (!editable && tasks.length !== 0) {
             order.current = tasks.map((_, i) => i);
@@ -129,22 +91,7 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
             order.current = [0, ...order.current.map(item => item + 1)];
             heights.current = [elementsRef.current[0].current!.offsetHeight, ...heights.current];
             calcPositions();
-            setSprings(i => {
-                const position = initialY.current[order.current.indexOf(i)];
-                console.log(initialY.current, order.current, position, position - heights.current[0])
-                if (i === 0) return {
-                    to: async animate => {
-                        await animate({y: position, opacity: 0, immediate: true});
-                        await animate({opacity: 1, immediate: false})
-                    }
-                }
-                return {
-                    to: async animate => {
-                        await animate({y: position - heights.current[0], immediate: true});
-                        await animate({y: position, immediate: false})
-                    }
-                }
-            });
+            setSprings(settings(order.current));
         }
         if (editable && tasks.length < memoizedTasksId.current.length) {
             const deletedTaskIndex = memoizedTasksId.current.findIndex(taskId => tasks.findIndex(item => item.id === taskId) === -1);
@@ -153,17 +100,10 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
                 .map(item => item > deletedTaskIndex ? item - 1 : item);
             heights.current = heights.current.filter((_, index) => index !== deletedOrder);
             calcPositions();
-            setSprings(i => {
-                return {
-                    scale: 1,
-                    y: initialY.current[order.current.indexOf(i)],
-                    zIndex: 1,
-                    immediate: false,
-                }
-            });
+            setSprings(settings(order.current));
         }
         const heightsSum = heights.current.reduce((sum, current) => sum + current, 0);
-        setCurrentHeight({height: heightsSum});
+        setCurrentHeight(heightsSum);
         setHeight(heightsSum);
         memoizedTasksId.current = tasks.map(item => item.id);
     }, [forceRerender]);
@@ -202,16 +142,15 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
     }
 
 
-    const gesture = useDrag(({args: [originalIndex], down, movement: [, y], event, first}) => {
+    const gesture = useDrag(({args: [originalIndex, trueIndex], down, movement: [, y], event, first}) => {
         event!.stopPropagation();
-        const curIndex = order.current.indexOf(originalIndex);
+        const curIndex = order.current.indexOf(trueIndex);
         if (first) {
             initialYofDragged.current = initialY.current[curIndex];
-            bounds.current = [-initialYofDragged.current, initialY.current[order.current.indexOf(tasks.length - 1)] - initialYofDragged.current];
-            console.log(bounds.current)
+            bounds.current = [-initialYofDragged.current, initialY.current[order.current.indexOf(tasks.length-1)] - initialYofDragged.current];
         }
         if (!initialYofDragged.current) initialYofDragged.current = initialY.current[curIndex];
-        const curRow = clamp(getNewIndex(curIndex, y)!, 0, tasks.length - 1);//текущий новый индекс
+        const curRow = getNewIndex(curIndex, y);//текущий новый индекс
         const newOrder = movePos(order.current, curIndex, curRow);// новый порядок
         const newHeights = movePos(heights.current, curIndex, curRow);//новый массив высот
         initialY.current = newHeights.map((_, index) => {//новый массив У координат
@@ -222,7 +161,7 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
                 return total
             }, 0)
         })
-        setSprings(settings(newOrder, down, originalIndex, curIndex, y));
+        setSprings(settings(newOrder, down, originalIndex, y));
         if (!down) {
             order.current = newOrder;
             heights.current = newHeights;
@@ -235,9 +174,9 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
     }, {filterTaps: true});
 
     return (
-        <TasksWrapper /*$height={height}*/ style={height}>
+        <TasksWrapper $height={height}>
             {tasks.map((task, i) =>
-                <TaskWrapper {...editable && {...gesture(i)}} key={task.id} style={springs[i]}
+                <TaskWrapper {...editable && {...gesture(tasks.length-i-1, i)}} key={task.id} style={springs[tasks.length-i-1]}
                              ref={elementsRef.current[i]}>
                     <TodoListTask task={task} todoListId={todoListId} palette={palette}/>
                 </TaskWrapper>)}

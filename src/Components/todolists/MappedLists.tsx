@@ -25,7 +25,8 @@ const CloseButtonAnimatedWrapper = styled(animated.div)`
 
 type PropsType = {
     setWrapperAnimation: SpringStartFn<{ x: string, rotateX: number, rotateZ: number, y: number, height: number }>,
-    width: number
+    width: number,
+    scrollByListDrugging: (direction: string) => void
 }
 
 type GridItemsType = {
@@ -40,7 +41,7 @@ type GridItemsType = {
     index: number,
 }
 
-const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width}) => {
+const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByListDrugging}) => {
 //resize logic
 
     const editable = useSelector((store: AppStateType) => store.todoList.editable, shallowEqual);
@@ -54,7 +55,7 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width}) => {
     useEffect(() => {
         recalculateMeasures();
         setSprings(i => {
-            const currentSettings = gridItems.current.find((list) => list.index === i)!;
+            const currentSettings = gridItems.current.find((list) => list.index === todoLists.length - 1 - i)!;
             return {x: currentSettings.x, y: currentSettings.y}
         });
     }, [width, columns, currWidth]);
@@ -75,7 +76,7 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width}) => {
             /*console.log(gridItems.current, width, columns)*/
             recalculateMeasures();
             setSprings(i => {
-                const currentSettings = gridItems.current.find((list) => list.index === i)!;
+                const currentSettings = gridItems.current.find((list) => list.index === todoLists.length - 1 - i)!;
                 return {x: currentSettings.x, y: currentSettings.y}
             })
         }
@@ -145,7 +146,7 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width}) => {
         }
         if (gridItems.current.length === todoLists.length) recalculateMeasures();
         setSprings(i => {
-            const currentSettings = gridItems.current.find((list) => list.index === i)!;
+            const currentSettings = gridItems.current.find((list) => list.index === todoLists.length - 1 - i)!;
             return {x: currentSettings.x, y: currentSettings.y}
         })
         console.log(gridItems.current);
@@ -201,7 +202,6 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width}) => {
         return i < todoLists.length && i >= 0 ? i : null;
     }
 
-    const draggedList = useRef<number>(0);
     const currItem = useRef<GridItemsType>({
         botY: 0,
         height: 0,
@@ -213,36 +213,49 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width}) => {
         x: 0,
         y: 0
     });
-    const bounds = useRef<{ left: number, right: number, top: number, bottom: number }>({
-        left: 0, right: 0, top: 0, bottom: 0
+    const bounds = useRef<{ left: number, right: number, top: number, bottom: number,  pageTop: number, pageBottom: number}>({
+        left: 0, right: 0, top: 0, bottom: 0, pageTop: 0, pageBottom: 0
     });
+    const eventCoords = useRef<{offsetX: number, offsetY: number, clientX: number, clientY: number} | null>(null);
 
     const getBounds = () => {
-        const left = gridItems.current.length !== 0 ? -gridItems.current[draggedList.current].x - 25 : 0;
-        const right = gridItems.current.length !== 0 ? width - gridItems.current[draggedList.current].rightX + 25 : 0;
-        const top = gridItems.current.length !== 0 ? -gridItems.current[draggedList.current].y - 25 : 0;
-        const bottom = gridItems.current.length !== 0 ?
-            height.current - gridItems.current[draggedList.current].botY + 25 : 0;
-        console.log(left, right, top, bottom)
-        return {left, right, top, bottom}
+        const left = -currItem.current.x - 25 + eventCoords.current!.offsetX;
+        const right = width - currItem.current.rightX + 25 + (width/columns - eventCoords.current!.offsetX);
+        const top = -currItem.current.y - 25 - eventCoords.current!.offsetY;
+        const bottom = height.current - currItem.current.y - 25 - (currItem.current.height - eventCoords.current!.offsetY);
+        const pageTop = -eventCoords.current!.clientY + eventCoords.current!.offsetY + 75;
+        const pageBottom = window.innerHeight - eventCoords.current!.clientY - (currItem.current.height - 75 - eventCoords.current!.offsetY);
+        bounds.current = {left, right, top, bottom, pageTop, pageBottom}
     }
 
     const gesture = useDrag(({
-                                 args: [index], down, movement: [x, y],
+                                 args: [index, springsIndex], down, movement: [x, y],
                                  active, first, event
                              }) => {
         event?.stopPropagation();
-        draggedList.current = gridItems.current.findIndex(item => item.index === index);
+        const draggedList = gridItems.current.findIndex(item => item.index === index);
         if (first) {
-            currItem.current = gridItems.current[draggedList.current];
+            currItem.current = gridItems.current[draggedList];
         }
         if (active) {
+            console.log(event)
+            if (!eventCoords.current) {
+                //@ts-ignore
+                eventCoords.current = {offsetX: event.offsetX, offsetY: event.offsetY, clientX: event.clientX, clientY: event.clientY};
+                getBounds()
+            }
+            if (y > bounds.current.pageBottom) {
+                scrollByListDrugging('bottom')
+            }
+            if (y < bounds.current.pageTop) {
+                scrollByListDrugging('top')
+            }
             const newIndex = calculatePositions(x, y);
-            if (newIndex !== null && newIndex !== draggedList.current) {
-                reorder(draggedList.current, newIndex);
+            if (newIndex !== null && newIndex !== draggedList) {
+                reorder(draggedList, newIndex);
             }
             setSprings(i => {
-                if (i === index) {
+                if (i === springsIndex) {
                     return {
                         x: currItem.current.x + x,
                         y: currItem.current.y + y,
@@ -250,19 +263,18 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width}) => {
                         immediate: (n: string): boolean => n === 'zIndex'
                     }
                 }
-                const currentSettings = gridItems.current.find((list) => list.index === i)!;
+                const currentSettings = gridItems.current.find((list) => list.index === todoLists.length - 1 - i)!;
                 return {x: currentSettings.x, y: currentSettings.y}
             })
         }
         if (!down) {
-            (async () => {
-                await setSprings(i => {
-                    const currentSettings = gridItems.current.find((list) => list.index === i)!;
-                    return {x: currentSettings.x, y: currentSettings.y, zIndex: 3}
-                });
-                const newOrder = gridItems.current.map(item => item.id)
-                dispatch(actions.swapTodoLists(newOrder))
-            })();
+            eventCoords.current = null;
+            setSprings(i => {
+                const currentSettings = gridItems.current.find((list) => list.index === todoLists.length - 1 - i)!;
+                return {x: currentSettings.x, y: currentSettings.y, zIndex: 3}
+            });
+            const newOrder = gridItems.current.map(item => item.id)
+            dispatch(actions.swapTodoLists(newOrder))
         }
     }, {filterTaps: true});
 
@@ -271,7 +283,7 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width}) => {
         if (editable) return;
         const currItem = gridItems.current.find(item => item.index === index)!;
         await setSprings(i => {
-            if (i !== index) return {
+            if (i !== todoLists.length - 1 - index) return {
                 to: async animate => {
                     await animate({opacity: 0});
                     await animate({display: 'none'})
@@ -286,10 +298,10 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width}) => {
             rotateZ: 0,
             y: 0,
         });
-        dispatch(actions.setPalette(neumorphColors[(todoLists.length - index) % neumorphColors.length]));
+        dispatch(actions.setPalette(neumorphColors[(todoLists.length - 1 - index) % neumorphColors.length]));
         setIndexOfLookedList(index);
         await setSprings(i => {
-            if (i !== index) return {to: false};
+            if (i !== todoLists.length - 1 - index) return {to: false};
             return {
                 y: window.innerHeight / 2 - currItem.height / 2,
                 x: width / 2 - (width / columns) / 2
@@ -316,8 +328,8 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width}) => {
             }
         });
         setSprings(i => {
-            if (i !== indexOfLookedList) return {to: false};
-            const currItem = gridItems.current.find(item => item.index === i)!
+            if (i !== todoLists.length - 1 - indexOfLookedList!) return {to: false};
+            const currItem = gridItems.current.find(item => item.index === todoLists.length - 1 - i)!
             return {x: currItem.x, y: currItem.y}
         });
         await setWrapperAnimation({
@@ -345,15 +357,15 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width}) => {
 
     return (
         <>
-            <CloseButtonAnimatedWrapper onClick={returnFromCloseLook}
-                style={closeButtonAnimation}>
+            <CloseButtonAnimatedWrapper onClick={returnFromCloseLook} style={closeButtonAnimation}>
                 <ClosingButton/>
             </CloseButtonAnimatedWrapper>
             {todoLists.length !== 0 && todoLists.map((list, i) =>
-                <TodoListContainer style={springs[i]} {...editable && {...gesture(i)}}
-                                   onClick={() => closeLook(i)}
-                                   $width={currWidth} key={list.id}>
-                    <TodoList id={list.id} paletteIndex={(todoLists.length - i) % neumorphColors.length}
+                <TodoListContainer
+                    style={springs[todoLists.length - i - 1]} {...editable && {...gesture(i, todoLists.length - i - 1)}}
+                    onClick={() => closeLook(i)}
+                    $width={currWidth} key={list.id}>
+                    <TodoList id={list.id} paletteIndex={(todoLists.length - 1 - i) % neumorphColors.length}
                               deleteList={deleteList} setNewHeights={setNewHeights} closeLook={i === indexOfLookedList}
                               listTitle={list.title} listTasks={list.tasks}/>
                 </TodoListContainer>)}
