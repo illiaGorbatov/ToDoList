@@ -63,7 +63,7 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
 
 // child height calculation logic
     const temporaryValue = useRef<Array<{ height: number, id: string }>>([]);
-    const setNewHeights = useCallback((height: number, id: string) => {
+    const setNewHeights = (height: number, id: string) => {
         const findHeight = temporaryValue.current.findIndex(item => item.id === id);
         const newHeightsArray = findHeight === -1 ? [...temporaryValue.current, {height, id}]
             : temporaryValue.current.map((item, i) => {
@@ -80,7 +80,8 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
                 return {x: currentSettings.x, y: currentSettings.y}
             })
         }
-    }, [todoLists, width, columns, currWidth,/*, newListsId*/]);
+    };
+    // [todoLists, width, columns, currWidth,/*, newListsId*/]
 
     const deleteList = useCallback((id: string) => {
         temporaryValue.current = temporaryValue.current.filter(item => item.id !== id)
@@ -200,7 +201,22 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
             if (item.x < xPos && item.rightX > xPos && item.y < yPos && item.botY > yPos) return true
         });
         return i < todoLists.length && i >= 0 ? i : null;
-    }
+    };
+
+    const setActualSprings = (x: number, y: number, springsIndex: number) => {
+        setSprings(i => {
+            if (i === springsIndex) {
+                return {
+                    x: currItem.current.x + x,
+                    y: currItem.current.y + y,
+                    zIndex: 4,
+                    immediate: (n: string): boolean => n === 'zIndex'
+                }
+            }
+            const currentSettings = gridItems.current.find((list) => list.index === todoLists.length - 1 - i)!;
+            return {x: currentSettings.x, y: currentSettings.y}
+        })
+    };
 
     const currItem = useRef<GridItemsType>({
         botY: 0,
@@ -213,17 +229,18 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
         x: 0,
         y: 0
     });
-    const bounds = useRef<{ left: number, right: number, top: number, bottom: number,  pageTop: number, pageBottom: number}>({
+    const bounds = useRef<{ left: number, right: number, top: number, bottom: number, pageTop: number, pageBottom: number }>({
         left: 0, right: 0, top: 0, bottom: 0, pageTop: 0, pageBottom: 0
     });
-    const eventCoords = useRef<{offsetX: number, offsetY: number, clientX: number, clientY: number} | null>(null);
+    const eventCoords = useRef<{ offsetX: number, offsetY: number, clientX: number, clientY: number } | null>(null);
+    const virtualY = useRef<number>(0)
 
     const getBounds = () => {
         const left = -currItem.current.x - 25 + eventCoords.current!.offsetX;
-        const right = width - currItem.current.rightX + 25 + (width/columns - eventCoords.current!.offsetX);
-        const top = -currItem.current.y - 25 - eventCoords.current!.offsetY;
-        const bottom = height.current - currItem.current.y - 25 - (currItem.current.height - eventCoords.current!.offsetY);
-        const pageTop = -eventCoords.current!.clientY + eventCoords.current!.offsetY + 75;
+        const right = width - currItem.current.rightX + 25 + (width / columns - eventCoords.current!.offsetX);
+        const top = -currItem.current.y - 25 - eventCoords.current!.offsetY - 25;
+        const bottom = height.current - currItem.current.y - 25 - (currItem.current.height - (eventCoords.current!.offsetY + 25));
+        const pageTop = -eventCoords.current!.clientY - 25;
         const pageBottom = window.innerHeight - eventCoords.current!.clientY - (currItem.current.height - 75 - eventCoords.current!.offsetY);
         bounds.current = {left, right, top, bottom, pageTop, pageBottom}
     }
@@ -236,36 +253,53 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
         const draggedList = gridItems.current.findIndex(item => item.index === index);
         if (first) {
             currItem.current = gridItems.current[draggedList];
+            //@ts-ignore
+            eventCoords.current = {offsetX: event.offsetX, offsetY: event.offsetY, clientX: event.clientX, clientY: event.clientY};
+            getBounds();
+            virtualY.current = y;
+            console.log(bounds.current)
         }
         if (active) {
-            console.log(event)
-            if (!eventCoords.current) {
-                //@ts-ignore
-                eventCoords.current = {offsetX: event.offsetX, offsetY: event.offsetY, clientX: event.clientX, clientY: event.clientY};
-                getBounds()
-            }
             if (y > bounds.current.pageBottom) {
-                scrollByListDrugging('bottom')
-            }
-            if (y < bounds.current.pageTop) {
-                scrollByListDrugging('top')
-            }
-            const newIndex = calculatePositions(x, y);
-            if (newIndex !== null && newIndex !== draggedList) {
-                reorder(draggedList, newIndex);
-            }
-            setSprings(i => {
-                if (i === springsIndex) {
-                    return {
-                        x: currItem.current.x + x,
-                        y: currItem.current.y + y,
-                        zIndex: 4,
-                        immediate: (n: string): boolean => n === 'zIndex'
+                (async () => {
+                    while (virtualY.current < bounds.current.bottom) {
+                        const promise = new Promise((resolve) => {
+                            setTimeout(() => {
+                                    scrollByListDrugging('bottom');
+                                    virtualY.current = virtualY.current + 5;
+                                    const newIndex = calculatePositions(x, virtualY.current);
+                                    if (newIndex !== null && newIndex !== draggedList) reorder(draggedList, newIndex);
+                                    setActualSprings(x, virtualY.current, springsIndex)
+                                    resolve()
+                                }
+                                , 5)
+                        });
+                        await promise
                     }
-                }
-                const currentSettings = gridItems.current.find((list) => list.index === todoLists.length - 1 - i)!;
-                return {x: currentSettings.x, y: currentSettings.y}
-            })
+                })();
+            } else if (y < bounds.current.pageTop) {
+                (async () => {
+                    while (virtualY.current > bounds.current.top) {
+                        const promise = new Promise((resolve) => {
+                            setTimeout(() => {
+                                    scrollByListDrugging('top');
+                                    virtualY.current = virtualY.current - 5;
+                                    const newIndex = calculatePositions(x, virtualY.current);
+                                    if (newIndex !== null && newIndex !== draggedList) reorder(draggedList, newIndex);
+                                    setActualSprings(x, virtualY.current, springsIndex);
+                                    resolve()
+                                }
+                                , 5)
+                        });
+                        await promise
+                    }
+                })()
+            } else {
+                virtualY.current = y;
+                const newIndex = calculatePositions(x, virtualY.current);
+                if (newIndex !== null && newIndex !== draggedList) reorder(draggedList, newIndex);
+                setActualSprings(x, virtualY.current, springsIndex)
+            }
         }
         if (!down) {
             eventCoords.current = null;

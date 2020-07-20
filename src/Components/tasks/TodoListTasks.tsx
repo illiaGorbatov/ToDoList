@@ -41,7 +41,6 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
     const dispatch = useDispatch();
 
     const settings = (order: Array<number>, down?: boolean, originalIndex?: number, y?: number): any => (index: number) => {
-        /*console.log(index, originalIndex)*/
             if (down && index === originalIndex && y !== undefined) {
                 const calcY = y > bounds.current[1] ? bounds.current[1] + (y - bounds.current[1]) * 0.1 : y < bounds.current[0] ?
                     bounds.current[0] + (y - bounds.current[0]) * 0.1 : y;
@@ -69,6 +68,7 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
     const initialY = useRef<Array<number>>([]);
     const heights = useRef<Array<number>>([]);
     const bounds = useRef<Array<number>>([]);
+    const elementsBorder = useRef<Array<{topBorder: number, center: number, bottomBorder: number}>>([]);
     const elementsRef = useRef<Array<RefObject<HTMLDivElement>>>([]);
     const [height, setCurrentHeight] = useState<number>(0)
 
@@ -84,13 +84,13 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
         if (!editable && tasks.length !== 0) {
             order.current = tasks.map((_, i) => i);
             heights.current = elementsRef.current.map(ref => ref.current!.offsetHeight);
-            calcPositions();
+            calcPositions(heights.current);
             setSprings(settings(order.current));
         }
         if (editable && tasks.length > memoizedTasksId.current.length) {
             order.current = [0, ...order.current.map(item => item + 1)];
             heights.current = [elementsRef.current[0].current!.offsetHeight, ...heights.current];
-            calcPositions();
+            calcPositions(heights.current);
             setSprings(settings(order.current));
         }
         if (editable && tasks.length < memoizedTasksId.current.length) {
@@ -99,7 +99,7 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
             order.current = order.current.filter(index => index !== deletedTaskIndex)
                 .map(item => item > deletedTaskIndex ? item - 1 : item);
             heights.current = heights.current.filter((_, index) => index !== deletedOrder);
-            calcPositions();
+            calcPositions(heights.current);
             setSprings(settings(order.current));
         }
         const heightsSum = heights.current.reduce((sum, current) => sum + current, 0);
@@ -108,15 +108,20 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
         memoizedTasksId.current = tasks.map(item => item.id);
     }, [forceRerender]);
 
-    const calcPositions = () => {
-        initialY.current = heights.current.map((height, index) => {
-            return heights.current.reduce((total, item, i) => {
+    const calcPositions = (heightsArray: Array<number>) => {
+        initialY.current = heightsArray.map((height, index) => {
+            return heightsArray.reduce((total, item, i) => {
                 if (i !== 0 && i <= index) {
-                    total += heights.current[i - 1]
+                    total += heightsArray[i - 1]
                 }
                 return total
             }, 0)
         });
+        elementsBorder.current = initialY.current.map((item, i) => ({
+            topBorder: item,
+            center: item + heightsArray[i]/2,
+            bottomBorder: item + heightsArray[i]
+        }));
     }
 
     const getNewIndex = (index: number, y: number) => {
@@ -141,26 +146,18 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
         return index
     }
 
-
     const gesture = useDrag(({args: [originalIndex, trueIndex], down, movement: [, y], event, first}) => {
         event!.stopPropagation();
         const curIndex = order.current.indexOf(trueIndex);
         if (first) {
             initialYofDragged.current = initialY.current[curIndex];
-            bounds.current = [-initialYofDragged.current, initialY.current[order.current.indexOf(tasks.length-1)] - initialYofDragged.current];
+            bounds.current = [-initialYofDragged.current, initialY.current[tasks.length-1] - initialYofDragged.current];
         }
         if (!initialYofDragged.current) initialYofDragged.current = initialY.current[curIndex];
         const curRow = getNewIndex(curIndex, y);//текущий новый индекс
         const newOrder = movePos(order.current, curIndex, curRow);// новый порядок
         const newHeights = movePos(heights.current, curIndex, curRow);//новый массив высот
-        initialY.current = newHeights.map((_, index) => {//новый массив У координат
-            return heights.current.reduce((total, item, i) => {
-                if (i !== 0 && i <= index) {
-                    total += newHeights[i - 1]
-                }
-                return total
-            }, 0)
-        })
+        calcPositions(newHeights);
         setSprings(settings(newOrder, down, originalIndex, y));
         if (!down) {
             order.current = newOrder;

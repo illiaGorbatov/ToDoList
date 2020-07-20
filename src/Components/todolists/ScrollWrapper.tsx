@@ -186,7 +186,6 @@ const ScrollWrapper: React.FC = () => {
                 <ScrollBarThing $palette={currentPalette} style={{top: scrollingAnimation.top}} {...!isMobile && {...bindDraggedScrollBar()}}
                                 $height={scrollBarHeight}/>
             </ScrollBarWrapper>
-            <div style={{position: 'absolute', width: 100, height: 5, background: 'black', top: 790}}/>
         </>
     );
 }
