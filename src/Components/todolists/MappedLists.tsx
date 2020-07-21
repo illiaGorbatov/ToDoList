@@ -29,7 +29,7 @@ type PropsType = {
     scrollByListDrugging: (direction: string) => void,
     setCloseLookState: (height: number) => void,
     returnFromCloseLookState: () => void,
-    hideScrollBar: () => void
+    switchScrollBar: () => void
 }
 
 type GridItemsType = {
@@ -45,7 +45,7 @@ type GridItemsType = {
 }
 
 const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByListDrugging,
-                                              setCloseLookState, returnFromCloseLookState, hideScrollBar}) => {
+                                              setCloseLookState, returnFromCloseLookState, switchScrollBar}) => {
 //resize logic
 
     const editable = useSelector((store: AppStateType) => store.todoList.editable, shallowEqual);
@@ -319,7 +319,7 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
     const closeLook = async (index: number) => {
         if (editable) return;
         const currItem = gridItems.current.find(item => item.index === index)!;
-        hideScrollBar();
+        switchScrollBar();
         await setSprings(i => {
             if (i !== todoLists.length-1-index) return {
                 to: async animate => {
@@ -360,13 +360,14 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
     };
 
     const returnFromCloseLook = async () => {
-        hideScrollBar()
+        switchScrollBar()
         setCloseButtonAnimation({
             to: async animate => {
                 await animate({opacity: 0});
                 await animate({display: 'none'})
             }
         });
+        returnFromCloseLookState();
         setSprings(i => {
             if (i !== todoLists.length-1-indexOfLookedList!) return {to: false};
             const currItem = gridItems.current.find(item => item.index === indexOfLookedList)!
@@ -380,7 +381,6 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
             height: height.current,
             immediate: (prop) => prop === 'height'
         });
-        returnFromCloseLookState();
         dispatch(actions.setPalette(defaultPalette));
         setIndexOfLookedList(null);
         setSprings(i => {

@@ -122,7 +122,7 @@ const ScrollWrapper: React.FC = () => {
     }));
 
     const visibilityOfScrollBar = useSpring({
-        from: {opacity: 0, right: 0, display: 'none'},
+        from: {opacity: 0, right: -50, display: 'none'},
         to: async animate => {
             await animate(visible ? {display: 'block'} : {opacity: 0, right: -50});
             await animate(visible ? {opacity: 1, right: 0} : {display: 'none'})
@@ -207,7 +207,7 @@ const ScrollWrapper: React.FC = () => {
         });
     }, [border, scrollBarHeight])
 
-    const hideScrollBar = useCallback(() => setVisible(false), [border, scrollBarHeight]);
+    const switchScrollBar = useCallback(() => setVisible(!visible), [border, scrollBarHeight]);
 
     return (
         <>
@@ -215,7 +215,7 @@ const ScrollWrapper: React.FC = () => {
                 <ScrollableWrapper style={{y: scrollingAnimation.y}}>
                     <MappedLists setWrapperAnimation={setWrapperAnimation} width={width}
                                  scrollByListDrugging={scrollByListDrugging} setCloseLookState={setCloseLookState}
-                                 returnFromCloseLookState={returnFromCloseLookState} hideScrollBar={hideScrollBar}/>
+                                 returnFromCloseLookState={returnFromCloseLookState} switchScrollBar={switchScrollBar}/>
                 </ScrollableWrapper>
             </AllLists>
             <ScrollBarWrapper $palette={currentPalette} $visible={visible} style={visibilityOfScrollBar}>

@@ -6,13 +6,11 @@ import {actions, submitAllChanges} from "../redux/functionalReducer";
 import {animated, useSpring, useTransition} from "react-spring";
 import {NeumorphColorsType} from "./neumorphColors";
 
-const BlurWrapper = styled(animated.div)`
+const RotatedBackground = styled(animated.div)<{ $palette: NeumorphColorsType }>`
    position: absolute;
-   backdrop-filter: blur(5px);
-   width: 100%;
-   height: 20vh;
-   max-height: 300px;
-   min-height: 100px;
+   z-index: 998;
+   background-color: #293241;
+   width: 150%
 `;
 
 const Wrapper = styled(animated.div)`
@@ -21,9 +19,6 @@ const Wrapper = styled(animated.div)`
   box-sizing: border-box;
   display: grid;
   place-items: center;
-  height: 20vh;
-  max-height: 300px;
-  min-height: 100px;
   z-index: 999;
 `;
 
@@ -185,13 +180,14 @@ const MainInterface = () => {
 
     //animation logic
     const [spring, setSpring] = useSpring(() => ({
-        wrapperX: '0%',
         height: '100%',
         width: '100%',
+        backgroundHeight: '100%',
         medX: '50%',
         medY: '50%',
         x: '50%',
         y: '50%',
+        rotateZ: -35
     }));
 
     const [progressBarrAnimation, setProgressBar] = useSpring(() => ({
@@ -199,21 +195,10 @@ const MainInterface = () => {
         clipPath2: `polygon( 0% 0%, 50% 0%, 50% 200%, 0% 200%)`,
     }));
 
-    const setProgress = (e:  React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-            const progress1 = 200 - (200 - +e.currentTarget.value*200);
-            const progress2 = 200 - +e.currentTarget.value*200;
-            setProgressBar({
-                clipPath1: `polygon( 50% ${progress1}%, 100% ${progress1}%, 100% 200%, 50% 200%)`,
-                clipPath2: `polygon( 0% 0%, 50% 0%, 50% ${progress2}%, 0% ${progress2}%)`
-            })
-        }
-    }
-
     useEffect(() => {
         const progress = allTasks === 0 ? 0 : completedTasks / allTasks;
-        const progress1 = 200 - (200 - progress*200);
-        const progress2 = 200 - progress*200;
+        const progress1 = 200 - (200 - progress * 200);
+        const progress2 = 200 - progress * 200;
         setProgressBar({
             clipPath1: `polygon( 50% ${progress1}%, 100% ${progress1}%, 100% 200%, 50% 200%)`,
             clipPath2: `polygon( 0% 0%, 50% 0%, 50% ${progress2}%, 0% ${progress2}%)`
@@ -223,14 +208,13 @@ const MainInterface = () => {
     useEffect(() => {
         if (!initialLoading && !editable && !pendingState) {
             setSpring({
-                height: '16%',
-                width: '16%',
-                wrapperX: '10%',
+                height: '20%',
+                width: '20%',
+                backgroundHeight: '30%',
                 config: {friction: 50}
             })
         } else if (editable) {
             setSpring({
-                wrapperX: '50%',
                 medX: '125%',
                 medY: '125%',
                 x: '-50%',
@@ -259,38 +243,37 @@ const MainInterface = () => {
 
     return (
         <>
-        <Wrapper style={{x: spring.wrapperX, width: spring.width, height: spring.height}}>
-            <ButtonsWrapper>
-                <EditButton onClick={switchEditMode} $palette={currentPalette}>
-                    <ProgressBackground>
-                        <Progress style={{clipPath: progressBarrAnimation.clipPath1}}/>
-                        <Progress style={{clipPath: progressBarrAnimation.clipPath2}}/>
-                    </ProgressBackground>
-                    <InnerBackground $palette={currentPalette}
-                                     $altBackground={pendingState || initialLoading || swapState || fetching}>
-                        {textTransition((style) =>
-                            <InnerEditButtonText style={{...style, translateY: '-50%'}}>
-                                {actionMessage}
-                            </InnerEditButtonText>)}
-                    </InnerBackground>
-                </EditButton>
-                <SmallerButton onClick={addTodoList} $palette={currentPalette}
-                               style={{x: spring.x, y: spring.y, translateX: '-50%', translateY: '-50%'}}>
-                    <InnerSmallerButtonText>
-                        Add list
-                    </InnerSmallerButtonText>
-                </SmallerButton>
-                <MediumButton onClick={rejectAllChanges} $palette={currentPalette}
-                              style={{x: spring.medX, y: spring.medY, translateX: '-50%', translateY: '-50%'}}>
-                    <InnerSmallerButtonText>
-                        remove changes
-                    </InnerSmallerButtonText>
-                </MediumButton>
-            </ButtonsWrapper>
-            <input onKeyPress={(e) => setProgress(e)} style={{position: 'absolute', top: '100%'}}/>
-        </Wrapper>
-
-            </>
+            <RotatedBackground $palette={currentPalette} style={{height: spring.backgroundHeight, rotateZ: spring.rotateZ}}/>
+            <Wrapper style={{width: spring.width, height: spring.height}}>
+                <ButtonsWrapper>
+                    <EditButton onClick={switchEditMode} $palette={currentPalette}>
+                        <ProgressBackground>
+                            <Progress style={{clipPath: progressBarrAnimation.clipPath1}}/>
+                            <Progress style={{clipPath: progressBarrAnimation.clipPath2}}/>
+                        </ProgressBackground>
+                        <InnerBackground $palette={currentPalette}
+                                         $altBackground={pendingState || initialLoading || swapState || fetching}>
+                            {textTransition((style) =>
+                                <InnerEditButtonText style={{...style, translateY: '-50%'}}>
+                                    {actionMessage}
+                                </InnerEditButtonText>)}
+                        </InnerBackground>
+                    </EditButton>
+                    <SmallerButton onClick={addTodoList} $palette={currentPalette}
+                                   style={{x: spring.x, y: spring.y, translateX: '-50%', translateY: '-50%'}}>
+                        <InnerSmallerButtonText>
+                            Add list
+                        </InnerSmallerButtonText>
+                    </SmallerButton>
+                    <MediumButton onClick={rejectAllChanges} $palette={currentPalette}
+                                  style={{x: spring.medX, y: spring.medY, translateX: '-50%', translateY: '-50%'}}>
+                        <InnerSmallerButtonText>
+                            remove changes
+                        </InnerSmallerButtonText>
+                    </MediumButton>
+                </ButtonsWrapper>
+            </Wrapper>
+        </>
     )
 };
 

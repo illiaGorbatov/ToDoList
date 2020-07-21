@@ -477,8 +477,7 @@ const getStateFromServer = (initial: boolean): ThunkType => async (dispatch: Thu
         await Promise.all(getTasks)
     }
     dispatch(actions.setTodoLists(listsWithTasks));
-    if (initial) dispatch(actions.completeInitialLoadingState());
-    if (!initial) dispatch(actions.setFetchingState(true));
+    if (initial) setTimeout(() => dispatch(actions.completeInitialLoadingState()), 400);
 };
 
 export const submitAllChanges = (): ThunkType =>
