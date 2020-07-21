@@ -1,20 +1,29 @@
-import React, {useEffect, useMemo, useState} from "react";
+import React, {useEffect, useMemo} from "react";
 import styled from "styled-components/macro";
 import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import {AppStateType} from "../redux/store";
 import {actions, submitAllChanges} from "../redux/functionalReducer";
 import {animated, useSpring, useTransition} from "react-spring";
-import {neumorphColors, NeumorphColorsType} from "./neumorphColors";
+import {NeumorphColorsType} from "./neumorphColors";
+
+const BlurWrapper = styled(animated.div)`
+   position: absolute;
+   backdrop-filter: blur(5px);
+   width: 100%;
+   height: 20vh;
+   max-height: 300px;
+   min-height: 100px;
+`;
 
 const Wrapper = styled(animated.div)`
   position: absolute;
   font-family: NunitoSans-ExtraLight, sans-serif;
-  backdrop-filter: blur(5px);
   box-sizing: border-box;
   display: grid;
   place-items: center;
-  min-height: min-content;
-  max-height: min-content;
+  height: 20vh;
+  max-height: 300px;
+  min-height: 100px;
   z-index: 999;
 `;
 
@@ -249,10 +258,10 @@ const MainInterface = () => {
     /*console.log('interface render')*/
 
     return (
+        <>
         <Wrapper style={{x: spring.wrapperX, width: spring.width, height: spring.height}}>
             <ButtonsWrapper>
                 <EditButton onClick={switchEditMode} $palette={currentPalette}>
-                    {/*<ProgressBackground style={progressBarrAnimation}/>*/}
                     <ProgressBackground>
                         <Progress style={{clipPath: progressBarrAnimation.clipPath1}}/>
                         <Progress style={{clipPath: progressBarrAnimation.clipPath2}}/>
@@ -280,6 +289,8 @@ const MainInterface = () => {
             </ButtonsWrapper>
             <input onKeyPress={(e) => setProgress(e)} style={{position: 'absolute', top: '100%'}}/>
         </Wrapper>
+
+            </>
     )
 };
 

@@ -1,13 +1,12 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useCallback, useEffect, useLayoutEffect, useRef, useState} from "react";
 import {initialization} from "../../redux/functionalReducer";
 import {shallowEqual, useDispatch, useSelector} from 'react-redux';
 import {AppStateType} from "../../redux/store";
 import styled from "styled-components/macro";
 import {animated, useSpring} from "react-spring";
 import {useDrag, useWheel} from "react-use-gesture";
-import ReactResizeDetector from 'react-resize-detector';
 import MappedLists from "./MappedLists";
-import {neumorphColors, NeumorphColorsType} from "../neumorphColors";
+import {NeumorphColorsType} from "../neumorphColors";
 import {isMobile} from 'react-device-detect'
 
 
@@ -15,6 +14,7 @@ const AllLists = styled(animated.div)`
   position: relative;
   transform-style: preserve-3d;
   width: 70vw;
+  max-width: 2000px;
   @media screen and (max-width: 800px) {
     top: -50vh
   }
@@ -28,7 +28,7 @@ const ScrollableWrapper = styled(animated.div)`
   z-index: 1;
 `;
 
-const ScrollBarWrapper = styled(animated.div)<{$palette: NeumorphColorsType, $visible: boolean}>`
+const ScrollBarWrapper = styled(animated.div)<{ $palette: NeumorphColorsType, $visible: boolean }>`
   position: absolute;
   width: 30px;
   height: 100vh;
@@ -39,7 +39,7 @@ const ScrollBarWrapper = styled(animated.div)<{$palette: NeumorphColorsType, $vi
   background: ${props => props.$palette.progressBarColor};
 `;
 
-const ScrollBarThing = styled(animated.div)<{$palette: NeumorphColorsType, $height: number}>`
+const ScrollBarThing = styled(animated.div)<{ $palette: NeumorphColorsType, $height: number }>`
   position: absolute;
   width: 20px;
   left: 50%;
@@ -70,10 +70,28 @@ const ScrollWrapper: React.FC = () => {
     useEffect(() => {
         if (height < window.innerHeight) setVisible(false)
         else setVisible(true)
-    }, [height])
+    }, [height]);
 
+    const measuredRef = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState<number>(0);
-    const onResize = (width: number) => setWidth(width);
+    useEffect(() => {
+        let isMounted = true;
+        let timeoutId: number | undefined = undefined;
+        const resizeListener = () => {
+            if (isMounted) {
+                clearTimeout(timeoutId);
+                timeoutId = window.setTimeout(() => setWidth(measuredRef.current!.offsetWidth), 150);
+            }
+        };
+        window.addEventListener('resize', resizeListener);
+        return () => {
+            isMounted = false;
+            window.removeEventListener('resize', resizeListener);
+        }
+    }, []);
+    useLayoutEffect(() => {
+        setWidth(measuredRef.current!.offsetWidth)
+    }, []);
 
     const [wrapperAnimation, setWrapperAnimation] = useSpring(() => ({
         x: '-15vw',
@@ -93,11 +111,10 @@ const ScrollWrapper: React.FC = () => {
         })
     }, [editable]);
 
-    const measuredRef = useRef<HTMLDivElement>(null);
-
     //scroll logic
     const scrolledY = useRef<number>(0);
     const scrolledPercent = useRef<number>(0);
+    const memoizedData = useRef<Array<number>>([]);
     const [scrollingAnimation, setScroll] = useSpring(() => ({
         y: 0,
         top: `0%`,
@@ -118,7 +135,7 @@ const ScrollWrapper: React.FC = () => {
     useWheel(({delta: [, y]}) => {
         scrolledY.current = scrolledY.current + y < border && scrolledY.current + y > 0 ? scrolledY.current + y
             : scrolledY.current + y <= 0 ? 0 : border;
-        scrolledPercent.current = scrolledY.current/border * (100 - scrollBarHeight);
+        scrolledPercent.current = scrolledY.current / border * (100 - scrollBarHeight);
         setScroll({
             y: -scrolledY.current,
             top: `${scrolledPercent.current}%`
@@ -139,7 +156,7 @@ const ScrollWrapper: React.FC = () => {
     //scroller
     const bindDraggedScrollBar = useDrag(({delta: [, y], event}) => {
         event?.stopPropagation();
-        const absY = y/window.innerHeight * 100;
+        const absY = y / window.innerHeight * 100;
         scrolledPercent.current = scrolledPercent.current + absY > 0 && scrolledPercent.current + absY < 100 - scrollBarHeight ?
             scrolledPercent.current + absY : scrolledPercent.current + absY <= 0 ? 0 : 100 - scrollBarHeight;
         scrolledY.current = border * scrolledPercent.current / (100 - scrollBarHeight);
@@ -150,10 +167,10 @@ const ScrollWrapper: React.FC = () => {
         });
     });
 
-    const scrollByListDrugging = (direction: string) => {
+    const scrollByListDrugging = useCallback((direction: string) => {
         if (direction === 'bottom' && scrolledY.current < border) {
             scrolledY.current = scrolledY.current + 5 < border ? scrolledY.current + 5 : border;
-            scrolledPercent.current = scrolledY.current/border * (100 - scrollBarHeight);
+            scrolledPercent.current = scrolledY.current / border * (100 - scrollBarHeight);
             setScroll({
                 y: -scrolledY.current,
                 top: `${scrolledPercent.current}%`
@@ -161,29 +178,49 @@ const ScrollWrapper: React.FC = () => {
         }
         if (direction === 'top' && scrolledY.current > 0) {
             scrolledY.current = scrolledY.current - 5 > 0 ? scrolledY.current - 5 : 0;
-            scrolledPercent.current = scrolledY.current/border * (100 - scrollBarHeight);
+            scrolledPercent.current = scrolledY.current / border * (100 - scrollBarHeight);
             setScroll({
                 y: -scrolledY.current,
                 top: `${scrolledPercent.current}%`
             });
         }
-    }
+    }, [border, scrollBarHeight])
+
+    const setCloseLookState = useCallback((height: number) => {
+        if (height < window.innerHeight) setVisible(false)
+        else setVisible(true);
+        memoizedData.current = [scrolledY.current, scrolledPercent.current];
+        scrolledY.current = 0;
+        scrolledPercent.current = 0;
+        setScroll({
+            y: 0,
+            top: `${0}%`
+        });
+    }, [border, scrollBarHeight])
+
+    const returnFromCloseLookState = useCallback(() => {
+        scrolledY.current = memoizedData.current[0];
+        scrolledPercent.current = memoizedData.current[1];
+        setScroll({
+            y: -memoizedData.current[0],
+            top: `${memoizedData.current[1]}%`
+        });
+    }, [border, scrollBarHeight])
+
+    const hideScrollBar = useCallback(() => setVisible(false), [border, scrollBarHeight]);
 
     return (
         <>
-            {/* @ts-ignore*/}
-                <ReactResizeDetector handleWidth onResize={onResize} refreshMode="debounce" targetRef={measuredRef}>
-                {() =>
-                    <AllLists style={wrapperAnimation} ref={measuredRef}>
-                        <ScrollableWrapper style={{y: scrollingAnimation.y}}>
-                            <MappedLists setWrapperAnimation={setWrapperAnimation} width={width}
-                                         scrollByListDrugging={scrollByListDrugging}/>
-                        </ScrollableWrapper>
-                    </AllLists>
-                }
-            </ReactResizeDetector>
+            <AllLists style={wrapperAnimation} ref={measuredRef}>
+                <ScrollableWrapper style={{y: scrollingAnimation.y}}>
+                    <MappedLists setWrapperAnimation={setWrapperAnimation} width={width}
+                                 scrollByListDrugging={scrollByListDrugging} setCloseLookState={setCloseLookState}
+                                 returnFromCloseLookState={returnFromCloseLookState} hideScrollBar={hideScrollBar}/>
+                </ScrollableWrapper>
+            </AllLists>
             <ScrollBarWrapper $palette={currentPalette} $visible={visible} style={visibilityOfScrollBar}>
-                <ScrollBarThing $palette={currentPalette} style={{top: scrollingAnimation.top}} {...!isMobile && {...bindDraggedScrollBar()}}
+                <ScrollBarThing $palette={currentPalette}
+                                style={{top: scrollingAnimation.top}} {...!isMobile && {...bindDraggedScrollBar()}}
                                 $height={scrollBarHeight}/>
             </ScrollBarWrapper>
         </>

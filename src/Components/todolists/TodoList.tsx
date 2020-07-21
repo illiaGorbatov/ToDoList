@@ -1,20 +1,17 @@
 import React, {useCallback, useRef, useState} from "react";
 import TodoListTasks from '../tasks/TodoListTasks';
-import '../../App.css'
 import TodoListTitle from "./TodoListTitle";
 import {shallowEqual, useDispatch, useSelector} from 'react-redux';
 import {actions} from "../../redux/functionalReducer";
 import {TaskType} from "../../redux/entities";
 import styled from "styled-components/macro";
 import {AppStateType} from "../../redux/store";
-import {animated, useSpring} from "react-spring";
 import {useHover} from "react-use-gesture";
 import ContextButtons, {ButtonWrapper} from "./ContextButtons";
 import isEqual from "react-fast-compare";
 import {defaultPalette, neumorphColors} from "../neumorphColors";
-import TodoListTaskCopyTransitions from "../tasks/TodoListTaskCopyTransitions";
 
-const SingleListWrapper = styled(animated.div)`
+const SingleListWrapper = styled.div`
   position: relative;
   transform-style: preserve-3d;
   transform-origin: 50% 50%;
@@ -27,7 +24,7 @@ const SingleListWrapper = styled(animated.div)`
   }
 `;
 
-const DetailsWrapper = styled(animated.div)`
+const DetailsWrapper = styled.div`
   position: absolute;
   top: 50%;
   left: 100%;
@@ -38,7 +35,7 @@ const DetailsWrapper = styled(animated.div)`
   white-space: nowrap;
 `;
 
-const SingleListBottomLayer = styled(animated.div)<{
+const SingleListBottomLayer = styled.div<{
     $palette: number, $editable: boolean, $closeLookState: boolean, $hovered: boolean
 }>`
   border-radius: 30px;
@@ -47,6 +44,12 @@ const SingleListBottomLayer = styled(animated.div)<{
   padding: 25px;
   background: ${props => neumorphColors[props.$palette].concaveBackground};
   position: relative;
+  transform: translateZ(0);
+  transition: transform .6s cubic-bezier(0.25, 0, 0, 1);
+  ${props => !props.$editable && 
+    `&:hover {
+        transform: translateZ(100px)
+  }`}
   ${props => (props.$closeLookState || props.$hovered && props.$editable) &&
     `&:before {
       border-radius: 30px;
@@ -183,20 +186,13 @@ const TodoList: React.FC<PropsType> = ({
     }) : [];
 
     //hover Effect
-    const [spring, setSpring] = useSpring(() => ({
-        z: 0
-    }));
 
     const bind = useHover(({hovering}) => {
         if (hovering) {
             dispatch(actions.setPalette(neumorphColors[paletteIndex]));
-            setHoveredState(true);
-            setSpring({z: 100})
         }
         if (!hovering) {
             dispatch(actions.setPalette(defaultPalette));
-            setHoveredState(false);
-            setSpring({z: 0});
         }
     });
 
@@ -211,7 +207,7 @@ const TodoList: React.FC<PropsType> = ({
     /*console.log(`${listTitle} render`)*/
     return (
         <SingleListWrapper {...!closeLook && {...bind()}} ref={ref}>
-            <SingleListBottomLayer $palette={paletteIndex} style={spring}
+            <SingleListBottomLayer $palette={paletteIndex}
                                    $editable={editable && !focusedStatus}
                                    $closeLookState={closeLook}
                                    $hovered={hoveredState}>

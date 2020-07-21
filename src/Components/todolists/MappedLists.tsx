@@ -26,7 +26,10 @@ const CloseButtonAnimatedWrapper = styled(animated.div)`
 type PropsType = {
     setWrapperAnimation: SpringStartFn<{ x: string, rotateX: number, rotateZ: number, y: number, height: number }>,
     width: number,
-    scrollByListDrugging: (direction: string) => void
+    scrollByListDrugging: (direction: string) => void,
+    setCloseLookState: (height: number) => void,
+    returnFromCloseLookState: () => void,
+    hideScrollBar: () => void
 }
 
 type GridItemsType = {
@@ -41,7 +44,8 @@ type GridItemsType = {
     index: number,
 }
 
-const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByListDrugging}) => {
+const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByListDrugging,
+                                              setCloseLookState, returnFromCloseLookState, hideScrollBar}) => {
 //resize logic
 
     const editable = useSelector((store: AppStateType) => store.todoList.editable, shallowEqual);
@@ -49,13 +53,13 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
     const dispatch = useDispatch();
 
     const columns = useMemo(() => {
-        return width >= 2000 ? 5 : width >= 1400 ? 4 : width >= 900 ? 3 : width >= 600 ? 2 : 1
+        return width >= 1700 ? 4 : width >= 1100 ? 3 : width >= 700 ? 2 : 1
     }, [width]);
     const currWidth = useMemo(() => width / columns, [width]);
     useEffect(() => {
         recalculateMeasures();
         setSprings(i => {
-            const currentSettings = gridItems.current.find((list) => list.index === todoLists.length - 1 - i)!;
+            const currentSettings = gridItems.current.find((list) => list.index === todoLists.length-1-i)!;
             return {x: currentSettings.x, y: currentSettings.y}
         });
     }, [width, columns, currWidth]);
@@ -63,7 +67,7 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
 
 // child height calculation logic
     const temporaryValue = useRef<Array<{ height: number, id: string }>>([]);
-    const setNewHeights = (height: number, id: string) => {
+    const setNewHeights = useCallback((height: number, id: string) => {
         const findHeight = temporaryValue.current.findIndex(item => item.id === id);
         const newHeightsArray = findHeight === -1 ? [...temporaryValue.current, {height, id}]
             : temporaryValue.current.map((item, i) => {
@@ -80,8 +84,7 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
                 return {x: currentSettings.x, y: currentSettings.y}
             })
         }
-    };
-    // [todoLists, width, columns, currWidth,/*, newListsId*/]
+    }, [todoLists, width, columns, currWidth,/*, newListsId*/])
 
     const deleteList = useCallback((id: string) => {
         temporaryValue.current = temporaryValue.current.filter(item => item.id !== id)
@@ -316,8 +319,9 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
     const closeLook = async (index: number) => {
         if (editable) return;
         const currItem = gridItems.current.find(item => item.index === index)!;
+        hideScrollBar();
         await setSprings(i => {
-            if (i !== todoLists.length - 1 - index) return {
+            if (i !== todoLists.length-1-index) return {
                 to: async animate => {
                     await animate({opacity: 0});
                     await animate({display: 'none'})
@@ -332,10 +336,11 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
             rotateZ: 0,
             y: 0,
         });
-        dispatch(actions.setPalette(neumorphColors[(todoLists.length - 1 - index) % neumorphColors.length]));
+        setCloseLookState(currItem.height);
+        dispatch(actions.setPalette(neumorphColors[(todoLists.length-1-index) % neumorphColors.length]));
         setIndexOfLookedList(index);
         await setSprings(i => {
-            if (i !== todoLists.length - 1 - index) return {to: false};
+            if (i !== todoLists.length-1-index) return {to: false};
             return {
                 y: window.innerHeight / 2 - currItem.height / 2,
                 x: width / 2 - (width / columns) / 2
@@ -355,6 +360,7 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
     };
 
     const returnFromCloseLook = async () => {
+        hideScrollBar()
         setCloseButtonAnimation({
             to: async animate => {
                 await animate({opacity: 0});
@@ -362,8 +368,8 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
             }
         });
         setSprings(i => {
-            if (i !== todoLists.length - 1 - indexOfLookedList!) return {to: false};
-            const currItem = gridItems.current.find(item => item.index === todoLists.length - 1 - i)!
+            if (i !== todoLists.length-1-indexOfLookedList!) return {to: false};
+            const currItem = gridItems.current.find(item => item.index === indexOfLookedList)!
             return {x: currItem.x, y: currItem.y}
         });
         await setWrapperAnimation({
@@ -374,10 +380,11 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
             height: height.current,
             immediate: (prop) => prop === 'height'
         });
+        returnFromCloseLookState();
         dispatch(actions.setPalette(defaultPalette));
         setIndexOfLookedList(null);
         setSprings(i => {
-            if (i !== indexOfLookedList) return {opacity: 1, display: 'block'};
+            if (i !== todoLists.length-1-indexOfLookedList!) return {opacity: 1, display: 'block'};
             return {to: false}
         });
     };
