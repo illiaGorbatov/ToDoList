@@ -320,6 +320,7 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
         if (editable) return;
         const currItem = gridItems.current.find(item => item.index === index)!;
         switchScrollBar();
+        dispatch(actions.setCloseLookState(true));
         await setSprings(i => {
             if (i !== todoLists.length-1-index) return {
                 to: async animate => {
@@ -367,12 +368,13 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
                 await animate({display: 'none'})
             }
         });
-        returnFromCloseLookState();
         setSprings(i => {
             if (i !== todoLists.length-1-indexOfLookedList!) return {to: false};
             const currItem = gridItems.current.find(item => item.index === indexOfLookedList)!
             return {x: currItem.x, y: currItem.y}
         });
+        returnFromCloseLookState();
+        dispatch(actions.setCloseLookState(false));
         await setWrapperAnimation({
             x: '-15vw',
             rotateX: 45,

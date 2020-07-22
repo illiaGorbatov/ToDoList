@@ -15,7 +15,7 @@ const CloseButton = styled(animated.div)<{ $palette: NeumorphColorsType}>`
     cursor: pointer;
     font-size: 20px;
     background: ${props => props.$palette.background};
-    color: ${props => props.$palette.background};
+    color: ${props => props.$palette.color};
     box-shadow: ${props => props.$palette.littleShadows};;
     transition: .25s cubic-bezier(0.25, 0, 0, 1);
     &:hover {

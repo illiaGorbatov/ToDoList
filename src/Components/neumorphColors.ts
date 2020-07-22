@@ -92,7 +92,19 @@ export const defaultPalette: NeumorphColorsType = {
     innerLittleShadows: 'inset 5px 5px 10px #5d5863, inset -5px -5px 10px #7d7887',
     progressBarColor: '#7c7785',
     color: 'white',
+    default: true
 };
+
+export const interfacePalette: NeumorphColorsType = {
+    background: '#1a0b3b',
+    concaveBackground: 'linear-gradient(145deg, #170a35, #1c0c3f)',
+    shadows: '20px 20px 40px #0a0418, -20px -20px 40px #2a125e',
+    innerShadows: '20px 20px 40px #0a0418, -20px -20px 40px #2a125e',
+    littleShadows: '5px 5px 10px #0a0418, -5px -5px 10px #2a125e',
+    color: 'white',
+    innerLittleShadows: 'inset 5px 5px 10px #0a0418, inset -5px -5px 10px #2a125e',
+    progressBarColor: '#1a0b3b',
+}
 
 
 export type NeumorphColorsType = {
@@ -104,4 +116,5 @@ export type NeumorphColorsType = {
     innerLittleShadows: string,
     progressBarColor: string,
     color: string,
+    default?: boolean
 };

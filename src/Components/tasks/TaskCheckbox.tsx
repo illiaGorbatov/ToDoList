@@ -1,16 +1,15 @@
-import React, {useEffect, useState} from "react";
+import React from "react";
 import {TaskType} from "../../redux/entities";
 import styled from "styled-components/macro";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {animated, useSpring, useSprings} from "react-spring";
 import {NeumorphColorsType} from "../neumorphColors";
 
-const CheckboxWrapper = styled(animated.div)`
+const CheckboxWrapper = styled.div<{$editable: boolean}>`
     width: 31px;
     height:31px;
     position: relative;
     padding-top: 10px;
     padding-left: 10px;
+    opacity: ${props => props.$editable ? 0 : 1};
     --background: #fff;
     --border: #D1D6EE;
     --border-hover: #BBC1E1;
@@ -79,12 +78,8 @@ type PropsType = {
 
 const TaskCheckbox: React.FC<PropsType> = ({task, changeDoneStatus, editable, palette}) => {
 
-    const animation = useSpring({
-        left: editable ? -32 : 0,
-    });
-
     return (
-        <CheckboxWrapper style={animation}>
+        <CheckboxWrapper $editable={editable}>
             <Checkbox type="checkbox" checked={task.status === 2} disabled={editable}
                       onChange={(e) => changeDoneStatus(e)}/>
             <Svg>

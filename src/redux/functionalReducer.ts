@@ -24,7 +24,8 @@ type InitialStateType = {
     fetchingState: boolean,
     height: number,
     allTasks: number,
-    completedTasks: number
+    completedTasks: number,
+    closeLookState: boolean
 };
 
 const initialState = {
@@ -42,6 +43,7 @@ const initialState = {
     pendingState: false,
     swapState: false,
     fetchingState: false,
+    closeLookState: false,
     height: 0,
     allTasks: 0,
     completedTasks: 0
@@ -244,6 +246,7 @@ export const actions = {
     setCompletedTask: (restore: boolean) => ({type: 'functionalReducer/SET_COMPLETED_TASK', restore} as const),
     setSwapState: (state: boolean) => ({type: 'functionalReducer/SET_SWAP_STATE', state} as const),
     setFetchingState: (state: boolean) => ({type: 'functionalReducer/SET_FETCHING_STATE', state} as const),
+    setCloseLookState: (state: boolean) => ({type: 'functionalReducer/SET_CLOSE_LOOK_STATE', state} as const),
 }
 
 type ThunkType = ThunkAction<void, AppStateType, unknown, ActionsTypes>;

@@ -4,13 +4,24 @@ import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import {AppStateType} from "../redux/store";
 import {actions, submitAllChanges} from "../redux/functionalReducer";
 import {animated, useSpring, useTransition} from "react-spring";
-import {NeumorphColorsType} from "./neumorphColors";
+import {interfacePalette, NeumorphColorsType} from "./neumorphColors";
 
 const RotatedBackground = styled(animated.div)<{ $palette: NeumorphColorsType }>`
    position: absolute;
    z-index: 998;
-   background-color: #293241;
-   width: 150%
+   background-color: ${props => props.$palette.default ? interfacePalette.background : props.$palette.background};
+   width: 200%;
+   transform-origin: 50% 0;
+   left: -100%;
+   transition: background-color 0.3s cubic-bezier(0.25, 0, 0, 1);
+   box-shadow: ${props => props.$palette.default ? interfacePalette.background : props.$palette.background};
+   &:before {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      content: '';
+      background-color: ${props => props.$palette.default ? interfacePalette.background : 'rgba(0, 0, 0, 0.3)'};
+   }
 `;
 
 const Wrapper = styled(animated.div)`
@@ -27,9 +38,9 @@ const ButtonsWrapper = styled.div`
   width: 16vw;
   height: 16vw;
   max-width: 210px;
-  min-width: 150px;
+  min-width: 130px;
   max-height: 210px;
-  min-height: 150px;
+  min-height: 130px;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -42,20 +53,21 @@ const EditButton = styled.div<{ $palette: NeumorphColorsType }>`
   width: 15vw;
   height: 15vw;
   max-width: 210px;
-  min-width: 150px;
+  min-width: 130px;
   max-height: 210px;
-  min-height: 150px;
+  min-height: 130px;
   border-radius: 50%;
-  box-shadow: ${props => props.$palette.shadows} ;
-  background: ${props => props.$palette.background};
+  box-shadow: ${props => props.$palette.default ? interfacePalette.shadows : props.$palette.shadows} ;
+  background: ${props => props.$palette.default ? interfacePalette.background : props.$palette.background};
 `;
 
-const ProgressBackground = styled.div`
+const ProgressBackground = styled(animated.div)`
   width: 100%;
   height: 100%;
   border-radius: 50%;
   background-color: red;
   position: absolute;
+  overflow: hidden;
 `;
 
 const Progress = styled(animated.div)`
@@ -72,8 +84,8 @@ const InnerBackground = styled.div<{ $palette: NeumorphColorsType, $altBackgroun
   top: 5%;
   left: 5%;
   position: absolute;
-  background: ${props => props.$palette.background};
-  color: ${props => props.$palette.color};
+  background: ${props => props.$palette.default ? interfacePalette.background : props.$palette.background};
+  color: ${props => props.$palette.default ? interfacePalette.color : props.$palette.color};
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -95,7 +107,7 @@ const InnerEditButtonText = styled(animated.div)`
   font-size: calc(15px + (50 - 15) * ((100vw - 100px) / (1200 - 100)));
 `;
 
-const SmallerButton = styled(animated.div)<{ $palette: NeumorphColorsType }>`
+const SmallerButton = styled.div<{ $palette: NeumorphColorsType, $editable: boolean }>`
   cursor: pointer;
   position: absolute;
   z-index: 2;
@@ -108,17 +120,18 @@ const SmallerButton = styled(animated.div)<{ $palette: NeumorphColorsType }>`
   border-radius: 50%;
   display: grid;
   place-items: center;
-  box-shadow: ${props => props.$palette.littleShadows};
-  background: ${props => props.$palette.background};
+  box-shadow: ${props => props.$palette.default ? interfacePalette.littleShadows : props.$palette.littleShadows};
+  background: ${props => props.$palette.default ? interfacePalette.background : props.$palette.background};
   color: ${props => props.$palette.color};
+  transform: translate(-50%, -50%) translate3d(${props => props.$editable ? '-50%, 150%, 0' : '50%, 50%, 0'});
   transition: 0.3s cubic-bezier(0.25, 0, 0, 1);
   &:hover {
-    background: ${props => props.$palette.background};
-    color: ${props => props.$palette.color};
+    background: ${props => props.$palette.default ? interfacePalette.background : props.$palette.background};
+    color: ${props => props.$palette.default ? interfacePalette.color : props.$palette.color};
   }
 `;
 
-const MediumButton = styled(animated.div)<{ $palette: NeumorphColorsType }>`
+const MediumButton = styled(animated.div)<{ $palette: NeumorphColorsType, $editable: boolean}>`
   cursor: pointer;
   position: absolute;
   z-index: 1;
@@ -131,13 +144,14 @@ const MediumButton = styled(animated.div)<{ $palette: NeumorphColorsType }>`
   border-radius: 50%;
   display: grid;
   place-items: center;
-  box-shadow: ${props => props.$palette.littleShadows};
-  background: ${props => props.$palette.background};
+  box-shadow: ${props => props.$palette.default ? interfacePalette.littleShadows : props.$palette.littleShadows};
+  background: ${props => props.$palette.default ? interfacePalette.background : props.$palette.background};
   color: ${props => props.$palette.color};
+  transform: translate(-50%, -50%) translate3d(${props => props.$editable ? '125%, 125%, 0' : '50%, 50%, 0'});
   transition: 0.3s cubic-bezier(0.25, 0, 0, 1);
   &:hover {
-    background: ${props => props.$palette.background};
-    color: ${props => props.$palette.color};
+    background: ${props => props.$palette.default ? interfacePalette.background : props.$palette.background};
+    color: ${props => props.$palette.default ? interfacePalette.color : props.$palette.color};
   }
 `;
 
@@ -157,6 +171,7 @@ const MainInterface = () => {
     const allTasks = useSelector((state: AppStateType) => state.todoList.allTasks, shallowEqual);
     const completedTasks = useSelector((state: AppStateType) => state.todoList.completedTasks, shallowEqual);
     const fetching = useSelector((state: AppStateType) => state.todoList.fetchingState, shallowEqual);
+    const closeLook = useSelector((state: AppStateType) => state.todoList.closeLookState, shallowEqual);
 
     const switchEditMode = () => {
         if (!editable) dispatch(actions.enableEditMode());
@@ -182,50 +197,65 @@ const MainInterface = () => {
     const [spring, setSpring] = useSpring(() => ({
         height: '100%',
         width: '100%',
-        backgroundHeight: '100%',
-        medX: '50%',
-        medY: '50%',
-        x: '50%',
-        y: '50%',
+        backgroundHeight: '150%',
         rotateZ: -35
     }));
 
     const [progressBarrAnimation, setProgressBar] = useSpring(() => ({
         clipPath1: `polygon( 50% 0%, 100% 0%, 100% 200%, 50% 200%)`,
         clipPath2: `polygon( 0% 0%, 50% 0%, 50% 200%, 0% 200%)`,
+        opacity: 1
     }));
 
     useEffect(() => {
         const progress = allTasks === 0 ? 0 : completedTasks / allTasks;
         const progress1 = 200 - (200 - progress * 200);
         const progress2 = 200 - progress * 200;
-        setProgressBar({
-            clipPath1: `polygon( 50% ${progress1}%, 100% ${progress1}%, 100% 200%, 50% 200%)`,
-            clipPath2: `polygon( 0% 0%, 50% 0%, 50% ${progress2}%, 0% ${progress2}%)`
+        setProgressBar(() => {
+            if (progress === 1) return {
+                to: async animate => {
+                    await animate({
+                        clipPath1: `polygon( 50% ${progress1}%, 100% ${progress1}%, 100% 200%, 50% 200%)`,
+                        clipPath2: `polygon( 0% 0%, 50% 0%, 50% ${progress2}%, 0% ${progress2}%)`
+                    });
+                    await animate({opacity: 0})
+                }
+            }
+            return {
+                clipPath1: `polygon( 50% ${progress1}%, 100% ${progress1}%, 100% 200%, 50% 200%)`,
+                clipPath2: `polygon( 0% 0%, 50% 0%, 50% ${progress2}%, 0% ${progress2}%)`,
+                opacity: 1,
+                immediate: (props) => props === 'opacity'
+            }
         })
-    }, [allTasks, completedTasks])
+    }, [allTasks, completedTasks]);
 
     useEffect(() => {
-        if (!initialLoading && !editable && !pendingState) {
-            setSpring({
-                height: '20%',
-                width: '20%',
-                backgroundHeight: '30%',
-                config: {friction: 50}
+        if (!initialLoading && !editable) {
+            setSpring(() => {
+
+                return {
+                    height: '20%',
+                    width: '20%',
+                    backgroundHeight: '30%',
+                    rotateZ: -35,
+                    config: {friction: 50}
+                }
             })
         } else if (editable) {
             setSpring({
-                medX: '125%',
-                medY: '125%',
-                x: '-50%',
-                y: '150%',
+                height: '20%',
+                width: '20%',
+                rotateZ: 0,
             })
-        } else if (pendingState) {
-
-        } else if (swapState) {
-
+        } else if (closeLook) {
+            setSpring({
+                height: '20%',
+                width: '20%',
+                rotateZ: 0,
+            })
         }
-    }, [editable, pendingState, initialLoading, swapState, fetching]);
+    }, [editable, pendingState, initialLoading, swapState, fetching, closeLook]);
 
     const actionMessage = useMemo(() =>
             initialLoading ? 'Loading' : editable ? 'Submit' : pendingState ? 'Sending data'
@@ -243,11 +273,14 @@ const MainInterface = () => {
 
     return (
         <>
-            <RotatedBackground $palette={currentPalette} style={{height: spring.backgroundHeight, rotateZ: spring.rotateZ}}/>
+            <RotatedBackground $palette={currentPalette} style={{
+                height: spring.backgroundHeight,
+                rotateZ: spring.rotateZ /*translateX: '-50%'*/
+            }}/>
             <Wrapper style={{width: spring.width, height: spring.height}}>
                 <ButtonsWrapper>
                     <EditButton onClick={switchEditMode} $palette={currentPalette}>
-                        <ProgressBackground>
+                        <ProgressBackground style={{opacity: progressBarrAnimation.opacity}}>
                             <Progress style={{clipPath: progressBarrAnimation.clipPath1}}/>
                             <Progress style={{clipPath: progressBarrAnimation.clipPath2}}/>
                         </ProgressBackground>
@@ -259,14 +292,12 @@ const MainInterface = () => {
                                 </InnerEditButtonText>)}
                         </InnerBackground>
                     </EditButton>
-                    <SmallerButton onClick={addTodoList} $palette={currentPalette}
-                                   style={{x: spring.x, y: spring.y, translateX: '-50%', translateY: '-50%'}}>
+                    <SmallerButton onClick={addTodoList} $palette={currentPalette} $editable={editable}>
                         <InnerSmallerButtonText>
                             Add list
                         </InnerSmallerButtonText>
                     </SmallerButton>
-                    <MediumButton onClick={rejectAllChanges} $palette={currentPalette}
-                                  style={{x: spring.medX, y: spring.medY, translateX: '-50%', translateY: '-50%'}}>
+                    <MediumButton onClick={rejectAllChanges} $palette={currentPalette} $editable={editable}>
                         <InnerSmallerButtonText>
                             remove changes
                         </InnerSmallerButtonText>
