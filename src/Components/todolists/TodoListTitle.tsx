@@ -1,12 +1,12 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useLayoutEffect, useRef} from "react";
 import '../../App.css';
 import styled from "styled-components/macro";
 import {useDispatch} from "react-redux";
 import {actions} from "../../redux/functionalReducer";
-import {animated, useSpring} from "react-spring";
 import { NeumorphColorsType } from "../neumorphColors";
+import {validate} from "../../hooks/validate";
 
-const ListTitle = styled(animated.div)<{$palette: NeumorphColorsType}>`
+const ListTitle = styled.div<{$palette: NeumorphColorsType, contentEditable: boolean}>`
   background-image: ${props => props.$palette.background};
   color: ${props => props.$palette.color};
   position: relative;
@@ -20,6 +20,8 @@ const ListTitle = styled(animated.div)<{$palette: NeumorphColorsType}>`
   display: inline-block;
   overflow-wrap: break-word;
   -webkit-line-break: after-white-space;
+  transform: scale(${props => props.contentEditable ? 1.3 : 1});
+  transition: transform .5s cubic-bezier(0.25, 0, 0, 1);
   &:before {
       border-radius: 10px;
       content: "";
@@ -37,10 +39,12 @@ type PropsType = {
     id: string,
     switchTitleMode: () => void,
     isTitleEditable: boolean,
-    palette: NeumorphColorsType
+    palette: NeumorphColorsType,
+    deleteTodoList: () => void
 };
 
-const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable, switchTitleMode, palette}) => {
+const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable,
+                                                deleteTodoList, switchTitleMode, palette}) => {
 
     const dispatch = useDispatch();
 
@@ -52,16 +56,12 @@ const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable, swi
     }, [isTitleEditable]);
 
     const ref = useRef<HTMLDivElement>(null);
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (ref.current) {
-            ref.current.textContent = listTitle
+            ref.current.textContent = listTitle;
+            if (listTitle === '') switchTitleMode()
         }
     }, [listTitle]);
-
-    const [title, setTitle] = useState<string>(listTitle);
-    const onChangeHandler = (e: React.FormEvent<HTMLDivElement>) => {
-        setTitle(e.currentTarget.textContent || '')
-    };
 
     const onKeyPressHandler = (e: React.KeyboardEvent) => {
         if (e.key === "Enter" ) {
@@ -70,22 +70,23 @@ const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable, swi
         }
     };
     const onBlurHandler = () => {
-        dispatch(actions.changeTodoListTitle(id, title));
-        switchTitleMode();
-        dispatch(actions.setFocusedStatus(false))
+        if (validate(ref.current!.textContent)) {
+            dispatch(actions.changeTodoListTitle(id, ref.current!.textContent!));
+            switchTitleMode();
+            dispatch(actions.setFocusedStatus(false));
+        } else if (!validate(ref.current!.textContent) && listTitle !== '') {
+            ref.current!.textContent = listTitle;
+            switchTitleMode();
+            dispatch(actions.setFocusedStatus(false));
+        } else {
+            dispatch(actions.setFocusedStatus(false));
+            deleteTodoList()
+        }
     };
 
-    const editModeAnimation = useSpring({
-        scale: isTitleEditable ? 1.3 : 1.0,
-        /*backgroundColor: isTitleEditable ? 'rgba(202, 106, 154, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-        color : isTitleEditable ? '#ffffff' : '#ca6a9a'*/
-    });
-
     return (
-        <ListTitle contentEditable={isTitleEditable} ref={ref} style={editModeAnimation}
-                   onInput={e => onChangeHandler(e)} onKeyPress={e => onKeyPressHandler(e)}
-                   onBlur={onBlurHandler}
-                   $palette={palette}/>
+        <ListTitle contentEditable={isTitleEditable} ref={ref} onKeyPress={e => onKeyPressHandler(e)}
+                   onBlur={onBlurHandler} $palette={palette}/>
     );
 }
 

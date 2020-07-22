@@ -35,9 +35,7 @@ const DetailsWrapper = styled.div`
   white-space: nowrap;
 `;
 
-const SingleListBottomLayer = styled.div<{
-    $palette: number, $editable: boolean, $closeLookState: boolean, $hovered: boolean
-}>`
+const SingleListBottomLayer = styled.div<{$palette: number, $editable: boolean, $closeLookState: boolean, $focusedStatus: boolean}>`
   border-radius: 30px;
   transform-style: preserve-3d;
   transform-origin: 50% 100%;
@@ -46,12 +44,11 @@ const SingleListBottomLayer = styled.div<{
   position: relative;
   transform: translateZ(0);
   transition: transform .6s cubic-bezier(0.25, 0, 0, 1);
-  ${props => !props.$editable && 
+  ${props => !props.$editable &&
     `&:hover {
         transform: translateZ(100px)
   }`}
-  ${props => (props.$closeLookState || props.$hovered && props.$editable) &&
-    `&:before {
+  &:before {
       border-radius: 30px;
       content: "";
       position: absolute;
@@ -61,53 +58,29 @@ const SingleListBottomLayer = styled.div<{
       left: 0;
       right: 0;
       border: 5px solid transparent;
-      box-shadow: ${neumorphColors[props.$palette].shadows};
-  }`};
-  ${props => (props.$hovered && !props.$editable && !props.$closeLookState) &&
-    `&:before {
-      border-radius: 30px;
-      content: "";
-      position: absolute;
-      top: 0;
-      z-index: -1;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      border: 5px solid transparent;
-      box-shadow: ${neumorphColors[props.$palette].shadows};
-  }`};
-  ${props => props.$closeLookState === false && props.$hovered === false &&
-    `&:after {
-      border-radius: 30px;
-      content: "";
-      position: absolute;
-      top: 0;
-      z-index: -1;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      border: 5px solid transparent;
-      box-shadow: 22px 22px 49px rgba(0, 0, 0, .4);
-  }`};
-  ${props => props.$editable &&
-    `&:after {
-      border-radius: 30px;
-      content: "";
-      position: absolute;
-      top: 0;
-      z-index: -1;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      box-shadow: 22px 22px 49px rgba(0, 0, 0, .4);
-      border: 5px solid transparent;
-      transition: border .3s linear;
-    }
-    &:hover:after {
-          border: 5px solid ${neumorphColors[props.$palette].background}
-    }`
+      transition: border, opacity .3s linear;
+      box-shadow: ${props => neumorphColors[props.$palette].shadows};
+      opacity: ${props => props.$closeLookState ? 1 : 0};
   };
-  ${props => props.$editable &&
+  &:hover:before {
+      border: 5px solid ${props => neumorphColors[props.$palette].background};
+      ${props => props.$editable && 'opacity: 1'}
+  };
+  &:after {
+      border-radius: 30px;
+      content: "";
+      position: absolute;
+      top: 0;
+      z-index: -1;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      box-shadow: 20px 20px 40px rgba(0, 0, 0, .4);
+      transition: opacity .3s linear;
+      opacity: ${props => !props.$closeLookState ? 1 : 0};
+  };
+  ${props => props.$editable && '&:hover:after {opacity: 0}'}
+  ${props => props.$editable && !props.$focusedStatus &&
     `&:hover ${ButtonWrapper},  ${ButtonWrapper}:focus-within {
        width: 90px;
        height: 90px;
@@ -116,6 +89,7 @@ const SingleListBottomLayer = styled.div<{
     };`
   }
 `;
+
 
 type PropsType = {
     id: string,
@@ -134,7 +108,7 @@ const TodoList: React.FC<PropsType> = ({
 
     const dispatch = useDispatch();
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
-    const focusedStatus = useSelector((state: AppStateType) => state.todoList.focusedStatus);
+    const focusedStatus = useSelector((state: AppStateType) => state.todoList.focusedStatus, shallowEqual);
 
     const currHeight = useRef<number>(0);
     const ref = useRef<HTMLDivElement>(null);
@@ -162,10 +136,8 @@ const TodoList: React.FC<PropsType> = ({
             title: '',
             id: taskId,
             todoListId: id,
-            editStatus: true
         }
         dispatch(actions.addTask(newTask, id));
-        dispatch(actions.setFocusedStatus(true))
     };
 
     const deleteTodoList = useCallback(() => {
@@ -197,23 +169,20 @@ const TodoList: React.FC<PropsType> = ({
     });
 
     //close look animations
-    const [hoveredState, setHoveredState] = useState<boolean>(false);
 
     const [isTitleEditable, setTitleEditMode] = useState<boolean>(false);
-    const switchTitleMode = () => {
+    const switchTitleMode = useCallback(() => {
         setTitleEditMode(!isTitleEditable)
-    };
+    }, [isTitleEditable]);
 
     /*console.log(`${listTitle} render`)*/
     return (
         <SingleListWrapper {...!closeLook && {...bind()}} ref={ref}>
-            <SingleListBottomLayer $palette={paletteIndex}
-                                   $editable={editable && !focusedStatus}
-                                   $closeLookState={closeLook}
-                                   $hovered={hoveredState}>
+            <SingleListBottomLayer $palette={paletteIndex} $editable={editable}
+                                   $closeLookState={closeLook} $focusedStatus={focusedStatus}>
                 <ContextButtons colors={neumorphColors[paletteIndex]} deleteTodoList={deleteTodoList}
                                 addTask={addTask} editList={switchTitleMode}/>
-                <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable}
+                <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable} deleteTodoList={deleteTodoList}
                                switchTitleMode={switchTitleMode} palette={neumorphColors[paletteIndex]}/>
                 <TodoListTasks todoListId={id} tasks={tasks} setHeight={setHeight} palette={neumorphColors[paletteIndex]}/>
                 {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}

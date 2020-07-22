@@ -158,7 +158,7 @@ const ScrollWrapper: React.FC = () => {
     useDrag(({offset: [, y], active, event}) => {
         /*if (!isMobile) return;*/
         console.log(-y)
-        event?.preventDefault()
+        /*event?.preventDefault()*/
         if (active) {
             const posY = -y;
             scrolledY.current = posY < border && posY > 0 ? posY : posY <= 0 ? 0 : border;
@@ -168,7 +168,7 @@ const ScrollWrapper: React.FC = () => {
                 top: `${scrolledPercent.current}%`
             });
         }
-    }, {domTarget: window, filterTaps: true});
+    }, {domTarget: window, filterTaps: true, eventOptions: {passive: false}});
 
     //scroller
     const bindDraggedScrollBar = useDrag(({delta: [, y], event, first, down}) => {

@@ -1,5 +1,5 @@
 
 
-export const validate = (value: string): boolean => {
-    return value !== '' || /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(value)
+export const validate = (value: string | null): boolean => {
+    return value !== '' && value !== null && /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(value)
 };

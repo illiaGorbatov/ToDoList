@@ -56,7 +56,7 @@ type PropsType = {
     colors: NeumorphColorsType,
     deleteTodoList: () => void,
     addTask: () => void,
-    editList: () => void
+    editList: () => void,
 };
 
 const ContextButtons: React.FC<PropsType> = ({colors, deleteTodoList, addTask, editList}) => {

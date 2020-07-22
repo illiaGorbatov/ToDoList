@@ -22,7 +22,7 @@ const TaskWrapper = styled(animated.div)<{ $editable: boolean}>`
 }
 `;
 
-const TaskBackground = styled(animated.div)<{$palette: NeumorphColorsType, $editable: boolean}>`
+const TaskBackground = styled.div<{$palette: NeumorphColorsType, $editable: boolean, $editorState: boolean}>`
     padding: 15px 0;
     background: ${props => props.$palette.background};
     color: ${props => props.$palette.color};
@@ -31,6 +31,8 @@ const TaskBackground = styled(animated.div)<{$palette: NeumorphColorsType, $edit
     border-radius: 10px;
     cursor: ${props => props.$editable ? "grab" : "inherit"};
     z-index: 2;
+    transform: scale(${props => props.$editorState ? 1.3 : 1});
+    transition: transform .5s cubic-bezier(0.25, 0, 0, 1);
     &:before {
       border-radius: 10px;
       content: "";
@@ -73,24 +75,24 @@ const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId, palette
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const focusedStatus = useSelector((state: AppStateType) => state.todoList.focusedStatus, shallowEqual);
 
-    const [isTaskEditable, setEditableState] = useState<boolean>(false);
+    const [editorState, setEditorState] = useState<boolean>(false);
     const editTask = () => {
-        setEditableState(true);
+        setEditorState(true);
         dispatch(actions.setFocusedStatus(true))
     };
+
     const textRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
-        if (task.editStatus || isTaskEditable) textRef.current!.focus()
-    }, [task, isTaskEditable])
+        if (editorState) textRef.current!.focus()
+    }, [editorState]);
 
     const deleteTask = () => {
         dispatch(actions.deleteTask(todoListId, task.id))
     };
 
-    const [title, setTitle] = useState<string>('');
     useLayoutEffect(() => {
         textRef.current!.textContent = task.title;
-        setTitle(task.title)
+        if (task.title === '') editTask()
     }, [task.title]);
 
     const changeDoneStatus = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,31 +100,29 @@ const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId, palette
         dispatch(actions.changeTask(newTask))
     };
 
-    const onChangeHandler = (e: React.FormEvent<HTMLDivElement>) => {
-        let title = e.currentTarget.textContent || '';
-        setTitle(title)
-    };
-
-    const setNewTask = () => {
-        setEditableState(false);
-        dispatch(actions.setFocusedStatus(false));
-        const isValid = validate(title);
-        if (isValid) {
-            let newTask = {...task, title, editStatus: false};
+    const onBlurHandler = () => {
+        const taskTitle = textRef.current!.textContent;
+        if (validate(taskTitle)) {
+            let newTask = {...task, title: taskTitle!, editStatus: false};
             dispatch(actions.changeTask(newTask));
-        } else deleteTask()
+            setEditorState(false);
+            dispatch(actions.setFocusedStatus(false));
+        } else if (!validate(taskTitle) && task.title !== '') {
+            textRef.current!.textContent = task.title;
+            setEditorState(false);
+            dispatch(actions.setFocusedStatus(false));
+        } else {
+            dispatch(actions.setFocusedStatus(false));
+            deleteTask()
+        }
     };
 
     const onKeyPressHandler = (e: React.KeyboardEvent) => {
-        if (e.key ===  "Enter") {
+        if (e.key === "Enter") {
             e.preventDefault();
             textRef.current!.blur()
         }
     };
-    //animation
-    const editModeAnimation = useSpring({
-        scale: isTaskEditable || task.editStatus ? 1.3 : 1.0,
-    });
 
     const priority = task.priority === 0 ? 'Low' : 1 ? 'Middle' : 2 ?
         'High' : 3 ? 'Urgently' : 'Later';
@@ -130,13 +130,10 @@ const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId, palette
     return (
         <TaskWrapper $editable={editable && !focusedStatus}>
             <TaskButtons editTask={editTask} deleteTask={deleteTask}/>
-            <TaskBackground style={editModeAnimation} $editable={editable}
-                            $palette={palette}>
+            <TaskBackground $editable={editable} $palette={palette} $editorState={editorState}>
                 <TaskCheckbox task={task} changeDoneStatus={changeDoneStatus} editable={editable} palette={palette}/>
-                <TaskText contentEditable={isTaskEditable || task.editStatus}
-                          onKeyPress={e => onKeyPressHandler(e)}
-                          ref={textRef}
-                          onBlur={setNewTask} onInput={e => onChangeHandler(e)}/>
+                <TaskText contentEditable={editorState} onKeyPress={e => onKeyPressHandler(e)}
+                          ref={textRef} onBlur={onBlurHandler}/>
             </TaskBackground>
         </TaskWrapper>
 
