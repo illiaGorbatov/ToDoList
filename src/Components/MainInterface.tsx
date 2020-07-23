@@ -1,8 +1,8 @@
-import React, {useEffect, useMemo} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import styled from "styled-components/macro";
 import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import {AppStateType} from "../redux/store";
-import {actions, submitAllChanges} from "../redux/functionalReducer";
+import {actions, initialization, submitAllChanges} from "../redux/functionalReducer";
 import {animated, useSpring, useTransition} from "react-spring";
 import {interfacePalette, NeumorphColorsType} from "./neumorphColors";
 
@@ -10,9 +10,10 @@ const RotatedBackground = styled(animated.div)<{ $palette: NeumorphColorsType }>
    position: absolute;
    z-index: 998;
    background-color: ${props => props.$palette.default ? interfacePalette.background : props.$palette.background};
-   width: 200%;
+   width: 300%;
+   min-height: 200px;
    transform-origin: 50% 0;
-   left: -100%;
+   left: -150%;
    transition: background-color 0.3s cubic-bezier(0.25, 0, 0, 1);
    box-shadow: ${props => props.$palette.default ? interfacePalette.background : props.$palette.background};
    &:before {
@@ -31,6 +32,8 @@ const Wrapper = styled(animated.div)`
   display: grid;
   place-items: center;
   z-index: 999;
+  min-width: 150px;
+  min-height: 150px;
 `;
 
 const ButtonsWrapper = styled.div`
@@ -89,7 +92,7 @@ const InnerBackground = styled.div<{ $palette: NeumorphColorsType, $altBackgroun
   display: grid;
   place-items: center;
   border-radius: 50%;
-  transition: 0.3s cubic-bezier(0.25, 0, 0, 1);
+  /*transition: 0.3s cubic-bezier(0.25, 0, 0, 1);*/
   ${props => !props.$altBackground &&
     `&:hover {
         background: ${props.$palette.background};
@@ -123,15 +126,17 @@ const SmallerButton = styled.div<{ $palette: NeumorphColorsType, $editable: bool
   box-shadow: ${props => props.$palette.default ? interfacePalette.littleShadows : props.$palette.littleShadows};
   background: ${props => props.$palette.default ? interfacePalette.background : props.$palette.background};
   color: ${props => props.$palette.color};
-  transform: translate(-50%, -50%) translate3d(${props => props.$editable ? '-50%, 150%, 0' : '50%, 50%, 0'});
-  transition: 0.3s cubic-bezier(0.25, 0, 0, 1);
+  transform: translate(-50%, -50%);
+  top: 50%;
+  left: ${props => props.$editable ? '-20%' : '50%'};
+  transition: left 0.4s cubic-bezier(0.25, 0, 0, 1) 0.3s, background, color 0.4s cubic-bezier(0.25, 0, 0, 1);
   &:hover {
     background: ${props => props.$palette.default ? interfacePalette.background : props.$palette.background};
     color: ${props => props.$palette.default ? interfacePalette.color : props.$palette.color};
   }
 `;
 
-const MediumButton = styled(animated.div)<{ $palette: NeumorphColorsType, $editable: boolean}>`
+const MediumButton = styled(animated.div)<{ $palette: NeumorphColorsType, $editable: boolean }>`
   cursor: pointer;
   position: absolute;
   z-index: 1;
@@ -147,8 +152,10 @@ const MediumButton = styled(animated.div)<{ $palette: NeumorphColorsType, $edita
   box-shadow: ${props => props.$palette.default ? interfacePalette.littleShadows : props.$palette.littleShadows};
   background: ${props => props.$palette.default ? interfacePalette.background : props.$palette.background};
   color: ${props => props.$palette.color};
-  transform: translate(-50%, -50%) translate3d(${props => props.$editable ? '125%, 125%, 0' : '50%, 50%, 0'});
-  transition: 0.3s cubic-bezier(0.25, 0, 0, 1);
+  transform: translate(-50%, -50%);
+  top: 50%;
+  left: ${props => props.$editable ? '130%' : '50%'};
+  transition: left 0.4s cubic-bezier(0.25, 0, 0, 1) 0.3s, background, color 0.4s cubic-bezier(0.25, 0, 0, 1);
   &:hover {
     background: ${props => props.$palette.default ? interfacePalette.background : props.$palette.background};
     color: ${props => props.$palette.default ? interfacePalette.color : props.$palette.color};
@@ -177,6 +184,23 @@ const MainInterface = () => {
         if (!editable) dispatch(actions.enableEditMode());
         if (editable) dispatch(submitAllChanges());
     };
+
+    const [height, setHeight] = useState<number>(window.innerHeight)
+    useEffect(() => {
+        let isMounted = true;
+        let timeoutId: number | undefined = undefined;
+        const resizeListener = () => {
+            if (isMounted) {
+                clearTimeout(timeoutId);
+                timeoutId = window.setTimeout(() => setHeight(window.innerHeight), 150);
+            }
+        };
+        window.addEventListener('resize', resizeListener);
+        return () => {
+            isMounted = false;
+            window.removeEventListener('resize', resizeListener);
+        }
+    }, []);
 
     const addTodoList = () => {
         const id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
@@ -232,20 +256,18 @@ const MainInterface = () => {
 
     useEffect(() => {
         if (!initialLoading && !editable) {
-            setSpring(() => {
-
-                return {
-                    height: '20%',
-                    width: '20%',
-                    backgroundHeight: '30%',
-                    rotateZ: -35,
-                    config: {friction: 50}
-                }
-            })
-        } else if (editable) {
             setSpring({
                 height: '20%',
                 width: '20%',
+                backgroundHeight: '25%',
+                rotateZ: -35,
+                config: {friction: 50}
+            })
+        } else if (editable) {
+            setSpring({
+                backgroundHeight: '22%',
+                height: '20%',
+                width: '100%',
                 rotateZ: 0,
             })
         } else if (closeLook) {

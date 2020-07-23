@@ -332,7 +332,7 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
         });
         setWrapperAnimation({
             height: window.innerHeight,
-            x: '15vw',
+            x: window.innerWidth <= 800 ? '5vw' : '15vw',
             rotateX: 0,
             rotateZ: 0,
             y: 0,
@@ -376,7 +376,7 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
         returnFromCloseLookState();
         dispatch(actions.setCloseLookState(false));
         await setWrapperAnimation({
-            x: '-15vw',
+            x: window.innerWidth <= 800 ? '-5vw' : '-15vw',
             rotateX: 45,
             rotateZ: 45,
             y: 275,

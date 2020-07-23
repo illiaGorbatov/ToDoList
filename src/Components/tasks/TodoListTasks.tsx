@@ -148,6 +148,7 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
 
     const gesture = useDrag(({args: [originalIndex, trueIndex], down, movement: [, y], event, first}) => {
         event!.stopPropagation();
+        console.log(event, y)
         const curIndex = order.current.indexOf(trueIndex);
         if (first) {
             initialYofDragged.current = initialY.current[curIndex];
