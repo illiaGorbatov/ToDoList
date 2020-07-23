@@ -13,7 +13,6 @@ const AllLists = styled(animated.div)<{$editable: boolean, $closeLook: boolean}>
   position: relative;
   transform-style: preserve-3d;
   width: 70vw;
-  max-width: 2000px;
   top: ${props => props.$editable && (window.innerHeight*0.22 <= 200 ? 200 : window.innerHeight*0.22) || 0}px;
   @media screen and (max-width: 800px) {
     transition: top 0.5s cubic-bezier(0.25, 0, 0, 1);
@@ -22,14 +21,15 @@ const AllLists = styled(animated.div)<{$editable: boolean, $closeLook: boolean}>
   }
 `;
 
-const ScrollableWrapper = styled(animated.div)`
+const ScrollableWrapper = styled(animated.div)<{top: number}>`
   position: absolute;
   transform-style: preserve-3d;
   width: 100%;
   height: 100%;
   z-index: 1;
   left: 50%;
-  top: 25px;
+  top: ${props => props.top}px;
+  transition: top 0.5s cubic-bezier(0.25, 0, 0, 1);
   max-width: 2000px;
 `;
 
@@ -97,18 +97,17 @@ const ScrollWrapper: React.FC = () => {
     }, []);
 
     const [{border, scrollBarHeight}, setBorders] = useState({border: 0, scrollBarHeight: 0});
-    /* const border = height - window.innerHeight < 0 ? 0.5 * height : height - window.innerHeight / 2;
-     const scrollBarHeight = !height ? 0 : (window.innerHeight - 275) / height * 100;*/
     const [drugged, setDrugged] = useState<boolean>(false);
     const [visible, setVisible] = useState<boolean>(false);
     const [closeLook, setCloseLook] = useState<boolean>(false);
     useEffect(() => {
         if (height < window.innerHeight) setVisible(false)
         else setVisible(true);
-        const border = height - window.innerHeight < 0 ? 0.5 * height : height - window.innerHeight / 2;
+        const border = editable ? (height - window.innerHeight < 0 ? 0 : height - window.innerHeight + 275)
+            : (height - window.innerHeight < 0 ? 0.5 * height : height - window.innerHeight / 2);
         const scrollBarHeight = !height ? 0 : (window.innerHeight - 275) / height * 100;
         setBorders({border, scrollBarHeight})
-    }, [height]);
+    }, [height, editable]);
 
     const measuredRef = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState<number>(0);
@@ -154,6 +153,7 @@ const ScrollWrapper: React.FC = () => {
     });
 
     useWheel(({delta: [, y]}) => {
+        if (!visible) return;
         scrolledY.current = scrolledY.current + y < border && scrolledY.current + y > 0 ? scrolledY.current + y
             : scrolledY.current + y <= 0 ? 0 : border;
         scrolledPercent.current = scrolledY.current / border * (100 - scrollBarHeight);
@@ -163,8 +163,7 @@ const ScrollWrapper: React.FC = () => {
         });
     }, {domTarget: window});
     useDrag(({offset: [, y], active, event}) => {
-        if (!isMobile) return;
-        console.log(-y)
+        if (!isMobile || !visible) return;
         event?.preventDefault();
         if (active) {
             const posY = -y;
@@ -212,38 +211,45 @@ const ScrollWrapper: React.FC = () => {
         }
     }, [border, scrollBarHeight])
 
-    const setCloseLookState = useCallback((height: number) => {
-        if (height < window.innerHeight) setVisible(false)
-        else setVisible(true);
+    const setCloseLookState = useCallback((elementHeight: number) => {
+        const newBorder = elementHeight > window.innerHeight - (isMobile ? 100 : 250) ?
+            elementHeight - (window.innerHeight - (isMobile ? 100 : 250)) : 0;
+        if (newBorder > 0) {
+            memoizedData.current = [scrolledY.current, scrolledPercent.current, border, scrollBarHeight];
+            const newScrollBarHeight = (window.innerHeight - (isMobile ? 100 : 250)) / elementHeight * 100;
+            setBorders({border: newBorder, scrollBarHeight: newScrollBarHeight})
+            scrolledY.current = 0;
+            scrolledPercent.current = 0;
+            setScroll({
+                y: 0,
+                top: `${0}%`
+            });
+            setVisible(true);
+        }
         setCloseLook(true);
-        memoizedData.current = [scrolledY.current, scrolledPercent.current, border, scrollBarHeight];
-        ///вот это
-        const newBorder = height;
-        const newScrollBarHeight = 0;
-        scrolledY.current = 0;
-        scrolledPercent.current = 0;
-        setScroll({
-            y: 0,
-            top: `${0}%`
-        });
-    }, [])
+    }, [border, scrollBarHeight])
 
     const returnFromCloseLookState = useCallback(() => {
-        setCloseLook(false);
-        scrolledY.current = memoizedData.current[0];
-        scrolledPercent.current = memoizedData.current[1];
-        setScroll({
-            y: -memoizedData.current[0],
-            top: `${memoizedData.current[1]}%`
-        });
+        if (memoizedData.current.length !== 0) {
+            scrolledY.current = memoizedData.current[0];
+            scrolledPercent.current = memoizedData.current[1];
+            setBorders({border: memoizedData.current[2], scrollBarHeight: memoizedData.current[3]})
+            setScroll({
+                y: -memoizedData.current[0],
+                top: `${memoizedData.current[1]}%`
+            });
+        }
+        setVisible(true);
+        setCloseLook(false)
     }, [])
 
-    const switchScrollBar = useCallback(() => setVisible(!visible), [visible]);
+    const switchScrollBar = useCallback((visibility: boolean) => setVisible(visibility), []);
 
     return (
         <>
-            <AllLists style={wrapperAnimation} ref={measuredRef} $editable={editable} $closeLook={closeLook}>
-                <ScrollableWrapper style={{y: scrollingAnimation.y,  translateX: '-50%'}}>
+            <AllLists style={wrapperAnimation} $editable={editable} $closeLook={closeLook}>
+                <ScrollableWrapper style={{y: scrollingAnimation.y,  translateX: '-50%'}} ref={measuredRef}
+                top={closeLook && visible && isMobile ? 50 : closeLook && visible && !isMobile ? 125 : 25}>
                     <MappedLists setWrapperAnimation={setWrapperAnimation} width={width}
                                  scrollByListDrugging={scrollByListDrugging} setCloseLookState={setCloseLookState}
                                  returnFromCloseLookState={returnFromCloseLookState} switchScrollBar={switchScrollBar}/>

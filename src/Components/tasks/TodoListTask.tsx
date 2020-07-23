@@ -102,6 +102,7 @@ const TodoListTask: React.FC<PropsType> = React.memo(({task, todoListId, palette
 
     const onBlurHandler = () => {
         const taskTitle = textRef.current!.textContent;
+        console.log(validate(taskTitle))
         if (validate(taskTitle)) {
             let newTask = {...task, title: taskTitle!, editStatus: false};
             dispatch(actions.changeTask(newTask));

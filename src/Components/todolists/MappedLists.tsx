@@ -29,7 +29,7 @@ type PropsType = {
     scrollByListDrugging: (direction: string) => void,
     setCloseLookState: (height: number) => void,
     returnFromCloseLookState: () => void,
-    switchScrollBar: () => void
+    switchScrollBar: (visibility: boolean) => void
 }
 
 type GridItemsType = {
@@ -80,7 +80,7 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
             /*console.log(gridItems.current, width, columns)*/
             recalculateMeasures();
             setSprings(i => {
-                const currentSettings = gridItems.current.find((list) => list.index === todoLists.length - 1 - i)!;
+                const currentSettings = gridItems.current.find((list) => list.index === todoLists.length-1-i)!;
                 return {x: currentSettings.x, y: currentSettings.y}
             })
         }
@@ -150,7 +150,7 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
         }
         if (gridItems.current.length === todoLists.length) recalculateMeasures();
         setSprings(i => {
-            const currentSettings = gridItems.current.find((list) => list.index === todoLists.length - 1 - i)!;
+            const currentSettings = gridItems.current.find((list) => list.index === todoLists.length-1-i)!;
             return {x: currentSettings.x, y: currentSettings.y}
         })
         console.log(gridItems.current);
@@ -317,9 +317,9 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
 
     const [indexOfLookedList, setIndexOfLookedList] = useState<number | null>(null);
     const closeLook = async (index: number) => {
-        if (editable) return;
+        if (editable || indexOfLookedList !== null) return;
         const currItem = gridItems.current.find(item => item.index === index)!;
-        switchScrollBar();
+        switchScrollBar(false);
         dispatch(actions.setCloseLookState(true));
         await setSprings(i => {
             if (i !== todoLists.length-1-index) return {
@@ -361,20 +361,20 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
     };
 
     const returnFromCloseLook = async () => {
-        switchScrollBar()
+        switchScrollBar(false)
         setCloseButtonAnimation({
             to: async animate => {
                 await animate({opacity: 0});
                 await animate({display: 'none'})
             }
         });
-        setSprings(i => {
+        await setSprings(i => {
             if (i !== todoLists.length-1-indexOfLookedList!) return {to: false};
             const currItem = gridItems.current.find(item => item.index === indexOfLookedList)!
             return {x: currItem.x, y: currItem.y}
         });
-        returnFromCloseLookState();
         dispatch(actions.setCloseLookState(false));
+        returnFromCloseLookState();
         await setWrapperAnimation({
             x: window.innerWidth <= 800 ? '-5vw' : '-15vw',
             rotateX: 45,
@@ -405,10 +405,10 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
             </CloseButtonAnimatedWrapper>
             {todoLists.length !== 0 && todoLists.map((list, i) =>
                 <TodoListContainer
-                    style={springs[todoLists.length - i - 1]} {...editable && {...gesture(i, todoLists.length - i - 1)}}
+                    style={springs[todoLists.length - i - 1]} {...editable && {...gesture(i, todoLists.length-i-1)}}
                     onClick={() => closeLook(i)}
                     $width={currWidth} key={list.id}>
-                    <TodoList id={list.id} paletteIndex={(todoLists.length - 1 - i) % neumorphColors.length}
+                    <TodoList id={list.id} paletteIndex={(todoLists.length-1-i) % neumorphColors.length}
                               deleteList={deleteList} setNewHeights={setNewHeights} closeLook={i === indexOfLookedList}
                               listTitle={list.title} listTasks={list.tasks}/>
                 </TodoListContainer>)}
