@@ -236,15 +236,19 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
         left: 0, right: 0, top: 0, bottom: 0, pageTop: 0, pageBottom: 0
     });
     const eventCoords = useRef<{ offsetX: number, offsetY: number, clientX: number, clientY: number } | null>(null);
-    const virtualY = useRef<number>(0)
+    const virtualY = useRef<number>(0);
+    const addedY = useRef<number>(0);
+    const timeoutId = useRef<number | null>(null);
 
     const getBounds = () => {
+        const interfaceHeight = window.innerHeight*0.22 > 200 ? window.innerHeight*0.22 : 200;
         const left = -currItem.current.x - 25 + eventCoords.current!.offsetX;
         const right = width - currItem.current.rightX + 25 + (width / columns - eventCoords.current!.offsetX);
         const top = -currItem.current.y - 25 - eventCoords.current!.offsetY - 25;
-        const bottom = height.current - currItem.current.y - 25 - (currItem.current.height - (eventCoords.current!.offsetY + 25));
-        const pageTop = -eventCoords.current!.clientY - 25;
-        const pageBottom = window.innerHeight - eventCoords.current!.clientY - (currItem.current.height - 75 - eventCoords.current!.offsetY);
+        /*const bottom = height.current - currItem.current.y - 25 - (currItem.current.height - (eventCoords.current!.offsetY + 25)) + interfaceHeight;*/
+        const bottom = height.current - currItem.current.y - 25 - (eventCoords.current!.offsetY + 25);
+        const pageTop = -eventCoords.current!.clientY + interfaceHeight + 25;
+        const pageBottom = window.innerHeight - window.innerHeight*0.1 + pageTop - interfaceHeight;
         bounds.current = {left, right, top, bottom, pageTop, pageBottom}
     }
 
@@ -260,45 +264,57 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, width, scrollByL
             eventCoords.current = {offsetX: event.offsetX, offsetY: event.offsetY, clientX: event.clientX, clientY: event.clientY};
             getBounds();
             virtualY.current = y;
+            addedY.current = 0;
             console.log(bounds.current)
         }
+        if (timeoutId.current !== null) {
+            clearTimeout(timeoutId.current);
+            timeoutId.current = null
+        }
+        console.log(virtualY.current)
         if (active) {
-            if (y > bounds.current.pageBottom) {
-                (async () => {
-                    while (virtualY.current < bounds.current.bottom) {
-                        const promise = new Promise((resolve) => {
-                            setTimeout(() => {
-                                    scrollByListDrugging('bottom');
-                                    virtualY.current = virtualY.current + 5;
-                                    const newIndex = calculatePositions(x, virtualY.current);
-                                    if (newIndex !== null && newIndex !== draggedList) reorder(draggedList, newIndex);
-                                    setActualSprings(x, virtualY.current, springsIndex)
-                                    resolve()
-                                }
-                                , 5)
-                        });
-                        await promise
-                    }
-                })();
-            } else if (y < bounds.current.pageTop) {
-                (async () => {
-                    while (virtualY.current > bounds.current.top) {
-                        const promise = new Promise((resolve) => {
-                            setTimeout(() => {
-                                    scrollByListDrugging('top');
-                                    virtualY.current = virtualY.current - 5;
-                                    const newIndex = calculatePositions(x, virtualY.current);
-                                    if (newIndex !== null && newIndex !== draggedList) reorder(draggedList, newIndex);
-                                    setActualSprings(x, virtualY.current, springsIndex);
-                                    resolve()
-                                }
-                                , 5)
-                        });
-                        await promise
-                    }
-                })()
+            if (y > bounds.current.pageBottom && virtualY.current < bounds.current.bottom) {
+                const awaitScroll = async () => {
+                    const promise = new Promise((resolve) => {
+                        timeoutId.current = window.setTimeout(() => {
+                                scrollByListDrugging('bottom');
+                                virtualY.current = virtualY.current + 5;
+                                addedY.current = addedY.current + 5;
+                                const newIndex = calculatePositions(x, virtualY.current);
+                                if (newIndex !== null && newIndex !== draggedList) reorder(draggedList, newIndex);
+                                setActualSprings(x, virtualY.current, springsIndex)
+                                resolve()
+                            }
+                            , 10)
+                    });
+                    console.log(virtualY.current)
+                    await promise.then(res => {
+                        if (virtualY.current < bounds.current.bottom) awaitScroll()
+                    })
+                }
+                (async () => await awaitScroll())()
+            } else if (y < bounds.current.pageTop && virtualY.current > bounds.current.top) {
+                const awaitScroll = async () => {
+                    const promise = new Promise((resolve) => {
+                        timeoutId.current = window.setTimeout(() => {
+                                scrollByListDrugging('top');
+                                virtualY.current = virtualY.current - 5;
+                                addedY.current = addedY.current - 5;
+                                const newIndex = calculatePositions(x, virtualY.current);
+                                if (newIndex !== null && newIndex !== draggedList) reorder(draggedList, newIndex);
+                                setActualSprings(x, virtualY.current, springsIndex)
+                                resolve()
+                            }
+                            , 10)
+                    });
+                    console.log(virtualY.current)
+                    await promise.then(res => {
+                        if (virtualY.current > bounds.current.top) awaitScroll()
+                    })
+                }
+                (async () => await awaitScroll())()
             } else {
-                virtualY.current = y;
+                virtualY.current = y + addedY.current;
                 const newIndex = calculatePositions(x, virtualY.current);
                 if (newIndex !== null && newIndex !== draggedList) reorder(draggedList, newIndex);
                 setActualSprings(x, virtualY.current, springsIndex)
