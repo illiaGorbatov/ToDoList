@@ -37,7 +37,7 @@ const ListTitle = styled.div<{$palette: NeumorphColorsType, contentEditable: boo
 type PropsType = {
     listTitle: string,
     id: string,
-    switchTitleMode: () => void,
+    switchTitleMode: (state: boolean) => void,
     isTitleEditable: boolean,
     palette: NeumorphColorsType,
     deleteTodoList: () => void
@@ -59,7 +59,7 @@ const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable,
     useLayoutEffect(() => {
         if (ref.current) {
             ref.current.textContent = listTitle;
-            if (listTitle === '') switchTitleMode()
+            if (listTitle === '') switchTitleMode(true)
         }
     }, [listTitle]);
 
@@ -72,11 +72,11 @@ const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable,
     const onBlurHandler = () => {
         if (validate(ref.current!.textContent)) {
             dispatch(actions.changeTodoListTitle(id, ref.current!.textContent!));
-            switchTitleMode();
+            switchTitleMode(false);
             dispatch(actions.setFocusedStatus(false));
         } else if (!validate(ref.current!.textContent) && listTitle !== '') {
             ref.current!.textContent = listTitle;
-            switchTitleMode();
+            switchTitleMode(false);
             dispatch(actions.setFocusedStatus(false));
         } else {
             dispatch(actions.setFocusedStatus(false));

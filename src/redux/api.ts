@@ -8,7 +8,7 @@ const instance = axios.create({
 });
 
 const loginInstance = axios.create({
-    baseURL: "https://social-network.samuraijs.com/api/1.1/auth/me",
+    baseURL: "https://social-network.samuraijs.com/api/1.1/auth",
     withCredentials: true,
     headers: {'API-KEY': 'b4801660-f864-43f9-8acc-579713cc64df'}
 });
@@ -31,7 +31,7 @@ type GetMeType = {
 
 export const api = {
     getAuthState: () => {
-        return loginInstance.get<CommonResponseType<GetMeType>>('').then(async res => {
+        return loginInstance.get<CommonResponseType<GetMeType>>('/me').then(async res => {
             if (res.status !== 200) {
                 let response = res;
                 while (response.status !== 200) {
@@ -44,7 +44,7 @@ export const api = {
     },
     logIn: () => {
         const requestObject = {email: "npikolist@gmail.com", password: "512347", rememberMe: false};
-        return loginInstance.post<CommonResponseType<{userId: string}>>('', requestObject)
+        return loginInstance.post<CommonResponseType<{userId: string}>>('/login', requestObject)
             .then(async res => {
             if (res.status !== 200) {
                 let response = res;

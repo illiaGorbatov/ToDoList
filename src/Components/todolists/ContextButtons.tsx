@@ -7,8 +7,8 @@ import { NeumorphColorsType } from "../neumorphColors";
 export const ButtonWrapper = styled.div`
     z-index: 0;
     position: absolute;
-    top: 15px;
-    left: 15px;
+    top: 7px;
+    left: 7px;
     border-radius: 100%;
     width: 0;
     height: 0;
@@ -29,7 +29,6 @@ export const Button = styled.div<{ styles: NeumorphColorsType }>`
     background: ${props => props.styles.background};
     color: ${props => props.styles.color};
     box-shadow: ${props => props.styles.littleShadows};;
-    transform: translate(-50%, -50%);
     transition: .25s cubic-bezier(0.25, 0, 0, 1);
     &:hover {
         background-color: ${props => props.styles.background};
@@ -56,7 +55,7 @@ type PropsType = {
     colors: NeumorphColorsType,
     deleteTodoList: () => void,
     addTask: () => void,
-    editList: () => void,
+    editList: (state: boolean) => void,
 };
 
 const ContextButtons: React.FC<PropsType> = ({colors, deleteTodoList, addTask, editList}) => {
@@ -72,7 +71,7 @@ const ContextButtons: React.FC<PropsType> = ({colors, deleteTodoList, addTask, e
                 <FontAwesomeIcon icon="trash"/>
             </Button>
             <Button styles={colors}
-                    onClick={editList}>
+                    onClick={() => editList(true)}>
                 <FontAwesomeIcon icon="edit"/>
             </Button>
         </ButtonWrapper>

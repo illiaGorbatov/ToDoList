@@ -14,9 +14,11 @@ const AllLists = styled(animated.div)<{$editable: boolean, $closeLook: boolean}>
   transform-style: preserve-3d;
   width: 70vw;
   top: ${props => props.$editable && (window.innerHeight*0.22 <= 200 ? 200 : window.innerHeight*0.22) || 0}px;
-  @media screen and (max-width: 800px) {
+  height: calc(100vh - 280px);
+  transform-origin: 50% 100%;
+  @media screen and (max-width: 1210px) {
     transition: top 0.5s cubic-bezier(0.25, 0, 0, 1);
-    top: ${props => props.$editable || props.$closeLook ? `${window.innerHeight*0.22 <= 200 ? 200 : window.innerHeight*0.22}px` : '-50vh'};
+    top: ${props => props.$editable || props.$closeLook ? `${window.innerHeight*0.22 <= 200 ? 200 : window.innerHeight*0.22}px` : '-38vh'};
     width: 90vw
   }
 `;
@@ -25,7 +27,6 @@ const ScrollableWrapper = styled(animated.div)<{top: number}>`
   position: absolute;
   transform-style: preserve-3d;
   width: 100%;
-  height: 100%;
   z-index: 1;
   left: 50%;
   top: ${props => props.top}px;
@@ -77,6 +78,7 @@ const ScrollWrapper: React.FC = () => {
     const currentPalette = useSelector((store: AppStateType) => store.todoList.currentPaletteIndex, shallowEqual);
     const editable = useSelector((store: AppStateType) => store.todoList.editable, shallowEqual);
     const height = useSelector((store: AppStateType) => store.todoList.height, shallowEqual);
+    const initialLoadingState = useSelector((store: AppStateType) => store.todoList.initialLoadingState, shallowEqual);
     const dispatch = useDispatch();
 
     useEffect(() => {
@@ -117,16 +119,20 @@ const ScrollWrapper: React.FC = () => {
     }, []);
 
     const [wrapperAnimation, setWrapperAnimation] = useSpring(() => ({
-        x: window.innerWidth <= 800 ? '-5vw' : '-15vw',
+        x: '-100vw',
         rotateX: 45,
         rotateZ: 45,
         y: 275,
-        height: 0,
         config: {tension: 100, friction: 60, clamp: true},
     }));
+    useEffect(() => {
+        if (!initialLoadingState) setWrapperAnimation({
+            x: window.innerWidth <= 800 ? '-5vw' : '-15vw'
+        })
+    }, [initialLoadingState])
 
     useEffect(() => {
-        setWrapperAnimation({
+        if (!initialLoadingState) setWrapperAnimation({
             x: editable ? (window.innerWidth <= 800 ? '5vw' : '15vw') : (window.innerWidth <= 800 ? '-5vw' : '-15vw'),
             rotateX: editable ? 0 : 45,
             rotateZ: editable ? 0 : 45,
@@ -141,8 +147,12 @@ const ScrollWrapper: React.FC = () => {
     const [scrollingAnimation, setScroll] = useSpring(() => ({
         y: 0,
         top: `0%`,
+        height: 0,
         immediate: false
     }));
+    useEffect(() => {
+        setScroll({height})
+    }, [height]);
 
     const visibilityOfScrollBar = useSpring({
         from: {opacity: 0, right: -50, display: 'none'},
@@ -248,8 +258,9 @@ const ScrollWrapper: React.FC = () => {
     return (
         <>
             <AllLists style={wrapperAnimation} $editable={editable} $closeLook={closeLook}>
-                <ScrollableWrapper style={{y: scrollingAnimation.y,  translateX: '-50%'}} ref={measuredRef}
-                top={closeLook && visible && isMobile ? 50 : closeLook && visible && !isMobile ? 125 : 25}>
+                <ScrollableWrapper style={{y: scrollingAnimation.y, height: scrollingAnimation.height, translateX: '-50%'}}
+                                   ref={measuredRef}
+                                   top={closeLook && visible && isMobile ? 50 : closeLook && visible && !isMobile ? 125 : 25}>
                     <MappedLists setWrapperAnimation={setWrapperAnimation} width={width}
                                  scrollByListDrugging={scrollByListDrugging} setCloseLookState={setCloseLookState}
                                  returnFromCloseLookState={returnFromCloseLookState} switchScrollBar={switchScrollBar}/>

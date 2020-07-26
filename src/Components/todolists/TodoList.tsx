@@ -1,5 +1,5 @@
 import React, {useCallback, useRef, useState} from "react";
-import TodoListTasks from '../tasks/TodoListTasks';
+import TodoListTasks, {TasksWrapper} from '../tasks/TodoListTasks';
 import TodoListTitle from "./TodoListTitle";
 import {shallowEqual, useDispatch, useSelector} from 'react-redux';
 import {actions} from "../../redux/functionalReducer";
@@ -9,7 +9,7 @@ import {AppStateType} from "../../redux/store";
 import {useHover} from "react-use-gesture";
 import ContextButtons, {ButtonWrapper} from "./ContextButtons";
 import isEqual from "react-fast-compare";
-import {defaultPalette, neumorphColors} from "../neumorphColors";
+import {defaultPalette, interfacePalette, neumorphColors} from "../neumorphColors";
 
 const SingleListWrapper = styled.div`
   position: relative;
@@ -17,7 +17,7 @@ const SingleListWrapper = styled.div`
   transform-origin: 50% 50%;
   backface-visibility: hidden;
   overflow: visible;
-  padding: 25px;
+  padding: 35px;
   font-family: NunitoSans-Light;
   &:hover {
       z-index: 5;
@@ -35,7 +35,8 @@ const DetailsWrapper = styled.div`
   white-space: nowrap;
 `;
 
-const SingleListBottomLayer = styled.div<{$palette: number, $editable: boolean, $closeLookState: boolean, $focusedStatus: boolean}>`
+const SingleListBottomLayer = styled.div<{$palette: number, $editable: boolean, $closeLookState: boolean,
+    $isTasksHovered: boolean, $focusedStatus: boolean}>`
   border-radius: 30px;
   transform-style: preserve-3d;
   transform-origin: 50% 100%;
@@ -62,10 +63,21 @@ const SingleListBottomLayer = styled.div<{$palette: number, $editable: boolean, 
       box-shadow: ${props => neumorphColors[props.$palette].shadows};
       opacity: ${props => props.$closeLookState ? 1 : 0};
   };
-  &:hover:before {
-      border: 5px solid ${props => neumorphColors[props.$palette].background};
-      ${props => props.$editable && 'opacity: 1'}
-  };
+  ${props => props.$editable && !props.$focusedStatus && !props.$isTasksHovered &&
+      `&:hover:before {
+          border: 5px solid ${interfacePalette.background};
+          opacity: 1
+       };
+       ${TasksWrapper}:hover & {
+            border: 5px solid transparent;
+       };
+       &:hover ${ButtonWrapper},  ${ButtonWrapper}:hover {
+       width: 120px;
+       height: 120px;
+       opacity: 1;
+       transition: opacity .6s cubic-bezier(0.25, 0, 0, 1);
+    }
+  `};
   &:after {
       border-radius: 30px;
       content: "";
@@ -80,14 +92,6 @@ const SingleListBottomLayer = styled.div<{$palette: number, $editable: boolean, 
       opacity: ${props => !props.$closeLookState ? 1 : 0};
   };
   ${props => props.$editable && '&:hover:after {opacity: 0}'}
-  ${props => props.$editable && !props.$focusedStatus &&
-    `&:hover ${ButtonWrapper},  ${ButtonWrapper}:focus-within {
-       width: 90px;
-       height: 90px;
-       opacity: 1;
-       transition: opacity .6s cubic-bezier(0.25, 0, 0, 1);
-    };`
-  }
 `;
 
 
@@ -110,6 +114,11 @@ const TodoList: React.FC<PropsType> = ({
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const focusedStatus = useSelector((state: AppStateType) => state.todoList.focusedStatus, shallowEqual);
 
+    const [isTasksHovered, setTasksHoveredStatus] = useState<boolean>(false);
+    const setHoveredStatus = useCallback((status: boolean) => {
+        setTasksHoveredStatus(status)
+    }, []);
+
     const currHeight = useRef<number>(0);
     const ref = useRef<HTMLDivElement>(null);
     const setHeight = useCallback((height: number) => {
@@ -128,8 +137,7 @@ const TodoList: React.FC<PropsType> = ({
         setFilterValue(newFilterValue)
     };
 
-
-    const addTask = () => {
+    const addTask = useCallback(() => {
         const taskId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
             .replace(/[xy]/g, (c, r) => ('x' == c ? (Math.random() * 16 | 0) : (r & 0x3 | 0x8)).toString(16));
         const newTask = {
@@ -138,7 +146,7 @@ const TodoList: React.FC<PropsType> = ({
             todoListId: id,
         }
         dispatch(actions.addTask(newTask, id));
-    };
+    }, []);
 
     const deleteTodoList = useCallback(() => {
         deleteList(id)
@@ -171,20 +179,21 @@ const TodoList: React.FC<PropsType> = ({
     //close look animations
 
     const [isTitleEditable, setTitleEditMode] = useState<boolean>(false);
-    const switchTitleMode = useCallback(() => {
-        setTitleEditMode(!isTitleEditable)
-    }, [isTitleEditable]);
+    const switchTitleMode = useCallback((state: boolean) => {
+        setTitleEditMode(state)
+    }, []);
 
     /*console.log(`${listTitle} render`)*/
     return (
         <SingleListWrapper {...!closeLook && {...bind()}} ref={ref}>
-            <SingleListBottomLayer $palette={paletteIndex} $editable={editable}
+            <SingleListBottomLayer $palette={paletteIndex} $editable={editable} $isTasksHovered={isTasksHovered}
                                    $closeLookState={closeLook} $focusedStatus={focusedStatus}>
                 <ContextButtons colors={neumorphColors[paletteIndex]} deleteTodoList={deleteTodoList}
                                 addTask={addTask} editList={switchTitleMode}/>
                 <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable} deleteTodoList={deleteTodoList}
                                switchTitleMode={switchTitleMode} palette={neumorphColors[paletteIndex]}/>
-                <TodoListTasks todoListId={id} tasks={tasks} setHeight={setHeight} palette={neumorphColors[paletteIndex]}/>
+                <TodoListTasks todoListId={id} tasks={tasks} setHeight={setHeight} palette={neumorphColors[paletteIndex]}
+                               setHoveredStatus={setHoveredStatus}/>
                 {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}
                 {/*<DetailsWrapper>
                     more details...
