@@ -23,6 +23,8 @@ type InitialStateType = {
     swapState: boolean,
     fetchingState: boolean,
     height: number,
+    width: number,
+    interfaceHeight: number,
     allTasks: number,
     completedTasks: number,
     closeLookState: boolean
@@ -45,6 +47,8 @@ const initialState = {
     fetchingState: false,
     closeLookState: false,
     height: 0,
+    width: 0,
+    interfaceHeight: 0,
     allTasks: 0,
     completedTasks: 0
 };
@@ -189,6 +193,16 @@ const functionalReducer = (state: InitialStateType = initialState, action: Actio
                 ...state,
                 height: action.height
             }
+        case "functionalReducer/SET_WIDTH":
+            return {
+                ...state,
+                width: action.width
+            }
+        case "functionalReducer/SET_INTERFACE_HEIGHT":
+            return {
+                ...state,
+                interfaceHeight: action.height
+            }
         case "functionalReducer/SET_ALL_TASKS":
             return {
                 ...state,
@@ -203,6 +217,11 @@ const functionalReducer = (state: InitialStateType = initialState, action: Actio
             return {
                 ...state,
                 swapState: action.state
+            }
+        case "functionalReducer/SET_CLOSE_LOOK_STATE":
+            return {
+                ...state,
+                closeLookState: action.state
             }
         default:
             return state;
@@ -242,6 +261,8 @@ export const actions = {
     completeInitialLoadingState: () => ({type: 'functionalReducer/COMPLETE_INITIAL_LOADING_STATE'} as const),
     setPendingState: (pendingState: boolean) => ({type: 'functionalReducer/SET_PENDING_STATE', pendingState} as const),
     setHeight: (height: number) => ({type: 'functionalReducer/SET_HEIGHT', height} as const),
+    setWidth: (width: number) => ({type: 'functionalReducer/SET_WIDTH', width} as const),
+    setInterfaceHeight: (height: number) => ({type: 'functionalReducer/SET_INTERFACE_HEIGHT', height} as const),
     setAllTasks: (tasks: number) => ({type: 'functionalReducer/SET_ALL_TASKS', tasks} as const),
     setCompletedTask: (restore: boolean) => ({type: 'functionalReducer/SET_COMPLETED_TASK', restore} as const),
     setSwapState: (state: boolean) => ({type: 'functionalReducer/SET_SWAP_STATE', state} as const),
@@ -480,7 +501,7 @@ const getStateFromServer = (initial: boolean): ThunkType => async (dispatch: Thu
         await Promise.all(getTasks)
     }
     dispatch(actions.setTodoLists(listsWithTasks));
-    if (initial) setTimeout(() => dispatch(actions.completeInitialLoadingState()), 400);
+    if (initial) setTimeout(() => dispatch(actions.completeInitialLoadingState()), 600);
 };
 
 export const submitAllChanges = (): ThunkType =>

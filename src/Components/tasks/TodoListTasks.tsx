@@ -40,6 +40,7 @@ type PropsType = {
 const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palette, setHoveredStatus}) => {
 
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
+    const width = useSelector((store: AppStateType) => store.todoList.width, shallowEqual);
     const dispatch = useDispatch();
 
     const settings = useCallback((order: Array<number>, down?: boolean, originalIndex?: number, y?: number): any => (index: number) => {
@@ -110,7 +111,7 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
         setCurrentHeight(heightsSum);
         setHeight(heightsSum);
         memoizedTasksId.current = tasks.map(item => item.id);
-    }, [forceRerender]);
+    }, [forceRerender, width]);
 
     const calcPositions = useCallback((heightsArray: Array<number>) => {
         initialY.current = heightsArray.map((height, index) => {

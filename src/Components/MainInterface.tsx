@@ -1,8 +1,8 @@
-import React, {useEffect, useMemo, useRef, useState} from "react";
+import React, {useEffect, useLayoutEffect, useMemo} from "react";
 import styled from "styled-components/macro";
 import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import {AppStateType} from "../redux/store";
-import {actions, initialization, submitAllChanges} from "../redux/functionalReducer";
+import {actions, submitAllChanges} from "../redux/functionalReducer";
 import {animated, useSpring, useTransition} from "react-spring";
 import {interfacePalette, NeumorphColorsType} from "./neumorphColors";
 
@@ -11,11 +11,9 @@ const RotatedBackground = styled(animated.div)<{ $palette: NeumorphColorsType }>
    z-index: 998;
    background-color: ${props => props.$palette.default ? interfacePalette.background : props.$palette.background};
    width: 300%;
-   min-height: 200px;
    transform-origin: 50% 0;
    left: -150%;
    transition: background-color 0.3s cubic-bezier(0.25, 0, 0, 1);
-   box-shadow: ${props => props.$palette.default ? interfacePalette.background : props.$palette.background};
    &:before {
       position: absolute;
       width: 100%;
@@ -92,7 +90,6 @@ const InnerBackground = styled.div<{ $palette: NeumorphColorsType, $altBackgroun
   display: grid;
   place-items: center;
   border-radius: 50%;
-  /*transition: 0.3s cubic-bezier(0.25, 0, 0, 1);*/
   ${props => !props.$altBackground &&
     `&:hover {
         background: ${props.$palette.background};
@@ -107,7 +104,7 @@ const InnerEditButtonText = styled(animated.div)`
   position: absolute;
   overflow: hidden;
   top: 50%;
-  font-size: calc(15px + (50 - 15) * ((100vw - 100px) / (1200 - 100)));
+  font-size: calc(15px + (50 - 15) * ((100vw - 300px) / (2000 - 300)));
 `;
 
 const SmallerButton = styled.div<{ $palette: NeumorphColorsType, $editable: boolean }>`
@@ -164,7 +161,7 @@ const MediumButton = styled(animated.div)<{ $palette: NeumorphColorsType, $edita
 
 const InnerSmallerButtonText = styled.div`
   text-align: center;
-  font-size: calc(10px + (20 - 10) * ((100vw - 50px) / (1200 - 50)));
+  font-size: calc(10px + (20 - 10) * ((100vw - 300px) / (2000 - 300)));
 `;
 
 const MainInterface = () => {
@@ -179,20 +176,26 @@ const MainInterface = () => {
     const completedTasks = useSelector((state: AppStateType) => state.todoList.completedTasks, shallowEqual);
     const fetching = useSelector((state: AppStateType) => state.todoList.fetchingState, shallowEqual);
     const closeLook = useSelector((state: AppStateType) => state.todoList.closeLookState, shallowEqual);
+    const interfaceHeight = useSelector((state: AppStateType) => state.todoList.interfaceHeight, shallowEqual);
 
     const switchEditMode = () => {
         if (!editable) dispatch(actions.enableEditMode());
         if (editable) dispatch(submitAllChanges());
     };
 
-    const [height, setHeight] = useState<number>(window.innerHeight)
     useEffect(() => {
         let isMounted = true;
         let timeoutId: number | undefined = undefined;
         const resizeListener = () => {
             if (isMounted) {
                 clearTimeout(timeoutId);
-                timeoutId = window.setTimeout(() => setHeight(window.innerHeight), 150);
+                timeoutId = window.setTimeout(() => {
+                    const newHeight = editable ? (window.innerWidth * 0.17 > 230 ? window.innerWidth * 0.17 :
+                        window.innerWidth * 0.17 < 150 ? 150 : window.innerWidth * 0.17) :
+                        (Math.sqrt((window.innerHeight*0.23) ** 2 + (window.innerWidth*0.23) ** 2) > 300 ? 300 :
+                            Math.sqrt((window.innerHeight*0.23) ** 2 + (window.innerWidth*0.23) ** 2))
+                    dispatch(actions.setInterfaceHeight(newHeight))
+                }, 150);
             }
         };
         window.addEventListener('resize', resizeListener);
@@ -201,6 +204,15 @@ const MainInterface = () => {
             window.removeEventListener('resize', resizeListener);
         }
     }, []);
+    console.log(Math.sqrt((window.innerHeight*0.25) ** 2 + (window.innerWidth*0.25) ** 2), (window.innerWidth * 0.17 > 230 ? window.innerWidth * 0.17 :
+        window.innerWidth * 0.17 < 150 ? 150 : window.innerWidth * 0.17))
+
+    useLayoutEffect(() => {
+        const newHeight = editable ? (window.innerWidth * 0.17 > 230 ? window.innerWidth * 0.17 :
+            window.innerWidth * 0.17 < 150 ? 150 : window.innerWidth * 0.17) :
+            Math.sqrt((window.innerHeight*0.23) ** 2 + (window.innerWidth*0.23) ** 2)
+        dispatch(actions.setInterfaceHeight(newHeight))
+    }, [editable])
 
     const addTodoList = () => {
         const id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
@@ -221,7 +233,7 @@ const MainInterface = () => {
     const [spring, setSpring] = useSpring(() => ({
         height: '100%',
         width: '100%',
-        backgroundHeight: '150%',
+        backgroundHeight: Math.sqrt(window.innerHeight ** 2 + window.innerWidth ** 2),
         rotateZ: -35
     }));
 
@@ -259,13 +271,13 @@ const MainInterface = () => {
             setSpring({
                 height: '20%',
                 width: '20%',
-                backgroundHeight: '25%',
+                backgroundHeight: interfaceHeight,
                 rotateZ: -35,
                 config: {friction: 50}
             })
         } else if (editable) {
             setSpring({
-                backgroundHeight: '22%',
+                backgroundHeight: interfaceHeight,
                 height: '20%',
                 width: '100%',
                 rotateZ: 0,
@@ -277,7 +289,7 @@ const MainInterface = () => {
                 rotateZ: 0,
             })
         }
-    }, [editable, pendingState, initialLoading, swapState, fetching, closeLook]);
+    }, [editable, pendingState, initialLoading, swapState, fetching, closeLook, interfaceHeight]);
 
     const actionMessage = useMemo(() =>
             initialLoading ? 'Loading' : editable ? 'Submit' : pendingState ? 'Sending data'

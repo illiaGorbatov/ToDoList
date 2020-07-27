@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useLayoutEffect, useRef, useState} from "react";
-import {initialization} from "../../redux/functionalReducer";
+import {actions, initialization} from "../../redux/functionalReducer";
 import {shallowEqual, useDispatch, useSelector} from 'react-redux';
 import {AppStateType} from "../../redux/store";
 import styled from "styled-components/macro";
@@ -9,16 +9,17 @@ import MappedLists from "./MappedLists";
 import {NeumorphColorsType, interfacePalette} from "../neumorphColors";
 import {isMobile} from 'react-device-detect'
 
-const AllLists = styled(animated.div)<{$editable: boolean, $closeLook: boolean}>`
+const AllLists = styled(animated.div)<{$editable: boolean, $closeLook: boolean, $interfaceHeight: number}>`
   position: relative;
   transform-style: preserve-3d;
   width: 70vw;
-  top: ${props => props.$editable && (window.innerHeight*0.22 <= 200 ? 200 : window.innerHeight*0.22) || 0}px;
+  top: ${props => props.$editable && !props.$closeLook  ? props.$interfaceHeight : 0}px;
   height: calc(100vh - 280px);
   transform-origin: 50% 100%;
   @media screen and (max-width: 1210px) {
     transition: top 0.5s cubic-bezier(0.25, 0, 0, 1);
-    top: ${props => props.$editable || props.$closeLook ? `${window.innerHeight*0.22 <= 200 ? 200 : window.innerHeight*0.22}px` : '-38vh'};
+    top: ${props => props.$editable ? `${props.$interfaceHeight}px` : props.$closeLook ? 
+        '0px' : '-38vh'};
     width: 90vw
   }
 `;
@@ -34,13 +35,12 @@ const ScrollableWrapper = styled(animated.div)<{top: number}>`
   max-width: 2000px;
 `;
 
-const ScrollBarWrapper = styled(animated.div)<{ $palette: NeumorphColorsType, $visible: boolean, $editable: boolean}>`
+const ScrollBarWrapper = styled(animated.div)<{ $palette: NeumorphColorsType, $visible: boolean, $editable: boolean, $interfaceHeight: number}>`
   position: absolute;
   width: 30px;
   border-radius: 10px;
-  height: ${props => props.$editable ? (window.innerHeight*0.22 <= 200 ?
-    window.innerHeight-200 : window.innerHeight-window.innerHeight*0.22) : window.innerHeight}px;
-  top: ${props => props.$editable && (window.innerHeight*0.22 <= 200 ? 200 : window.innerHeight*0.22) || 0}px;
+  height: ${props => props.$editable ? window.innerHeight - props.$interfaceHeight : window.innerHeight}px;
+  top: ${props => props.$editable ? props.$interfaceHeight : 0}px;
   right: 0;
   overflow: hidden;
   transition: .6s cubic-bezier(0.25, 0, 0, 1);
@@ -78,7 +78,10 @@ const ScrollWrapper: React.FC = () => {
     const currentPalette = useSelector((store: AppStateType) => store.todoList.currentPaletteIndex, shallowEqual);
     const editable = useSelector((store: AppStateType) => store.todoList.editable, shallowEqual);
     const height = useSelector((store: AppStateType) => store.todoList.height, shallowEqual);
+    const width = useSelector((store: AppStateType) => store.todoList.width, shallowEqual);
     const initialLoadingState = useSelector((store: AppStateType) => store.todoList.initialLoadingState, shallowEqual);
+    const closeLook = useSelector((store: AppStateType) => store.todoList.closeLookState, shallowEqual);
+    const interfaceHeight = useSelector((state: AppStateType) => state.todoList.interfaceHeight, shallowEqual);
     const dispatch = useDispatch();
 
     useEffect(() => {
@@ -88,7 +91,7 @@ const ScrollWrapper: React.FC = () => {
         const resizeListener = () => {
             if (isMounted) {
                 clearTimeout(timeoutId);
-                timeoutId = window.setTimeout(() => setWidth(measuredRef.current!.offsetWidth), 150);
+                timeoutId = window.setTimeout(() => dispatch(actions.setWidth(measuredRef.current!.offsetWidth)), 150);
             }
         };
         window.addEventListener('resize', resizeListener);
@@ -101,21 +104,21 @@ const ScrollWrapper: React.FC = () => {
     const [{border, scrollBarHeight}, setBorders] = useState({border: 0, scrollBarHeight: 0});
     const [drugged, setDrugged] = useState<boolean>(false);
     const [visible, setVisible] = useState<boolean>(false);
-    const [closeLook, setCloseLook] = useState<boolean>(false);
     useEffect(() => {
         if (height < window.innerHeight) setVisible(false)
         else setVisible(true);
-        const border = editable ? (height - window.innerHeight < 0 ? 0 : height - window.innerHeight + 275)
-            : (height - window.innerHeight < 0 ? 0.5 * height : height - window.innerHeight / 2);
-        const scrollBarHeight = !height ? 0 : (window.innerHeight - 275) / height * 100;
-        setBorders({border, scrollBarHeight})
-    }, [height, editable]);
+        if (!closeLook) {
+            const border = editable ? (height - window.innerHeight < 0 ? 0 : height - window.innerHeight + interfaceHeight)
+                : (height - window.innerHeight < 0 ? 0.5 * height : height - window.innerHeight / 2);
+            const scrollBarHeight = !height ? 0 : (window.innerHeight - (editable ? interfaceHeight : 0)) / height * 100;
+            setBorders({border, scrollBarHeight})
+        }
+    }, [height, editable, width]);
 
     const measuredRef = useRef<HTMLDivElement>(null);
-    const [width, setWidth] = useState<number>(0);
 
     useLayoutEffect(() => {
-        setWidth(measuredRef.current!.offsetWidth)
+        dispatch(actions.setWidth(measuredRef.current!.offsetWidth))
     }, []);
 
     const [wrapperAnimation, setWrapperAnimation] = useSpring(() => ({
@@ -123,17 +126,17 @@ const ScrollWrapper: React.FC = () => {
         rotateX: 45,
         rotateZ: 45,
         y: 275,
-        config: {tension: 100, friction: 60, clamp: true},
+        config: {tension: 90, clamp: true},
     }));
     useEffect(() => {
         if (!initialLoadingState) setWrapperAnimation({
-            x: window.innerWidth <= 800 ? '-5vw' : '-15vw'
+            x: window.innerWidth <= 1210 ? '-5vw' : '-15vw',
         })
     }, [initialLoadingState])
 
     useEffect(() => {
         if (!initialLoadingState) setWrapperAnimation({
-            x: editable ? (window.innerWidth <= 800 ? '5vw' : '15vw') : (window.innerWidth <= 800 ? '-5vw' : '-15vw'),
+            x: editable ? (window.innerWidth <= 1210 ? '5vw' : '15vw') : (window.innerWidth <= 1210 ? '-5vw' : '-15vw'),
             rotateX: editable ? 0 : 45,
             rotateZ: editable ? 0 : 45,
             y: editable ? 0 : 275,
@@ -151,8 +154,11 @@ const ScrollWrapper: React.FC = () => {
         immediate: false
     }));
     useEffect(() => {
-        setScroll({height})
-    }, [height]);
+        setScroll({height});
+        if (!initialLoadingState) setWrapperAnimation({
+            x: editable || closeLook ? (window.innerWidth <= 1210 ? '5vw' : '15vw') : (window.innerWidth <= 1210 ? '-5vw' : '-15vw')
+        })
+    }, [height, width]);
 
     const visibilityOfScrollBar = useSpring({
         from: {opacity: 0, right: -50, display: 'none'},
@@ -190,7 +196,7 @@ const ScrollWrapper: React.FC = () => {
     const bindDraggedScrollBar = useDrag(({delta: [, y], event, first, down}) => {
         event?.stopPropagation();
         if (first) setDrugged(true);
-        const absY = y / window.innerHeight * 100;
+        const absY = y / (editable ? window.innerHeight - interfaceHeight : window.innerHeight) * 100;
         scrolledPercent.current = scrolledPercent.current + absY > 0 && scrolledPercent.current + absY < 100 - scrollBarHeight ?
             scrolledPercent.current + absY : scrolledPercent.current + absY <= 0 ? 0 : 100 - scrollBarHeight;
         scrolledY.current = border * scrolledPercent.current / (100 - scrollBarHeight);
@@ -226,7 +232,7 @@ const ScrollWrapper: React.FC = () => {
             elementHeight - (window.innerHeight - (isMobile ? 100 : 250)) : 0;
         if (newBorder > 0) {
             memoizedData.current = [scrolledY.current, scrolledPercent.current, border, scrollBarHeight];
-            const newScrollBarHeight = (window.innerHeight - (isMobile ? 100 : 250)) / elementHeight * 100;
+            const newScrollBarHeight = (window.innerHeight - (isMobile ? 100 : 250)) / elementHeight * 100
             setBorders({border: newBorder, scrollBarHeight: newScrollBarHeight})
             scrolledY.current = 0;
             scrolledPercent.current = 0;
@@ -236,8 +242,7 @@ const ScrollWrapper: React.FC = () => {
             });
             setVisible(true);
         }
-        setCloseLook(true);
-    }, [border, scrollBarHeight])
+    }, [border, scrollBarHeight]);
 
     const returnFromCloseLookState = useCallback(() => {
         if (memoizedData.current.length !== 0) {
@@ -250,23 +255,23 @@ const ScrollWrapper: React.FC = () => {
             });
         }
         setVisible(true);
-        setCloseLook(false)
-    }, [])
+    }, []);
 
     const switchScrollBar = useCallback((visibility: boolean) => setVisible(visibility), []);
 
     return (
         <>
-            <AllLists style={wrapperAnimation} $editable={editable} $closeLook={closeLook}>
+            <AllLists style={wrapperAnimation} $editable={editable} $closeLook={closeLook} $interfaceHeight={interfaceHeight}>
                 <ScrollableWrapper style={{y: scrollingAnimation.y, height: scrollingAnimation.height, translateX: '-50%'}}
-                                   ref={measuredRef}
+                                   ref={measuredRef} //here
                                    top={closeLook && visible && isMobile ? 50 : closeLook && visible && !isMobile ? 125 : 25}>
-                    <MappedLists setWrapperAnimation={setWrapperAnimation} width={width}
-                                 scrollByListDrugging={scrollByListDrugging} setCloseLookState={setCloseLookState}
-                                 returnFromCloseLookState={returnFromCloseLookState} switchScrollBar={switchScrollBar}/>
+                    <MappedLists setWrapperAnimation={setWrapperAnimation} scrollByListDrugging={scrollByListDrugging}
+                                 setCloseLookState={setCloseLookState} returnFromCloseLookState={returnFromCloseLookState}
+                                 switchScrollBar={switchScrollBar}/>
                 </ScrollableWrapper>
             </AllLists>
-            <ScrollBarWrapper $palette={currentPalette} $visible={visible} style={visibilityOfScrollBar} $editable={editable}>
+            <ScrollBarWrapper $palette={currentPalette} $visible={visible} style={visibilityOfScrollBar}
+                              $editable={editable} $interfaceHeight={interfaceHeight}>
                 <ScrollBarThing $palette={currentPalette} $drugged={drugged}
                                 style={{top: scrollingAnimation.top}} {...!isMobile && {...bindDraggedScrollBar()}}
                                 $height={scrollBarHeight}/>
