@@ -1,10 +1,10 @@
 import React, {useEffect, useLayoutEffect, useMemo} from "react";
 import styled from "styled-components/macro";
 import {shallowEqual, useDispatch, useSelector} from "react-redux";
-import {AppStateType} from "../redux/store";
-import {actions, submitAllChanges} from "../redux/functionalReducer";
+import {AppStateType} from "../../redux/store";
+import {actions, submitAllChanges} from "../../redux/functionalReducer";
 import {animated, useSpring, useTransition} from "react-spring";
-import {interfacePalette, NeumorphColorsType} from "./neumorphColors";
+import {interfacePalette, NeumorphColorsType} from "../neumorphColors";
 
 const RotatedBackground = styled(animated.div)<{ $palette: NeumorphColorsType }>`
    position: absolute;
@@ -163,6 +163,8 @@ const InnerSmallerButtonText = styled.div`
   text-align: center;
   font-size: calc(10px + (20 - 10) * ((100vw - 300px) / (2000 - 300)));
 `;
+
+
 
 const MainInterface = () => {
 

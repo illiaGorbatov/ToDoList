@@ -3,9 +3,10 @@ import styled, {createGlobalStyle} from "styled-components/macro";
 import {library} from "@fortawesome/fontawesome-svg-core";
 import {far} from "@fortawesome/free-regular-svg-icons";
 import {fas} from "@fortawesome/free-solid-svg-icons";
-import ScrollWrapper from "./todolists/ScrollWrapper";
+import ScrollWrapperOriginal from "./AppAnimatedWrappers/ScrollWrapperOriginal";
 import AnimatedBackground from "./AnimatedBackground";
-import MainInterface from "./MainInterface";
+import MainInterface_CONTAINER from "./MainInterface/MainInterface_CONTAINER";
+import Scroll_WRAPPER from "./AppAnimatedWrappers/ScrollableElements/Scroll_WRAPPER";
 
 library.add(far, fas);
 
@@ -45,8 +46,8 @@ const App: React.FC = () => {
             <GlobalStyles/>
             <AnimatedBackground/>
             <Wrapper>
-                <MainInterface/>
-                <ScrollWrapper/>
+                <MainInterface_CONTAINER/>
+                <Scroll_WRAPPER/>
             </Wrapper>
         </>
     );

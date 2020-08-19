@@ -1,13 +1,13 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {animated, useSprings, SpringStartFn, useSpring} from "react-spring";
-import {swap} from "../../hooks/swap";
+import {swap} from "../../../hooks/swap";
 import {useDrag} from "react-use-gesture";
-import {actions} from "../../redux/functionalReducer";
+import {actions} from "../../../redux/functionalReducer";
 import styled from "styled-components/macro";
-import TodoList from "./TodoList";
-import {defaultPalette, neumorphColors} from "../neumorphColors";
+import TodoList from "../../SingleToDoList/TodoList";
+import {defaultPalette, neumorphColors} from "../../neumorphColors";
 import {shallowEqual, useDispatch, useSelector} from "react-redux";
-import {AppStateType} from "../../redux/store";
+import {AppStateType} from "../../../redux/store";
 import isEqual from "react-fast-compare";
 import ClosingButton from "./CloseButton";
 
@@ -409,9 +409,9 @@ const MappedLists: React.FC<PropsType> = ({setWrapperAnimation, scrollByListDrug
 
     return (
         <>
-            <CloseButtonAnimatedWrapper onClick={returnFromCloseLook} style={closeButtonAnimation}>
+           {/* <CloseButtonAnimatedWrapper onClick={returnFromCloseLook} style={closeButtonAnimation}>
                 <ClosingButton/>
-            </CloseButtonAnimatedWrapper>
+            </CloseButtonAnimatedWrapper>*/}
             {todoLists.length !== 0 && todoLists.map((list, i) =>
                 <TodoListContainer
                     style={springs[todoLists.length - i - 1]} {...editable && {...gesture(i, todoLists.length-i-1)}}
