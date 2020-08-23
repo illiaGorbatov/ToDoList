@@ -4,8 +4,7 @@ import {ThunkAction, ThunkDispatch} from "redux-thunk";
 import {AppStateType, InferActionTypes} from "./store";
 import cloneDeep from "lodash-es/cloneDeep";
 import {movePos} from "../hooks/movePos";
-import {act} from "react-dom/test-utils";
-import {defaultPalette, neumorphColors, NeumorphColorsType} from "../Components/neumorphColors";
+import {defaultPalette, NeumorphColorsType} from "../Components/neumorphColors";
 
 type InitialStateType = {
     todoLists: Array<TodoListType>,
@@ -401,12 +400,12 @@ export const changeTodoListTitleTC = (todoListId: string, todoListTitle: string)
                 })
                 await Promise.all(promises);
                 if (addedInNewListsSwappedTasks.length !== 0) {
-                    const newIdSwappedTasks = addedInNewListsSwappedTasks.map(tasks => tasks.map(task => {
+                    const newIdSwappedTasks = addedInNewListsSwappedTasks.map(Tasks => Tasks.map(task => {
                         const currentTask = newTasks.find(newTask => task === newTask.oldId)!;
                         return {newId: currentTask.newId, listId: currentTask.listId}
                     }))
-                    newIdSwappedTasks.map(tasks => {
-                        api.swapTasks(tasks[0].listId, tasks[0].newId, tasks[1].newId)
+                    newIdSwappedTasks.map(Tasks => {
+                        api.swapTasks(Tasks[0].listId, Tasks[0].newId, Tasks[1].newId)
                     })
                 }
             }
@@ -425,20 +424,20 @@ export const changeTodoListTitleTC = (todoListId: string, todoListTitle: string)
             })
             await Promise.all(promises);
             if (addedSwappedTasks.length !== 0) {
-                const newIdSwappedTasks = addedSwappedTasks.map(tasks => tasks.map(task => {
+                const newIdSwappedTasks = addedSwappedTasks.map(Tasks => Tasks.map(task => {
                     const currentTask = newTasks.find(newTask => task === newTask.oldId)!;
                     return {newId: currentTask.newId, listId: currentTask.listId}
                 }))
-                newIdSwappedTasks.map(tasks => {
-                    api.swapTasks(tasks[0].listId, tasks[0].newId, tasks[1].newId).then(data => {
+                newIdSwappedTasks.map(Tasks => {
+                    api.swapTasks(Tasks[0].listId, Tasks[0].newId, Tasks[1].newId).then(data => {
                         if (data.resultCode !== 0) dispatch(actions.setError())
                     })
                 })
             }
         }
         if (clearlySwappedTasks.length !== 0) {
-            clearlySwappedTasks.forEach(tasks => {
-                api.swapTasks(tasks[2], tasks[0], tasks[1]).then(data => {
+            clearlySwappedTasks.forEach(Tasks => {
+                api.swapTasks(Tasks[2], Tasks[0], Tasks[1]).then(data => {
                     if (data.resultCode !== 0) dispatch(actions.setError())
                 })
             })
@@ -748,9 +747,9 @@ export const submitAllChanges = (): ThunkType =>
 
             /*console.log(currentListsStateOnServer,
                 todoListsWithNewId.find(item => item.id === currentListsStateOnServer![0].todoListId)!
-                    .tasks.map(item => item.id),
+                    .Tasks.map(item => item.id),
                 todoListsWithNewId.find(item => item.id === currentListsStateOnServer![0].todoListId)!
-                    .tasks.map(item => item.title))*/
+                    .Tasks.map(item => item.title))*/
 
             let requiredOrder: Array<{ todoListId: string, tasks: Array<string> }> = [];
             if (currentListsStateOnServer && tasksOrder.length !== 0) {

@@ -41,17 +41,16 @@ type PropsType = {
 }
 
 const ScrollableWrapper: React.FC<PropsType> = ({
-                                                children, wrapperAnimation,
-                                                editable, closeLook, height, interfaceHeight,
-                                                y, visible, measuredRef
-                                            }) => {
+                                                    children, wrapperAnimation,
+                                                    editable, closeLook, height, interfaceHeight,
+                                                    y, visible, measuredRef
+                                                }) => {
 
     return (
         <AllLists style={wrapperAnimation} $editable={editable} $closeLook={closeLook}
                   $interfaceHeight={interfaceHeight}>
-            <ScrollWrapper style={{y, height, translateX: '-50%'}}
-                               ref={measuredRef} //here
-                               $top={closeLook && visible && isMobile ? 50 : closeLook && visible && !isMobile ? 125 : 25}>
+            <ScrollWrapper style={{y, height, translateX: '-50%'}} ref={measuredRef}
+                           $top={closeLook && visible && isMobile ? 50 : closeLook && visible && !isMobile ? 125 : 25}>
                 {children}
             </ScrollWrapper>
         </AllLists>

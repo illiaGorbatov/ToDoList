@@ -1,7 +1,8 @@
 import React from "react";
 import styled from "styled-components/macro";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {interfacePalette, NeumorphColorsType} from "../neumorphColors";
+import {NeumorphColorsType} from "../neumorphColors";
+import {useDrag} from "react-use-gesture";
 
 export const TaskButtonWrapper = styled.div`
     z-index: 0;
@@ -25,10 +26,11 @@ const Button = styled.div<{$palette: NeumorphColorsType}>`
     border-radius: 100%;
     background-color: ${props => props.$palette.background};
     box-shadow: ${props => props.$palette.littleShadows};
+    color: ${props => props.$palette.color};
     transition: .25s cubic-bezier(0.25, 0, 0, 1);
     &:hover {
-        background-color: ${interfacePalette.background};
-        color: white;
+        background-color: ${props => props.$palette.color};
+        color: ${props => props.$palette.background};
     }
     &:first-child:nth-last-child(2),
         &:first-child:nth-last-child(2) ~ * { 
@@ -50,12 +52,22 @@ type PropsType = {
 
 const TaskButtons: React.FC<PropsType> = ({deleteTask, editTask, palette}) => {
 
+    const onEditClickHandler = useDrag(({tap, event}) => {
+        event?.stopPropagation()
+        if (tap) editTask()
+    });
+
+    const onDeleteClickHandler = useDrag(({tap, event}) => {
+        event?.stopPropagation()
+        if (tap) deleteTask()
+    })
+
     return (
         <TaskButtonWrapper>
-            <Button onClick={editTask} $palette={palette}>
+            <Button {...onEditClickHandler()} $palette={palette}>
                 <FontAwesomeIcon icon="edit"/>
             </Button>
-            <Button onClick={deleteTask} $palette={palette}>
+            <Button {...onDeleteClickHandler()} $palette={palette}>
                 <FontAwesomeIcon icon="trash"/>
             </Button>
         </TaskButtonWrapper>

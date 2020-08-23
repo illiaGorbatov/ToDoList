@@ -1,5 +1,5 @@
 import React, {useCallback, useRef, useState} from "react";
-import TodoListTasks, {TasksWrapper} from '../tasks/TodoListTasks';
+import TodoListTasks from '../Tasks/Tasks_WRAPPER';
 import TodoListTitle from "./TodoListTitle";
 import {shallowEqual, useDispatch, useSelector} from 'react-redux';
 import {actions} from "../../redux/functionalReducer";
@@ -9,9 +9,9 @@ import {AppStateType} from "../../redux/store";
 import {useHover} from "react-use-gesture";
 import ContextButtons, {ButtonWrapper} from "./ContextButtons";
 import isEqual from "react-fast-compare";
-import {defaultPalette, interfacePalette, neumorphColors} from "../neumorphColors";
+import {defaultPalette, neumorphColors} from "../neumorphColors";
 
-const SingleListWrapper = styled.div`
+const SingleListWrapper = styled.div<{ $editable: boolean}>`
   position: relative;
   transform-style: preserve-3d;
   transform-origin: 50% 50%;
@@ -22,6 +22,10 @@ const SingleListWrapper = styled.div`
   &:hover {
       z-index: 5;
   }
+  ${props => !props.$editable &&
+    `&:hover ${ListOuterLayer}{
+        transform: translateZ(100px)
+  }`}
 `;
 
 const DetailsWrapper = styled.div`
@@ -35,20 +39,19 @@ const DetailsWrapper = styled.div`
   white-space: nowrap;
 `;
 
-const SingleListBottomLayer = styled.div<{$palette: number, $editable: boolean, $closeLookState: boolean,
-    $isTasksHovered: boolean, $focusedStatus: boolean}>`
+const ListOuterLayer = styled.div<{
+    $palette: number, $editable: boolean, $closeLookState: boolean,
+    $isTasksHovered: boolean, $focusedStatus: boolean
+}>`
+  cursor: ${props => props.$editable ? 'grab' : 'inherit'};
   border-radius: 30px;
+  padding: 35px;
   transform-style: preserve-3d;
   transform-origin: 50% 100%;
-  padding: 25px;
   background: ${props => neumorphColors[props.$palette].concaveBackground};
   position: relative;
   transform: translateZ(0);
   transition: transform .6s cubic-bezier(0.25, 0, 0, 1);
-  ${props => !props.$editable &&
-    `&:hover {
-        transform: translateZ(100px)
-  }`}
   &:before {
       border-radius: 30px;
       content: "";
@@ -58,26 +61,20 @@ const SingleListBottomLayer = styled.div<{$palette: number, $editable: boolean, 
       bottom: 0;
       left: 0;
       right: 0;
-      border: 5px solid transparent;
-      transition: border, opacity .3s linear;
+      transition: opacity .3s linear;
       box-shadow: ${props => neumorphColors[props.$palette].shadows};
       opacity: ${props => props.$closeLookState ? 1 : 0};
   };
   ${props => props.$editable && !props.$focusedStatus && !props.$isTasksHovered &&
-      `&:hover:before {
-          border: 5px solid ${interfacePalette.background};
-          opacity: 1
-       };
-       ${TasksWrapper}:hover & {
-            border: 5px solid transparent;
-       };
-       &:hover ${ButtonWrapper},  ${ButtonWrapper}:hover {
-       width: 120px;
-       height: 120px;
-       opacity: 1;
-       transition: opacity .6s cubic-bezier(0.25, 0, 0, 1);
-    }
-  `};
+    `&:hover ${ButtonWrapper},  ${ButtonWrapper}:hover {
+           width: 120px;
+           height: 120px;
+           opacity: 1;
+           transition: opacity .6s cubic-bezier(0.25, 0, 0, 1);
+       }
+       &:hover ${ListInnerLayer} {
+           opacity: 1
+       }`};
   &:after {
       border-radius: 30px;
       content: "";
@@ -87,11 +84,33 @@ const SingleListBottomLayer = styled.div<{$palette: number, $editable: boolean, 
       bottom: 0;
       left: 0;
       right: 0;
-      box-shadow: 20px 20px 40px rgba(0, 0, 0, .4);
+      box-shadow: 14px 14px 35px rgba(0, 0, 0, .4);
       transition: opacity .3s linear;
       opacity: ${props => !props.$closeLookState ? 1 : 0};
   };
-  ${props => props.$editable && '&:hover:after {opacity: 0}'}
+  ${props => props.$editable && `
+    &:hover:after {opacity: 0};
+    &:hover:before {opacity: 1};
+    &:active {
+        cursor: grabbing;
+        &:after {opacity: 1};
+        &:before {opacity: 0};
+        ${ListInnerLayer} {opacity: 1}
+    }`}
+`;
+
+const ListInnerLayer = styled.div<{ $palette: number}>`
+  position: absolute;
+  border-radius: 20px;
+  top: 50%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-50%);
+  height: calc(100% - 20px);
+  width: calc(100% - 20px);
+  padding: 25px;
+  box-shadow: ${props => neumorphColors[props.$palette].innerShadows};
+  opacity: 0;
+  transition: opacity .3s linear;
 `;
 
 
@@ -126,7 +145,7 @@ const TodoList: React.FC<PropsType> = ({
             currHeight.current = ref.current.offsetHeight
         }
         if (currHeight.current !== height) {
-            setNewHeights(height+currHeight.current, id);
+            setNewHeights(height + currHeight.current, id);
         }
     }, []);
 
@@ -168,6 +187,7 @@ const TodoList: React.FC<PropsType> = ({
     //hover Effect
 
     const bind = useHover(({hovering}) => {
+        if (focusedStatus || closeLook) return
         if (hovering) {
             dispatch(actions.setPalette(neumorphColors[paletteIndex]));
         }
@@ -185,20 +205,23 @@ const TodoList: React.FC<PropsType> = ({
 
     /*console.log(`${listTitle} render`)*/
     return (
-        <SingleListWrapper {...!closeLook && {...bind()}} ref={ref}>
-            <SingleListBottomLayer $palette={paletteIndex} $editable={editable} $isTasksHovered={isTasksHovered}
-                                   $closeLookState={closeLook} $focusedStatus={focusedStatus}>
-                <ContextButtons colors={neumorphColors[paletteIndex]} deleteTodoList={deleteTodoList}
-                                addTask={addTask} editList={switchTitleMode}/>
-                <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable} deleteTodoList={deleteTodoList}
-                               switchTitleMode={switchTitleMode} palette={neumorphColors[paletteIndex]}/>
-                <TodoListTasks todoListId={id} tasks={tasks} setHeight={setHeight} palette={neumorphColors[paletteIndex]}
-                               setHoveredStatus={setHoveredStatus}/>
-                {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}
-                {/*<DetailsWrapper>
+        <SingleListWrapper {...!closeLook && {...bind()}} ref={ref} $editable={editable}>
+            <ListOuterLayer $palette={paletteIndex} $editable={editable} $isTasksHovered={isTasksHovered}
+                                  $closeLookState={closeLook} $focusedStatus={focusedStatus}>
+                <ListInnerLayer $palette={paletteIndex}/>
+                    <ContextButtons colors={neumorphColors[paletteIndex]} deleteTodoList={deleteTodoList}
+                                    addTask={addTask} editList={switchTitleMode}/>
+                    <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable}
+                                   deleteTodoList={deleteTodoList}
+                                   switchTitleMode={switchTitleMode} palette={neumorphColors[paletteIndex]}/>
+                    <TodoListTasks todoListId={id} tasks={tasks} setHeight={setHeight}
+                                   palette={neumorphColors[paletteIndex]}
+                                   setHoveredStatus={setHoveredStatus}/>
+                    {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}
+                    {/*<DetailsWrapper>
                     more details...
                 </DetailsWrapper>*/}
-            </SingleListBottomLayer>
+            </ListOuterLayer>
         </SingleListWrapper>
     );
 }

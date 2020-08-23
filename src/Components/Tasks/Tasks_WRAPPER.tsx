@@ -1,7 +1,7 @@
 import React, {RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState} from "react";
 import TodoListTask from "./TodoListTask";
 import {TaskType} from "../../redux/entities";
-import {animated, useSprings, useSpring} from "react-spring";
+import {animated, useSprings} from "react-spring";
 import {useDrag, useHover} from "react-use-gesture";
 import styled from "styled-components/macro";
 import {shallowEqual, useDispatch, useSelector} from "react-redux";
@@ -10,7 +10,6 @@ import {actions} from "../../redux/functionalReducer";
 import {movePos} from "../../hooks/movePos";
 import isEqual from "react-fast-compare";
 import {NeumorphColorsType} from "../neumorphColors";
-import {clamp} from "lodash-es";
 
 export const TasksWrapper = styled.div<{ $height: number }>`
   user-select: none;
@@ -37,7 +36,7 @@ type PropsType = {
     setHoveredStatus: (status: boolean) => void
 };
 
-const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palette, setHoveredStatus}) => {
+const Tasks_WRAPPER: React.FC<PropsType> = ({tasks, todoListId, setHeight, palette, setHoveredStatus}) => {
 
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const width = useSelector((store: AppStateType) => store.todoList.width, shallowEqual);
@@ -67,7 +66,7 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
         }, [tasks]);
 
     const order = useRef<Array<number>>([]);
-    const initialYofDragged = useRef<number | null>(0);
+    const initialYofDragged = useRef<number | null>(null);
     const memoizedOrder = useRef<Array<number>>([]);
     const memoizedTasksId = useRef<Array<string>>([]);
     const initialY = useRef<Array<number>>([]);
@@ -151,10 +150,10 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
         return index
     }, [])
 
-    const gesture = useDrag(({args: [originalIndex, trueIndex], down, movement: [, y], event, first}) => {
-        event!.stopPropagation();
+    const gesture = useDrag(({args: [originalIndex, trueIndex], down, movement: [, y], event}) => {
+        event?.stopPropagation();
         const curIndex = order.current.indexOf(trueIndex);
-        if (first) {
+        if (initialYofDragged.current === null) {
             initialYofDragged.current = initialY.current[curIndex];
             bounds.current = [-initialYofDragged.current, initialY.current[tasks.length-1] - initialYofDragged.current];
             dispatch(actions.setFocusedStatus(true))
@@ -193,5 +192,5 @@ const TodoListTasks: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
     );
 }
 
-export default React.memo(TodoListTasks, isEqual);
+export default React.memo(Tasks_WRAPPER, isEqual);
 

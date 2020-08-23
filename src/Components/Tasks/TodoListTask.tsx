@@ -6,12 +6,11 @@ import {AppStateType} from "../../redux/store";
 import styled from "styled-components/macro";
 import TaskButtons, {TaskButtonWrapper} from "./TaskButtons";
 import {validate} from "../../hooks/validate";
-import {animated, useSpring} from "react-spring";
 import TaskCheckbox from "./TaskCheckbox";
-import {interfacePalette, NeumorphColorsType} from "../neumorphColors";
+import {NeumorphColorsType} from "../neumorphColors";
 import isEqual from "react-fast-compare";
 
-const TaskWrapper = styled(animated.div)<{ $editable: boolean, $editorState: boolean}>`
+const TaskWrapper = styled.div<{ $editable: boolean, $editorState: boolean}>`
     position: relative;
     text-align: left;
     z-index: ${props => props.$editorState ? 2 : 1};
@@ -21,8 +20,7 @@ const TaskWrapper = styled(animated.div)<{ $editable: boolean, $editorState: boo
        height: calc(100% + 10px);
        left: -10px;
        top: -5px
-     }`
-}
+     }`}
 `;
 
 const TaskBackground = styled.div<{$palette: NeumorphColorsType, $editable: boolean, $editorState: boolean}>`
@@ -46,19 +44,34 @@ const TaskBackground = styled.div<{$palette: NeumorphColorsType, $editable: bool
       right: 0;
       z-index: -1;
       box-shadow: ${props => props.$palette.littleShadows};
-      border: 3px solid transparent;
-      transition: border .3s linear;
     };
-    ${props => props.$editable &&
-        `&:hover:before {
-             border: 3px solid ${interfacePalette.background}
-        };
+    &:after {
+      border-radius: 7px;
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translateY(-50%) translateX(-50%);
+      z-index: 1;
+      width: calc(100% - 10px);
+      height: calc(100% - 10px);
+      box-shadow: ${props => props.$palette.innerLittleShadows};
+      opacity: 0;
+      transition: opacity .3s linear;
+    };
+    ${props => props.$editable && `
+        &:hover:after {opacity: 1};
         &:hover ${TaskButtonWrapper},  ${TaskButtonWrapper}:focus-within {
            width: 4rem;
            height: 5rem;
            left: -10px
-        }`
-    }
+        }
+        &:active {
+           cursor: grabbing;
+           &:before {box-shadow: 10px 10px 20px rgba(0, 0, 0, .4)};
+           &:after {opacity: 1}
+        }`}
+    ${props => props.$editorState && `&:after {opacity: 1}`}
 `;
 
 const TaskText = styled.div`
@@ -69,6 +82,7 @@ const TaskText = styled.div`
     overflow-wrap: break-word;
     -webkit-line-break: after-white-space;
     width: 100%;
+    font-size: 16px;
 `;
 
 
@@ -86,6 +100,7 @@ const TodoListTask: React.FC<PropsType> = ({task, todoListId, palette}) => {
     const [editorState, setEditorState] = useState<boolean>(false);
     const editTask = useCallback(() => {
         setEditorState(true);
+        dispatch(actions.setPalette(palette));
         dispatch(actions.setFocusedStatus(true))
     }, []);
 
@@ -110,7 +125,7 @@ const TodoListTask: React.FC<PropsType> = ({task, todoListId, palette}) => {
 
     const onBlurHandler = useCallback(() => {
         const taskTitle = textRef.current!.textContent;
-        console.log(validate(taskTitle))
+        console.log(focusedStatus)
         if (validate(taskTitle)) {
             let newTask = {...task, title: taskTitle!};
             dispatch(actions.changeTask(newTask));
@@ -126,8 +141,8 @@ const TodoListTask: React.FC<PropsType> = ({task, todoListId, palette}) => {
         }
     }, [task]);
 
-    const onKeyPressHandler = useCallback((e: React.KeyboardEvent) => {
-        if (e.key === "Enter") {
+    const onKeyDownHandler = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.keyCode === 13 || e.keyCode === 27) {
             e.preventDefault();
             textRef.current!.blur()
         }
@@ -141,7 +156,7 @@ const TodoListTask: React.FC<PropsType> = ({task, todoListId, palette}) => {
             <TaskButtons editTask={editTask} deleteTask={deleteTask} palette={palette}/>
             <TaskBackground $editable={editable} $palette={palette} $editorState={editorState}>
                 <TaskCheckbox task={task} changeDoneStatus={changeDoneStatus} editable={editable} palette={palette}/>
-                <TaskText contentEditable={editorState} onKeyPress={e => onKeyPressHandler(e)}
+                <TaskText contentEditable={editorState} onKeyDown={e => onKeyDownHandler(e)}
                           ref={textRef} onBlur={onBlurHandler}/>
             </TaskBackground>
         </TaskWrapper>

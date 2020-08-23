@@ -7,7 +7,7 @@ import { NeumorphColorsType } from "../neumorphColors";
 import {validate} from "../../hooks/validate";
 
 const ListTitle = styled.div<{$palette: NeumorphColorsType, contentEditable: boolean}>`
-  background-image: ${props => props.$palette.background};
+  background-color: ${props => props.$palette.background};
   color: ${props => props.$palette.color};
   position: relative;
   font-size: 25px;
@@ -64,7 +64,7 @@ const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable,
     }, [listTitle]);
 
     const onKeyPressHandler = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter" ) {
+        if (e.keyCode === 13 || e.keyCode === 27 ) {
             e.preventDefault();
             ref.current!.blur()
         }
@@ -85,7 +85,7 @@ const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable,
     };
 
     return (
-        <ListTitle contentEditable={isTitleEditable} ref={ref} onKeyPress={e => onKeyPressHandler(e)}
+        <ListTitle contentEditable={isTitleEditable} ref={ref} onKeyDown={e => onKeyPressHandler(e)}
                    onBlur={onBlurHandler} $palette={palette}/>
     );
 }

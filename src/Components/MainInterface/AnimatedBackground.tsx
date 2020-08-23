@@ -1,12 +1,11 @@
 import React, {useEffect} from "react";
 import {shallowEqual, useSelector} from 'react-redux';
-import {AppStateType} from "../redux/store";
+import {AppStateType} from "../../redux/store";
 import styled from "styled-components/macro";
 import {animated, useSpring} from "react-spring";
 import {library} from "@fortawesome/fontawesome-svg-core";
 import {far} from "@fortawesome/free-regular-svg-icons";
 import {fas} from "@fortawesome/free-solid-svg-icons";
-import {neumorphColors} from "./neumorphColors";
 
 library.add(far, fas);
 
@@ -24,6 +23,7 @@ const AnimatedBackground:React.FC = () => {
     const [animateBackground, setBackground] = useSpring(() => ({
         background: currentPalette.background
     }));
+
     useEffect(() => {
         setBackground({background: currentPalette.background})
     }, [currentPalette])

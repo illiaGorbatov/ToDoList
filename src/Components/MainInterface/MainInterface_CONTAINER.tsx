@@ -1,10 +1,10 @@
-import React, {useCallback, useEffect, useLayoutEffect, useMemo} from "react";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
 import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import {AppStateType} from "../../redux/store";
 import {actions, submitAllChanges} from "../../redux/functionalReducer";
 import {useSpring} from "react-spring";
 import RotatedBackground from "./RotatedBackground";
-import InterfaceWrapper from "./ButtonsWrapper";
+import InterfaceWrapper from "./InterfaceWrapper";
 import EditButton from "./EditButton";
 import OtherButtons from "./OtherButtons";
 
@@ -22,6 +22,9 @@ const MainInterface_CONTAINER = () => {
     const fetching = useSelector((state: AppStateType) => state.todoList.fetchingState, shallowEqual);
     const closeLook = useSelector((state: AppStateType) => state.todoList.closeLookState, shallowEqual);
     const interfaceHeight = useSelector((state: AppStateType) => state.todoList.interfaceHeight, shallowEqual);
+    const width = useSelector((state: AppStateType) => state.todoList.width, shallowEqual);
+
+    const [buttonsWrapperHeight, setButtonsHeight] = useState<number>(0);
 
     const switchEditMode = useCallback(() => {
         if (!editable) dispatch(actions.enableEditMode());
@@ -31,15 +34,28 @@ const MainInterface_CONTAINER = () => {
     useEffect(() => {
         let isMounted = true;
         let timeoutId: number | undefined = undefined;
+        const getHeight = (getButtonHeight: boolean) => {
+            if (!getButtonHeight) return editable ? (window.innerHeight * 0.17 > 230 ? 230 :
+                window.innerHeight * 0.17 < 150 ? 150 : window.innerHeight * 0.17) :
+                (Math.sqrt((window.innerHeight * 0.23) ** 2 + (window.innerWidth * 0.23) ** 2) > 300 ? 300 :
+                    Math.sqrt((window.innerHeight * 0.23) ** 2 + (window.innerWidth * 0.23) ** 2));
+            return window.innerHeight * 0.17 > 230 ? 230 :
+                window.innerHeight * 0.17 < 150 ? 150 : window.innerHeight * 0.17
+        }
+        if (isMounted) {
+            const height = getHeight(false);
+            dispatch(actions.setInterfaceHeight(height));
+            const buttonHeight = getHeight(true);
+            setButtonsHeight(buttonHeight);
+        }
         const resizeListener = () => {
             if (isMounted) {
                 clearTimeout(timeoutId);
                 timeoutId = window.setTimeout(() => {
-                    const newHeight = editable ? (window.innerWidth * 0.17 > 230 ? window.innerWidth * 0.17 :
-                        window.innerWidth * 0.17 < 150 ? 150 : window.innerWidth * 0.17) :
-                        (Math.sqrt((window.innerHeight * 0.23) ** 2 + (window.innerWidth * 0.23) ** 2) > 300 ? 300 :
-                            Math.sqrt((window.innerHeight * 0.23) ** 2 + (window.innerWidth * 0.23) ** 2))
-                    dispatch(actions.setInterfaceHeight(newHeight))
+                    const newHeight = getHeight(false);
+                    dispatch(actions.setInterfaceHeight(newHeight));
+                    const newButtonHeight = getHeight(true);
+                    setButtonsHeight(newButtonHeight);
                 }, 150);
             }
         };
@@ -48,14 +64,7 @@ const MainInterface_CONTAINER = () => {
             isMounted = false;
             window.removeEventListener('resize', resizeListener);
         }
-    }, []);
-
-    useLayoutEffect(() => {
-        const newHeight = editable ? (window.innerWidth * 0.17 > 230 ? window.innerWidth * 0.17 :
-            window.innerWidth * 0.17 < 150 ? 150 : window.innerWidth * 0.17) :
-            Math.sqrt((window.innerHeight * 0.23) ** 2 + (window.innerWidth * 0.23) ** 2)
-        dispatch(actions.setInterfaceHeight(newHeight))
-    }, [editable])
+    }, [editable]);
 
     const addTodoList = useCallback(() => {
         const id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
@@ -74,62 +83,60 @@ const MainInterface_CONTAINER = () => {
 
     //animation logic
     const [spring, setSpring] = useSpring(() => ({
-        height: '100%',
-        width: '100%',
+        height: window.innerHeight,
+        width: window.innerWidth,
         backgroundHeight: Math.sqrt(window.innerHeight ** 2 + window.innerWidth ** 2),
-        rotateZ: -35
+        rotateZ: -35,
+        x: '0vw',
     }));
 
     const [progressBarAnimation, setProgressBar] = useSpring(() => ({
-        clipPath1: `polygon( 50% 0%, 100% 0%, 100% 200%, 50% 200%)`,
-        clipPath2: `polygon( 0% 0%, 50% 0%, 50% 200%, 0% 200%)`,
+        value: 0,
+        height: '0%',
         opacity: 1
     }));
 
     useEffect(() => {
-        const progress = allTasks === 0 ? 0 : completedTasks / allTasks;
-        const progress1 = 200 - (200 - progress * 200);
-        const progress2 = 200 - progress * 200;
+        if (editable) setSpring({width: window.innerWidth})
+    }, [width]);
+
+    useEffect(() => {
         setProgressBar(() => {
-            if (progress === 1) return {
+            if (completedTasks / allTasks !== 1) return {
+                value: isNaN(completedTasks / allTasks * 100) ? 0 : completedTasks / allTasks * 100,
+                height: `${completedTasks / allTasks * 100}%`,
+            };
+            else return {
                 to: async animate => {
                     await animate({
-                        clipPath1: `polygon( 50% ${progress1}%, 100% ${progress1}%, 100% 200%, 50% 200%)`,
-                        clipPath2: `polygon( 0% 0%, 50% 0%, 50% ${progress2}%, 0% ${progress2}%)`
-                    });
+                        value: isNaN(completedTasks / allTasks * 100) ? 0 : completedTasks / allTasks * 100,
+                        height: `${completedTasks / allTasks * 100}%`});
                     await animate({opacity: 0})
                 }
-            }
-            return {
-                clipPath1: `polygon( 50% ${progress1}%, 100% ${progress1}%, 100% 200%, 50% 200%)`,
-                clipPath2: `polygon( 0% 0%, 50% 0%, 50% ${progress2}%, 0% ${progress2}%)`,
-                opacity: 1,
-                immediate: (props) => props === 'opacity'
             }
         })
     }, [allTasks, completedTasks]);
 
     useEffect(() => {
-        if (!initialLoading && !editable) {
+        if (!initialLoading && !editable && !closeLook) {
             setSpring({
-                height: '20%',
-                width: '20%',
+                height: interfaceHeight,
+                width: buttonsWrapperHeight,
                 backgroundHeight: interfaceHeight,
                 rotateZ: -35,
+                x: '0vw',
                 config: {friction: 50}
             })
         } else if (editable) {
             setSpring({
                 backgroundHeight: interfaceHeight,
-                height: '20%',
-                width: '100%',
+                height: interfaceHeight,
+                width: window.innerWidth,
                 rotateZ: 0,
             })
         } else if (closeLook) {
             setSpring({
-                height: '20%',
-                width: '20%',
-                rotateZ: 0,
+                x: '-100vw'
             })
         }
     }, [editable, pendingState, initialLoading, swapState, fetching, closeLook, interfaceHeight]);
@@ -139,19 +146,16 @@ const MainInterface_CONTAINER = () => {
                 : 'Edit'
         , [editable, pendingState, initialLoading, swapState, fetching]);
 
-
-    /*console.log('interface render')*/
-
     return (
         <>
-            <RotatedBackground palette={currentPalette} height={spring.backgroundHeight} rotateZ={spring.rotateZ}/>
-            <InterfaceWrapper height={spring.height} width={spring.width}>
-                <EditButton actionMessage={actionMessage}
-                            altBackground={pendingState || initialLoading || swapState || fetching}
+            <RotatedBackground palette={currentPalette} height={spring.backgroundHeight} rotateZ={spring.rotateZ} x={spring.x}/>
+            <InterfaceWrapper height={spring.height} width={spring.width} interfaceHeight={buttonsWrapperHeight} x={spring.x}>
+                <EditButton actionMessage={actionMessage} interfaceHeight={buttonsWrapperHeight}
+                            cantBeHovered={pendingState || initialLoading || swapState || fetching}
                             switchEditMode={switchEditMode} palette={currentPalette}
                             progressBarAnimation={progressBarAnimation}/>
                 <OtherButtons palette={currentPalette} editable={editable} addTodoList={addTodoList}
-                              rejectAllChanges={rejectAllChanges}/>
+                              rejectAllChanges={rejectAllChanges} interfaceHeight={buttonsWrapperHeight}/>
             </InterfaceWrapper>
         </>
     )

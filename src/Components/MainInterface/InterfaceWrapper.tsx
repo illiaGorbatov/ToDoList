@@ -1,7 +1,6 @@
 import React from "react";
 import styled from "styled-components/macro";
 import {animated, SpringValue} from "react-spring";
-import isEqual from "react-fast-compare";
 
 const WholeWrapper = styled(animated.div)`
   position: absolute;
@@ -10,33 +9,30 @@ const WholeWrapper = styled(animated.div)`
   display: grid;
   place-items: center;
   z-index: 999;
-  min-width: 150px;
-  min-height: 150px;
 `;
 
-const ButtonsWrapper = styled.div`
+const ButtonsWrapper = styled.div<{$height: number}>`
   position: absolute;
-  width: 16vw;
-  height: 16vw;
-  max-width: 210px;
-  min-width: 130px;
-  max-height: 210px;
-  min-height: 130px;
-  border-radius: 50%;
+  width: ${props => props.$height * 0.8}px;
+  height: ${props => props.$height * 0.8}px;
+  border-radius:30px;
   display: grid;
   place-items: center;
 `;
 
 type PropsType = {
-    width: SpringValue<string>,
-    height: SpringValue<string>
+    width: SpringValue<number>,
+    height: SpringValue<number>,
+    interfaceHeight: number,
+    x: SpringValue<string>
 }
 
-const InterfaceWrapper: React.FC<PropsType> = ({width, height, children}) => {
+const InterfaceWrapper: React.FC<PropsType> = ({width, height, children,
+                                               interfaceHeight, x}) => {
 
     return(
-        <WholeWrapper style={{width, height}}>
-            <ButtonsWrapper>
+        <WholeWrapper style={{width, height, x}}>
+            <ButtonsWrapper $height={interfaceHeight}>
                 {children}
             </ButtonsWrapper>
         </WholeWrapper>

@@ -31,8 +31,8 @@ export const Button = styled.div<{ styles: NeumorphColorsType }>`
     box-shadow: ${props => props.styles.littleShadows};;
     transition: .25s cubic-bezier(0.25, 0, 0, 1);
     &:hover {
-        background-color: ${props => props.styles.background};
-        color: ${props => props.styles.color};
+        background-color: ${props => props.styles.color};
+        color: ${props => props.styles.background};
     }
     &:first-child:nth-last-child(3),
         &:first-child:nth-last-child(3) ~ * {
