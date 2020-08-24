@@ -29,7 +29,7 @@ const InnerBackground = styled.div<{ $palette: NeumorphColorsType, $cantBeHovere
   top: 5%;
   left: 5%;
   position: absolute;
-  background: ${props => props.$palette.default ? defaultPalette.background : props.$palette.background};
+  background-color: ${props => props.$palette.default ? defaultPalette.background : props.$palette.background};
   color: ${props => props.$palette.default ? defaultPalette.color : props.$palette.color};
   display: grid;
   place-items: center;

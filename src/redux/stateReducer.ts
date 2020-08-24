@@ -5,6 +5,7 @@ import {AppStateType, InferActionTypes} from "./store";
 import cloneDeep from "lodash-es/cloneDeep";
 import {movePos} from "../hooks/movePos";
 import {defaultPalette, NeumorphColorsType} from "../Components/neumorphColors";
+import {interfaceActions} from "./interfaceReducer";
 
 type InitialStateType = {
     todoLists: Array<TodoListType>,
@@ -14,19 +15,6 @@ type InitialStateType = {
     tasksOrder: Array<{ todoListId: string, newTasksOrder: Array<string> }>,
     newListsId: Array<{ oldId: string, newId: string }>,
     newTasksId: Array<{ oldId: string, newId: string, todoListId: string }>,
-    errorsNumber: number,
-    focusedStatus: boolean,
-    currentPaletteIndex: NeumorphColorsType,
-    initialLoadingState: boolean,
-    pendingState: boolean,
-    swapState: boolean,
-    fetchingState: boolean,
-    height: number,
-    width: number,
-    interfaceHeight: number,
-    allTasks: number,
-    completedTasks: number,
-    closeLookState: boolean
 };
 
 const initialState = {
@@ -37,29 +25,16 @@ const initialState = {
     tasksOrder: [],
     newListsId: [],
     newTasksId: [],
-    errorsNumber: 0,
-    focusedStatus: false,
-    currentPaletteIndex: defaultPalette,
-    initialLoadingState: true,
-    pendingState: false,
-    swapState: false,
-    fetchingState: false,
-    closeLookState: false,
-    height: 0,
-    width: 0,
-    interfaceHeight: 0,
-    allTasks: 0,
-    completedTasks: 0
 };
 
-/*const functionalReducer = (state: InitialStateType = initialState, action: ActionsTypes): InitialStateType => {
+const stateReducer = (state: InitialStateType = initialState, action: StateActionsType): InitialStateType => {
     switch (action.type) {
-        case 'functionalReducer/SET_TODO_LISTS':
+        case 'stateReducer/SET_TODO_LISTS':
             return {
                 ...state,
                 todoLists: action.todoLists
             };
-        case 'functionalReducer/SET_TASKS':
+        case 'stateReducer/SET_TASKS':
             return {
                 ...state,
                 todoLists: state.todoLists.map(list => {
@@ -68,12 +43,12 @@ const initialState = {
                     } else return list
                 }),
             };
-        case 'functionalReducer/ADD_TODO_LIST':
+        case 'stateReducer/ADD_TODO_LIST':
             return {
                 ...state,
                 todoLists: [action.newTodoList, ...state.todoLists],
             };
-        case 'functionalReducer/ADD_TASK':
+        case 'stateReducer/ADD_TASK':
             return {
                 ...state,
                 todoLists: state.todoLists.map(list => {
@@ -82,7 +57,7 @@ const initialState = {
                     } else return list
                 }),
             };
-        case 'functionalReducer/CHANGE_TASK':
+        case 'stateReducer/CHANGE_TASK':
             return {
                 ...state,
                 todoLists: state.todoLists.map(list => {
@@ -97,12 +72,12 @@ const initialState = {
                     } else return list
                 }),
             };
-        case 'functionalReducer/DELETE_TODO_LIST':
+        case 'stateReducer/DELETE_TODO_LIST':
             return {
                 ...state,
                 todoLists: state.todoLists.filter(list => list.id !== action.todoListId),
             };
-        case 'functionalReducer/DELETE_TASK':
+        case 'stateReducer/DELETE_TASK':
             return {
                 ...state,
                 todoLists: state.todoLists.map(list => {
@@ -111,7 +86,7 @@ const initialState = {
                     } else return list
                 }),
             };
-        case 'functionalReducer/CHANGE_TODO_LIST_TITLE':
+        case 'stateReducer/CHANGE_TODO_LIST_TITLE':
             return {
                 ...state,
                 todoLists: state.todoLists.map(list => {
@@ -120,12 +95,12 @@ const initialState = {
                     } else return list
                 }),
             };
-        case "functionalReducer/SWAP_TODO_LISTS":
+        case "stateReducer/SWAP_TODO_LISTS":
             return {
                 ...state,
                 listsOrder: action.newListsOrder
             }
-        case "functionalReducer/SWAP_TASKS":
+        case "stateReducer/SWAP_TASKS":
             const index = state.tasksOrder.findIndex(item => item.todoListId === action.todoListId);
             const newSwappedTasks = index !== -1 ? state.tasksOrder.map((item, i) => {
                 if (i === index) return {todoListId: action.todoListId, newTasksOrder: action.newTasksOrder}
@@ -135,41 +110,25 @@ const initialState = {
                 ...state,
                 tasksOrder: newSwappedTasks
             }
-        case "functionalReducer/ENABLE_EDIT_MODE": //глянуть
+        case "stateReducer/ENABLE_EDIT_MODE": //глянуть
             return {
                 ...state,
                 editable: true,
                 listsOrder: [],
                 tasksOrder: [],
-                errorsNumber: 0,
                 deepCopy: cloneDeep(state.todoLists)
             };
-        case "functionalReducer/DISABLE_EDIT_MODE":
+        case "stateReducer/DISABLE_EDIT_MODE":
             return {
                 ...state,
                 editable: false
             }
-        case "functionalReducer/SET_ERROR":
-            return {
-                ...state,
-                errorsNumber: state.errorsNumber + 1
-            };
-        case "functionalReducer/SET_FOCUSED_STATUS":
-            return {
-                ...state,
-                focusedStatus: action.status
-            };
-        case "functionalReducer/SET_NEW_ID":
+        case "stateReducer/SET_NEW_ID":
             return {
                 ...state,
                 todoLists: action.newTodoLists
             };
-        case "functionalReducer/SET_CURRENT_PALETTE_INDEX":
-            return {
-                ...state,
-                currentPaletteIndex: action.palette
-            }
-        case "functionalReducer/REJECT_ALL_CHANGES":
+        case "stateReducer/REJECT_ALL_CHANGES":
             return {
                 ...state,
                 todoLists: state.deepCopy,
@@ -177,304 +136,73 @@ const initialState = {
                 listsOrder: [],
                 tasksOrder: [],
             }
-        case "functionalReducer/COMPLETE_INITIAL_LOADING_STATE":
-            return {
-                ...state,
-                initialLoadingState: false
-            }
-        case "functionalReducer/SET_PENDING_STATE":
-            return {
-                ...state,
-                pendingState: action.pendingState
-            }
-        case "functionalReducer/SET_HEIGHT":
-            return {
-                ...state,
-                height: action.height
-            }
-        case "functionalReducer/SET_WIDTH":
-            return {
-                ...state,
-                width: action.width
-            }
-        case "functionalReducer/SET_INTERFACE_HEIGHT":
-            return {
-                ...state,
-                interfaceHeight: action.height
-            }
-        case "functionalReducer/SET_ALL_TASKS":
-            return {
-                ...state,
-                allTasks: action.tasks
-            }
-        case "functionalReducer/SET_COMPLETED_TASK":
-            return {
-                ...state,
-                completedTasks: action.restore ? 0 : state.completedTasks+1
-            }
-        case "functionalReducer/SET_SWAP_STATE":
-            return {
-                ...state,
-                swapState: action.state
-            }
-        case "functionalReducer/SET_CLOSE_LOOK_STATE":
-            return {
-                ...state,
-                closeLookState: action.state
-            }
         default:
             return state;
     }
 };
 
-type ActionsTypes = InferActionTypes<typeof actions>;
+type StateActionsType = InferActionTypes<typeof stateActions>;
 
-export const actions = {
-    addTodoList: (newTodoList: TodoListType) => ({type: 'functionalReducer/ADD_TODO_LIST', newTodoList} as const),
-    addTask: (newTask: TaskType, todoListId: string) => ({type: 'functionalReducer/ADD_TASK', newTask, todoListId} as const),
-    changeTask: (task: TaskType) => ({type: 'functionalReducer/CHANGE_TASK', task} as const),
-    deleteTodoList: (todoListId: string) => ({type: 'functionalReducer/DELETE_TODO_LIST', todoListId} as const),
-    deleteTask: (todoListId: string, taskId: string) => ({type: 'functionalReducer/DELETE_TASK', taskId, todoListId} as const),
-    restoreTodoList: (todoLists: TodoListType[]) => ({type: 'functionalReducer/SET_TODO_LISTS', todoLists} as const),
+type DispatchedActionsTypes = InferActionTypes<typeof stateActions & typeof interfaceActions>;
+
+export const stateActions = {
+    addTodoList: (newTodoList: TodoListType) => ({type: 'stateReducer/ADD_TODO_LIST', newTodoList} as const),
+    addTask: (newTask: TaskType, todoListId: string) => ({type: 'stateReducer/ADD_TASK', newTask, todoListId} as const),
+    changeTask: (task: TaskType) => ({type: 'stateReducer/CHANGE_TASK', task} as const),
+    deleteTodoList: (todoListId: string) => ({type: 'stateReducer/DELETE_TODO_LIST', todoListId} as const),
+    deleteTask: (todoListId: string, taskId: string) => ({type: 'stateReducer/DELETE_TASK', taskId, todoListId} as const),
+    restoreTodoList: (todoLists: TodoListType[]) => ({type: 'stateReducer/SET_TODO_LISTS', todoLists} as const),
     restoreTasks: (tasks: TaskType[], todoListId: string) => ({
-        type: 'functionalReducer/SET_TASKS',
+        type: 'stateReducer/SET_TASKS',
         tasks,
         todoListId
     } as const),
     changeTodoListTitle: (todoListId: string, todoListTitle: string) => ({
-        type: 'functionalReducer/CHANGE_TODO_LIST_TITLE',
+        type: 'stateReducer/CHANGE_TODO_LIST_TITLE',
         todoListId,
         todoListTitle
     } as const),
-    enableEditMode: () => ({type: 'functionalReducer/ENABLE_EDIT_MODE'} as const),
-    disableEditMode: () => ({type: 'functionalReducer/DISABLE_EDIT_MODE'} as const),
-    setError: () => ({type: 'functionalReducer/SET_ERROR'} as const),
-    setFocusedStatus: (status: boolean) => ({type: 'functionalReducer/SET_FOCUSED_STATUS', status} as const),
+    enableEditMode: () => ({type: 'stateReducer/ENABLE_EDIT_MODE'} as const),
+    disableEditMode: () => ({type: 'stateReducer/DISABLE_EDIT_MODE'} as const),
     swapTasks: (todoListId: string, newTasksOrder: Array<string>) => ({
-        type: 'functionalReducer/SWAP_TASKS', todoListId, newTasksOrder
+        type: 'stateReducer/SWAP_TASKS', todoListId, newTasksOrder
     } as const),
-    swapTodoLists: (newListsOrder: Array<string>) => ({type: 'functionalReducer/SWAP_TODO_LISTS', newListsOrder} as const),
-    setTodoLists: (newTodoLists: Array<TodoListType>) => ({type: 'functionalReducer/SET_NEW_ID', newTodoLists} as const),
-    setPalette: (palette: NeumorphColorsType) => ({type: 'functionalReducer/SET_CURRENT_PALETTE_INDEX', palette} as const),
-    rejectAllChanges: () => ({type: 'functionalReducer/REJECT_ALL_CHANGES'} as const),
-    completeInitialLoadingState: () => ({type: 'functionalReducer/COMPLETE_INITIAL_LOADING_STATE'} as const),
-    setPendingState: (pendingState: boolean) => ({type: 'functionalReducer/SET_PENDING_STATE', pendingState} as const),
-    setHeight: (height: number) => ({type: 'functionalReducer/SET_HEIGHT', height} as const),
-    setWidth: (width: number) => ({type: 'functionalReducer/SET_WIDTH', width} as const),
-    setInterfaceHeight: (height: number) => ({type: 'functionalReducer/SET_INTERFACE_HEIGHT', height} as const),
-    setAllTasks: (tasks: number) => ({type: 'functionalReducer/SET_ALL_TASKS', tasks} as const),
-    setCompletedTask: (restore: boolean) => ({type: 'functionalReducer/SET_COMPLETED_TASK', restore} as const),
-    setSwapState: (state: boolean) => ({type: 'functionalReducer/SET_SWAP_STATE', state} as const),
-    setFetchingState: (state: boolean) => ({type: 'functionalReducer/SET_FETCHING_STATE', state} as const),
-    setCloseLookState: (state: boolean) => ({type: 'functionalReducer/SET_CLOSE_LOOK_STATE', state} as const),
+    swapTodoLists: (newListsOrder: Array<string>) => ({type: 'stateReducer/SWAP_TODO_LISTS', newListsOrder} as const),
+    setTodoLists: (newTodoLists: Array<TodoListType>) => ({type: 'stateReducer/SET_NEW_ID', newTodoLists} as const),
+    rejectAllChanges: () => ({type: 'stateReducer/REJECT_ALL_CHANGES'} as const),
 }
 
-type ThunkType = ThunkAction<void, AppStateType, unknown, ActionsTypes>;
-type ThunkActionType = ThunkDispatch<AppStateType, unknown, ActionsTypes>;
+type ThunkType = ThunkAction<void, AppStateType, unknown, DispatchedActionsTypes>;
+type ThunkActionType = ThunkDispatch<AppStateType, unknown, DispatchedActionsTypes>;
 
 export const loadTodoListsTC = (): ThunkType => (dispatch: ThunkActionType) => {
     api.restoreState().then(data => {
-        dispatch(actions.restoreTodoList(data))
+        dispatch(stateActions.restoreTodoList(data))
     })
 };
 export const addTodoListTC = (title: string): ThunkType => (dispatch: ThunkActionType) => {//done
     api.addTodoList(title).then(data => {
-        if (data.resultCode === 0) dispatch(actions.addTodoList(data.data.item))
-    })
-};
-export const addTaskTC = (newTask: string, todoListId: string): ThunkType => (dispatch: ThunkActionType) => {
-    api.addTask(newTask, todoListId).then(data => {
-        if (data.resultCode === 0) dispatch(actions.addTask(data.data.item, todoListId))
+        if (data.resultCode === 0) dispatch(stateActions.addTodoList(data.data.item))
     })
 };
 export const changeTaskTC = (todoListId: string, taskId: string, newTask: TaskType): ThunkType => (dispatch: ThunkActionType) => {
     api.changeTask(todoListId, taskId, newTask).then(data => {
-        if (data.resultCode === 0) dispatch(actions.changeTask(data.data.item))
-    })
-};
-export const deleteTodoListTC = (todoListId: string): ThunkType => (dispatch: ThunkActionType) => {
-    api.deleteTodoList(todoListId).then(data => {
-        if (data.resultCode === 0) dispatch(actions.deleteTodoList(todoListId))
+        if (data.resultCode === 0) dispatch(stateActions.changeTask(data.data.item))
     })
 };
 export const deleteTaskTC = (todoListId: string, taskId: string): ThunkType => (dispatch: ThunkActionType) => {
     api.deleteTask(todoListId, taskId).then(data => {
-        if (data.resultCode === 0) dispatch(actions.deleteTask(todoListId, taskId))
-    })
-};
-export const restoreTasksTC = (todoListId: string): ThunkType => (dispatch: ThunkActionType) => {
-    api.restoreTasks(todoListId).then(data => {
-        dispatch(actions.restoreTasks(data.items, todoListId))
+        if (data.resultCode === 0) dispatch(stateActions.deleteTask(todoListId, taskId))
     })
 };
 export const changeTodoListTitleTC = (todoListId: string, todoListTitle: string): ThunkType => (dispatch: ThunkActionType) => {
     api.changeTodoListTitle(todoListId, todoListTitle).then(data => {
-        if (data.resultCode === 0) dispatch(actions.changeTodoListTitle(todoListId, todoListTitle))
+        if (data.resultCode === 0) dispatch(stateActions.changeTodoListTitle(todoListId, todoListTitle))
     })
-};*/
-
-/*export const submitAllChanges = (): ThunkType =>
-    async (dispatch: ThunkActionType, getState: () => AppStateType) => {
-        const deletedLists = getState().todoList.deletedLists;
-        const addedLists = getState().todoList.addedLists;
-        const clearedAddedLists = getState().todoList.addedLists.filter(item => deletedLists
-            .findIndex(i => i === item.id) === -1);
-        const changedLists = getState().todoList.changedLists.filter(item => deletedLists
-            .findIndex(i => i === item.id) === -1);
-        const clearlyDeletedLists = deletedLists.filter(list => addedLists
-            .findIndex(item => item.id === list) === -1);
-        /!*const addedSwappedLists = getState().todoList.swappedLists.filter(item => clearedAddedLists
-            .findIndex(i => i.id === (item[0].id || item[1].id)) !== -1);
-        const clearlySwappedLists = getState().todoList.swappedLists.filter(item => addedSwappedLists
-            .findIndex(i => i[0] === item[0] && i[1] === item[1]) === -1);*!/
-
-        const deletedTasksWithList = getState().todoList.deletedTasksWithList;
-        const deletedTasks = getState().todoList.deletedTasks.filter(item => deletedTasksWithList
-            .findIndex(i => i.taskId === item.taskId) === -1);
-        const allDeletedTasks = [...deletedTasks, ...deletedTasksWithList];
-        const changedTasks = getState().todoList.changedTasks.filter(item => allDeletedTasks
-            .findIndex(i => i.taskId === item.id) === -1);
-        const addedTasks = getState().todoList.addedTasks.filter(item => allDeletedTasks
-            .findIndex(i => i.taskId === item.id) === -1);
-        const clearedSwappedTasks = getState().todoList.swappedTasks.filter(item => deletedLists
-            .findIndex(i => i === item.todoListId) === -1).map(item => item.swappedTasks
-            .map(taskArray => [...taskArray, item.todoListId])).map(item => {
-            const newArray: Array<string> = [];
-            return newArray.concat(...item)
-        })
-        //очистка от удалённых
-
-        const clearlyAddedLists = clearedAddedLists.map(list => {
-            const sameList = changedLists.find(item => item.id === list.id);
-            if (sameList) {
-                return sameList
-            } else return list
-        });
-        const clearlyChangedLists = changedLists.filter(list => clearlyAddedLists
-            .findIndex(item => item.id === list.id) === -1);
-        //очистка одинаковых листов
-
-        const clearedNewTasks = addedTasks.map(task => {
-            const sameTask = changedTasks.find(item => item.id === task.id)
-            if (sameTask) {
-                return sameTask
-            } else return task
-        });
-        const clearlyChangedTasks = changedTasks.filter(task => clearedNewTasks
-            .findIndex(item => item.id === task.id) === -1);
-        const addedInNewListsTasks = clearedNewTasks.filter(task => clearlyAddedLists
-            .findIndex(list => list.id === task.todoListId) !== -1);
-        const clearlyAddedTasks = clearedNewTasks.filter(task => addedInNewListsTasks
-            .findIndex(item => item.id === task.id) !== 1);
-        const addedSwappedTasks = clearedSwappedTasks.map(item => item.filter(task =>
-            clearlyAddedTasks.findIndex(i => i.id === task) !== -1));
-        const addedInNewListsSwappedTasks = clearedSwappedTasks.map(item => item.filter(task =>
-            addedInNewListsTasks.findIndex(i => i.id === task) !== -1));
-        const clearlySwappedTasks = clearedSwappedTasks.map(item => item.filter(task => (
-            addedSwappedTasks.findIndex(i => (i[0] || i[1]) === task) === -1 || addedInNewListsSwappedTasks
-                .findIndex(i => (i[0] || i[1]) === task) === -1)));
-        //очистка тасок
-
-        //запросы
-        if (clearlyAddedLists.length !== 0) {
-            let newLists: Array<{ newId: string, oldId: string }> = [];
-            const promises = clearlyAddedLists.map(async (list) => {
-                return await api.addTodoList(list.title).then(data => {
-                    if (data.resultCode === 0) newLists.push({newId: data.data.item.id, oldId: list.id})
-                    if (data.resultCode !== 0) dispatch(actions.setError())
-                })
-            })
-            await Promise.all(promises);
-            if (addedInNewListsTasks.length !== 0) {
-                let newTasks: Array<{ newId: string, oldId: string, listId: string }> = [];
-                const promises = addedInNewListsTasks.map(async (task) => {
-                    let newListId = newLists.find(list => list.oldId === task.todoListId)!.newId;
-                    return await api.addTask(task.title, newListId).then(data => {
-                        if (data.resultCode === 0) newTasks.push({
-                            newId: data.data.item.id,
-                            oldId: task.id,
-                            listId: data.data.item.todoListId
-                        })
-                        if (data.resultCode !== 0) dispatch(actions.setError())
-                    })
-                })
-                await Promise.all(promises);
-                if (addedInNewListsSwappedTasks.length !== 0) {
-                    const newIdSwappedTasks = addedInNewListsSwappedTasks.map(Tasks => Tasks.map(task => {
-                        const currentTask = newTasks.find(newTask => task === newTask.oldId)!;
-                        return {newId: currentTask.newId, listId: currentTask.listId}
-                    }))
-                    newIdSwappedTasks.map(Tasks => {
-                        api.swapTasks(Tasks[0].listId, Tasks[0].newId, Tasks[1].newId)
-                    })
-                }
-            }
-        }
-        if (clearlyAddedTasks.length !== 0) {
-            let newTasks: Array<{ newId: string, oldId: string, listId: string }> = [];
-            const promises = clearlyAddedTasks.map(async (task) => {
-                api.addTask(task.title, task.todoListId).then(data => {
-                    if (data.resultCode === 0) newTasks.push({
-                        newId: data.data.item.id,
-                        oldId: task.id,
-                        listId: data.data.item.todoListId
-                    })
-                    if (data.resultCode !== 0) dispatch(actions.setError())
-                });
-            })
-            await Promise.all(promises);
-            if (addedSwappedTasks.length !== 0) {
-                const newIdSwappedTasks = addedSwappedTasks.map(Tasks => Tasks.map(task => {
-                    const currentTask = newTasks.find(newTask => task === newTask.oldId)!;
-                    return {newId: currentTask.newId, listId: currentTask.listId}
-                }))
-                newIdSwappedTasks.map(Tasks => {
-                    api.swapTasks(Tasks[0].listId, Tasks[0].newId, Tasks[1].newId).then(data => {
-                        if (data.resultCode !== 0) dispatch(actions.setError())
-                    })
-                })
-            }
-        }
-        if (clearlySwappedTasks.length !== 0) {
-            clearlySwappedTasks.forEach(Tasks => {
-                api.swapTasks(Tasks[2], Tasks[0], Tasks[1]).then(data => {
-                    if (data.resultCode !== 0) dispatch(actions.setError())
-                })
-            })
-        }
-        if (clearlyDeletedLists.length !== 0) {
-            clearlyDeletedLists.forEach(list => {
-                api.deleteTodoList(list).then(data => {
-                    if (data.resultCode !== 0) dispatch(actions.setError())
-                })
-            })
-        }
-        if (clearlyChangedLists.length !== 0) {
-            clearlyChangedLists.forEach(list => {
-                api.changeTodoListTitle(list.id, list.title).then(data => {
-                    if (data.resultCode !== 0) dispatch(actions.setError())
-                })
-            })
-        }
-        if (clearlyChangedTasks.length !== 0) {
-            clearlyChangedTasks.forEach(task => {
-                api.changeTask(task.todoListId, task.id, task).then(data => {
-                    if (data.resultCode !== 0) dispatch(actions.setError())
-                })
-            })
-        }
-        if (deletedTasks.length !== 0) {
-            deletedTasks.forEach(task => {
-                api.deleteTask(task.todoListId, task.taskId).then(data => {
-                    if (data.resultCode !== 0) dispatch(actions.setError())
-                })
-            })
-        }
-        dispatch(actions.disableEditMode())
-    };*/
+};
 
 
-/*
+
 export const initialization = (): ThunkType => async (dispatch: ThunkActionType) => {
     const authState = await api.getAuthState();
     console.log(authState)
@@ -485,31 +213,31 @@ export const initialization = (): ThunkType => async (dispatch: ThunkActionType)
 };
 
 const getStateFromServer = (initial: boolean): ThunkType => async (dispatch: ThunkActionType) => {
-    if (!initial) dispatch(actions.setFetchingState(true));
+    if (!initial) dispatch(interfaceActions.setFetchingState(true));
     const lists = await api.restoreState();
     let listsWithTasks = lists;
     if (lists.length !== 0) {
-        dispatch(actions.setAllTasks(lists.length));
-        dispatch(actions.setCompletedTask(true))
+        dispatch(interfaceActions.setAllTasks(lists.length));
+        dispatch(interfaceActions.setCompletedTask(true))
         const getTasks = lists.map(async (item) => {
             return await api.restoreTasks(item.id).then(data => {
                 const index = listsWithTasks.findIndex(list => item.id === list.id);
                 listsWithTasks[index] = {...item, tasks: data.items};
-                dispatch(actions.setCompletedTask(false))
+                dispatch(interfaceActions.setCompletedTask(false))
             })
         });
         await Promise.all(getTasks)
     }
-    dispatch(actions.setTodoLists(listsWithTasks));
-    if (initial) setTimeout(() => dispatch(actions.completeInitialLoadingState()), 600);
+    dispatch(stateActions.setTodoLists(listsWithTasks));
+    if (initial) setTimeout(() => dispatch(interfaceActions.completeInitialLoadingState()), 600);
 };
 
 export const submitAllChanges = (): ThunkType =>
     async (dispatch: ThunkActionType, getState: () => AppStateType) => {
 
-        dispatch(actions.disableEditMode());
-        dispatch(actions.setPendingState(true))
-        /!*dispatch(actions.setPendingState(true))*!/
+        dispatch(stateActions.disableEditMode());
+        dispatch(interfaceActions.setPendingState(true))
+        /*dispatch(actions.setPendingState(true))*/
 
         const oldTodoLists = getState().todoList.deepCopy;
         const newTodoLists = getState().todoList.todoLists;
@@ -572,35 +300,35 @@ export const submitAllChanges = (): ThunkType =>
         if (addedTasks.length !== 0) allTasks = allTasks + addedTasks.length;
         if (editedLists.length !== 0) allTasks = allTasks + editedLists.length;
         if (editedTasks.length !== 0) allTasks = allTasks + editedTasks.length;
-        dispatch(actions.setAllTasks(allTasks));
+        dispatch(interfaceActions.setAllTasks(allTasks));
 
         //queries
-        dispatch(actions.setCompletedTask(true))
+        dispatch(interfaceActions.setCompletedTask(true))
         if (deletedLists.length !== 0) {
             deletedLists.map(list => {
                 api.deleteTodoList(list.id).then(data => {
-                    if (data.resultCode === 0) dispatch(actions.setCompletedTask(false))
+                    if (data.resultCode === 0) dispatch(interfaceActions.setCompletedTask(false))
                 })
             })
         }
         if (deletedTasks.length !== 0) {
             deletedTasks.map(task => {
                 api.deleteTask(task.todoListId, task.id).then(data => {
-                    if (data.resultCode === 0) dispatch(actions.setCompletedTask(false))
+                    if (data.resultCode === 0) dispatch(interfaceActions.setCompletedTask(false))
                 })
             })
         }
         if (editedLists.length !== 0) {
             editedLists.map(list => {
                 api.changeTodoListTitle(list.id, list.title).then(data => {
-                    if (data.resultCode === 0) dispatch(actions.setCompletedTask(false))
+                    if (data.resultCode === 0) dispatch(interfaceActions.setCompletedTask(false))
                 })
             })
         }
         if (editedTasks.length !== 0) {
             editedTasks.map(task => {
                 api.changeTask(task.todoListId, task.id, task).then(data => {
-                    if (data.resultCode === 0) dispatch(actions.setCompletedTask(false))
+                    if (data.resultCode === 0) dispatch(interfaceActions.setCompletedTask(false))
                 })
             })
         }
@@ -614,7 +342,7 @@ export const submitAllChanges = (): ThunkType =>
                             oldId: task.id,
                             todoListId: data.data.item.todoListId
                         })
-                        if (data.resultCode === 0) dispatch(actions.setCompletedTask(false))
+                        if (data.resultCode === 0) dispatch(interfaceActions.setCompletedTask(false))
                     });
                 })
                 await Promise.all(tasksPromises);
@@ -637,7 +365,7 @@ export const submitAllChanges = (): ThunkType =>
                 return await api.addTodoList(list.title).then(data => {
                     if (data.resultCode === 0) {
                         newListsId.push({newId: data.data.item.id, oldId: list.id});
-                        dispatch(actions.setCompletedTask(false))
+                        dispatch(interfaceActions.setCompletedTask(false))
                     }
                 })
 
@@ -661,8 +389,8 @@ export const submitAllChanges = (): ThunkType =>
         } else await createAndChangeIdOfTasksInOrderList();
 
         //swap progress
-        dispatch(actions.setPendingState(false));
-        dispatch(actions.setSwapState(true))
+        dispatch(interfaceActions.setPendingState(false));
+        dispatch(interfaceActions.setSwapState(true))
 
         //changing id
         if (newListsId.length !== 0) {
@@ -701,9 +429,9 @@ export const submitAllChanges = (): ThunkType =>
                 }
             });
             swapOrder.map(item => {
-                api.swapTodoList(item.swappedId, item.beforeSwappedId).then(data => {
+                api.swapTodoList(item.swappedId, item.beforeSwappedId)/*.then(data => {
                     if (data.resultCode !== 0) dispatch(actions.setError())
-                });
+                });*/
             })
         }
 
@@ -746,11 +474,11 @@ export const submitAllChanges = (): ThunkType =>
                 } else return undefined
             })() : undefined;
 
-            /!*console.log(currentListsStateOnServer,
+            /*console.log(currentListsStateOnServer,
                 todoListsWithNewId.find(item => item.id === currentListsStateOnServer![0].todoListId)!
                     .Tasks.map(item => item.id),
                 todoListsWithNewId.find(item => item.id === currentListsStateOnServer![0].todoListId)!
-                    .Tasks.map(item => item.title))*!/
+                    .Tasks.map(item => item.title))*/
 
             let requiredOrder: Array<{ todoListId: string, tasks: Array<string> }> = [];
             if (currentListsStateOnServer && tasksOrder.length !== 0) {
@@ -816,14 +544,14 @@ export const submitAllChanges = (): ThunkType =>
             const swapOrderPending = groupedSwapOrder.map(async (item) => {
                 const consistentSwapOrder = item.swapOrder
                 for (let order of consistentSwapOrder) {
-                    await api.swapTasks(item.todoListId, order.swappedId, order.beforeSwappedId).then(data => {
+                    await api.swapTasks(item.todoListId, order.swappedId, order.beforeSwappedId)/*.then(data => {
                         if (data.resultCode !== 0) dispatch(actions.setError())
-                    })
+                    })*/
                 }
             });
             await Promise.all(swapOrderPending)
         }
-        dispatch(actions.setSwapState(false));
+        dispatch(interfaceActions.setSwapState(false));
 
 
         if (addedLists.length !== 0 || addedTasks.length !== 0) {
@@ -831,4 +559,4 @@ export const submitAllChanges = (): ThunkType =>
         }
     };
 
-export default functionalReducer*/
+export default stateReducer

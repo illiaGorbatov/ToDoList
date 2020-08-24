@@ -6,6 +6,7 @@ import {AppStateType} from "../../../redux/store";
 import {NeumorphColorsType} from "../../neumorphColors";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import isEqual from "react-fast-compare";
+import {isMobile} from "react-device-detect";
 
 const CloseButtonAnimatedWrapper = styled(animated.div)`
   position: absolute;
@@ -15,8 +16,8 @@ const CloseButtonAnimatedWrapper = styled(animated.div)`
 const CloseButton = styled(animated.div)<{ $palette: NeumorphColorsType }>`
     display: grid;
     place-items: center;
-    width: 40px;
-    height: 40px;
+    width: ${isMobile ? 60 : 40}px;
+    height: ${isMobile ? 60 : 40}px;
     border-radius: 100%;
     cursor: pointer;
     font-size: 20px;
@@ -37,7 +38,7 @@ type PropsType ={
 
 const ClosingButton: React.FC<PropsType> = ({closeButtonAnimation, returnFromCloseLook}) => {
 
-    const currentPalette = useSelector((state: AppStateType) => state.todoList.currentPaletteIndex, shallowEqual);
+    const currentPalette = useSelector((state: AppStateType) => state.interface.currentPaletteIndex, shallowEqual);
 
     return (
         <CloseButtonAnimatedWrapper onClick={returnFromCloseLook} style={closeButtonAnimation}>

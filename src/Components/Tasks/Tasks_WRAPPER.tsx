@@ -6,10 +6,11 @@ import {useDrag, useHover} from "react-use-gesture";
 import styled from "styled-components/macro";
 import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import {AppStateType} from "../../redux/store";
-import {actions} from "../../redux/functionalReducer";
 import {movePos} from "../../hooks/movePos";
 import isEqual from "react-fast-compare";
 import {NeumorphColorsType} from "../neumorphColors";
+import {interfaceActions} from "../../redux/interfaceReducer";
+import {stateActions} from "../../redux/stateReducer";
 
 export const TasksWrapper = styled.div<{ $height: number }>`
   user-select: none;
@@ -39,7 +40,7 @@ type PropsType = {
 const Tasks_WRAPPER: React.FC<PropsType> = ({tasks, todoListId, setHeight, palette, setHoveredStatus}) => {
 
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
-    const width = useSelector((store: AppStateType) => store.todoList.width, shallowEqual);
+    const width = useSelector((store: AppStateType) => store.interface.width, shallowEqual);
     const dispatch = useDispatch();
 
     const settings = useCallback((order: Array<number>, down?: boolean, originalIndex?: number, y?: number): any => (index: number) => {
@@ -156,7 +157,7 @@ const Tasks_WRAPPER: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
         if (initialYofDragged.current === null) {
             initialYofDragged.current = initialY.current[curIndex];
             bounds.current = [-initialYofDragged.current, initialY.current[tasks.length-1] - initialYofDragged.current];
-            dispatch(actions.setFocusedStatus(true))
+            dispatch(interfaceActions.setFocusedStatus(true))
         }
         if (!initialYofDragged.current) initialYofDragged.current = initialY.current[curIndex];
         const curRow = getNewIndex(curIndex, y);//текущий новый индекс
@@ -170,19 +171,19 @@ const Tasks_WRAPPER: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
             initialYofDragged.current = null;
             if (!isEqual(order.current, memoizedOrder.current)) {
                 const newOrder = order.current.map(item => tasks[item].id)
-                dispatch(actions.swapTasks(todoListId, newOrder))
+                dispatch(stateActions.swapTasks(todoListId, newOrder))
             }
-            dispatch(actions.setFocusedStatus(false))
+            dispatch(interfaceActions.setFocusedStatus(false))
         }
     }, {filterTaps: true});
 
     const hovering = useHover(({hovering}) => {
         if (hovering) setHoveredStatus(true);
         if (!hovering) setHoveredStatus(false)
-    })
+    });
 
     return (
-        <TasksWrapper $height={height} {...editable &&{...hovering()}}>
+        <TasksWrapper $height={height} {...editable && {...hovering()}}>
             {tasks.map((task, i) =>
                 <TaskWrapper {...editable && {...gesture(tasks.length-i-1, i)}} key={task.id} style={springs[tasks.length-i-1]}
                              ref={elementsRef.current[i]}>

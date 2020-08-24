@@ -18,7 +18,7 @@ const Background = styled(animated.div)`
 
 const AnimatedBackground:React.FC = () => {
 
-    const currentPalette = useSelector((store: AppStateType) => store.todoList.currentPaletteIndex, shallowEqual);
+    const currentPalette = useSelector((store: AppStateType) => store.interface.currentPaletteIndex, shallowEqual);
 
     const [animateBackground, setBackground] = useSpring(() => ({
         background: currentPalette.background

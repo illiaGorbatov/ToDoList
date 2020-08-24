@@ -1,8 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {animated, useSprings, SpringStartFn, useSpring} from "react-spring";
+import {animated, useSprings, SpringStartFn, useSpring, SpringValue} from "react-spring";
 import {swap} from "../../../hooks/swap";
 import {useDrag} from "react-use-gesture";
-import {actions} from "../../../redux/functionalReducer";
 import styled from "styled-components/macro";
 import TodoList from "../../SingleToDoList/TodoList";
 import {defaultPalette, neumorphColors} from "../../neumorphColors";
@@ -10,6 +9,9 @@ import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import {AppStateType} from "../../../redux/store";
 import isEqual from "react-fast-compare";
 import ClosingButton from "./CloseButton";
+import {interfaceActions} from "../../../redux/interfaceReducer";
+import {stateActions} from "../../../redux/stateReducer";
+import {isMobile} from "react-device-detect";
 
 
 const TodoListContainer = styled(animated.div)<{ $width: number }>` 
@@ -23,7 +25,7 @@ type PropsType = {
     scrollByListDrugging: (direction: string) => void,
     setCloseLookState: (height: number) => void,
     returnFromCloseLookState: () => void,
-    switchScrollBar: (visibility: boolean) => void
+    switchScrollBar: (visibility: boolean) => void,
 }
 
 type GridItemsType = {
@@ -35,19 +37,20 @@ type GridItemsType = {
     botY: number,
     horizontalCenter: number,
     verticalCenter: number,
-    index: number,
+    index: number
 }
 
 const AllLists_CONTAINER: React.FC<PropsType> = ({
                                               setWrapperAnimation, scrollByListDrugging,
                                               setCloseLookState, returnFromCloseLookState, switchScrollBar
                                           }) => {
-//resize logic
-
+    //resize logic
     const editable = useSelector((store: AppStateType) => store.todoList.editable, shallowEqual);
     const todoLists = useSelector((store: AppStateType) => store.todoList.todoLists, isEqual);
-    const width = useSelector((store: AppStateType) => store.todoList.width, shallowEqual);
-    const interfaceHeight = useSelector((store: AppStateType) => store.todoList.interfaceHeight, shallowEqual);
+    const width = useSelector((store: AppStateType) => store.interface.width, shallowEqual);
+    const interfaceHeight = useSelector((store: AppStateType) => store.interface.interfaceHeight, shallowEqual);
+    const scrollableState = useSelector((state: AppStateType) => state.interface.scrollableState, shallowEqual);
+    const focusedStatus = useSelector((state: AppStateType) => state.interface.focusedStatus, shallowEqual);
     const dispatch = useDispatch();
 
     const columns = useMemo(() => {
@@ -123,7 +126,7 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
                     return {x, y, height, id: item.id, botY, rightX, horizontalCenter, verticalCenter, index}
                 });
             height.current = Math.max(...newHeights);
-            dispatch(actions.setHeight(height.current));
+            dispatch(interfaceActions.setHeight(height.current));
         }
         if (editable && gridItems.current.length < todoLists.length) {
             gridItems.current = [{
@@ -168,7 +171,7 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
         });
         if (Math.max(...newHeights) !== height.current) {
             height.current = Math.max(...newHeights);
-            dispatch(actions.setHeight(height.current));
+            dispatch(interfaceActions.setHeight(height.current));
         }
     }, [currWidth, columns]);
 
@@ -186,15 +189,16 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
         });
         if (Math.max(...newHeights) !== height.current) {
             height.current = Math.max(...newHeights);
-            dispatch(actions.setHeight(height.current));
+            dispatch(interfaceActions.setHeight(height.current));
         }
     }, [currWidth, columns]);
 
     const calculatePositions = useCallback((x: number, y: number) => {
-        const xPos = currItem.current!.horizontalCenter + x;
-        const yPos = currItem.current!.verticalCenter + y;
+        const xPos = currItem.current.horizontalCenter + x;
+        const yPos = currItem.current.verticalCenter + y;
+        const halfHeight = currItem.current.height / 2;
         let i = gridItems.current.findIndex(item => {
-            if (item.x < xPos && item.rightX > xPos && item.y < yPos && item.botY > yPos) return true
+            if (item.x < xPos && item.rightX > xPos && item.verticalCenter + halfHeight > yPos && item.verticalCenter - halfHeight < yPos) return true
         });
         return i < todoLists.length && i >= 0 ? i : null;
     }, [todoLists]);
@@ -203,9 +207,10 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
         setSprings(i => {
             if (i === springsIndex) {
                 return {
-                    x: currItem.current!.x + x,
-                    y: currItem.current!.y + y,
+                    x: currItem.current.x + x,
+                    y: currItem.current.y + y,
                     zIndex: 4,
+                    config: {tension: 200, clamp: true},
                     immediate: (n: string): boolean => n === 'zIndex'
                 }
             }
@@ -214,7 +219,7 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
         })
     }, [todoLists]);
 
-    const currItem = useRef<GridItemsType | null>(null);
+    const currItem = useRef<GridItemsType>(null as unknown as GridItemsType);
     const bounds = useRef<{ left: number, right: number, top: number, bottom: number, pageTop: number, pageBottom: number }>({
         left: 0, right: 0, top: 0, bottom: 0, pageTop: 0, pageBottom: 0
     });
@@ -226,10 +231,10 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
     const getBounds = useCallback(() => {
         const left = -currItem.current!.x - 35 + eventCoords.current!.offsetX;
         const right = width - currItem.current!.rightX + 35 + (width / columns - eventCoords.current!.offsetX);
-        const top = -currItem.current!.y - 35 - eventCoords.current!.offsetY - 35;
+        const top = -currItem.current!.y + 35 - eventCoords.current!.offsetY + 35 + 25;
         const bottom = height.current - currItem.current!.y - 35 - (eventCoords.current!.offsetY + 35);
-        const pageTop = -eventCoords.current!.clientY + interfaceHeight + 35;
-        const pageBottom = window.innerHeight - window.innerHeight * 0.1 + pageTop - interfaceHeight;
+        const pageTop = -eventCoords.current!.clientY + interfaceHeight + 35 + 25;
+        const pageBottom = window.innerHeight - window.innerHeight * 0.1 + pageTop - interfaceHeight - 25;
         bounds.current = {left, right, top, bottom, pageTop, pageBottom}
     }, [width, columns]);
 
@@ -237,13 +242,14 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
                                  args: [index, springsIndex], down, movement: [x, y],
                                  active, first, event
                              }) => {
+        if (scrollableState && isMobile) return;
         event?.stopPropagation();
         const draggedList = gridItems.current.findIndex(item => item.index === index);
-        if (currItem.current === null) {
-            dispatch(actions.setFocusedStatus(true))
-            currItem.current = gridItems.current[draggedList];
+        if (!focusedStatus) {
+            dispatch(interfaceActions.setFocusedStatus(true))
         }
         if (first) {
+            currItem.current = gridItems.current[draggedList];
             //@ts-ignore
             eventCoords.current = {offsetX: event.offsetX, offsetY: event.offsetY, clientX: event.clientX, clientY: event.clientY};
             getBounds();
@@ -307,17 +313,18 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
                 return {x: currentSettings.x, y: currentSettings.y, zIndex: 3}
             });
             const newOrder = gridItems.current.map(item => item.id)
-            dispatch(actions.swapTodoLists(newOrder));
-            dispatch(actions.setFocusedStatus(false))
+            dispatch(stateActions.swapTodoLists(newOrder));
+            dispatch(interfaceActions.setFocusedStatus(false))
         }
     }, {filterTaps: true});
+
 
     const [indexOfLookedList, setIndexOfLookedList] = useState<number | null>(null);
     const closeLook = useCallback(async (index: number) => {
         if (editable || indexOfLookedList !== null) return;
         const currItem = gridItems.current.find(item => item.index === index)!;
         switchScrollBar(false);
-        dispatch(actions.setCloseLookState(true));
+        dispatch(interfaceActions.setCloseLookState(true));
         await setSprings(i => {
             if (i !== todoLists.length - 1 - index) return {
                 to: async animate => {
@@ -327,14 +334,9 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
             };
             return {to: false}
         });
-        dispatch(actions.setHeight(currItem.height));
-        setWrapperAnimation({
-            rotateX: 0,
-            rotateZ: 0,
-            y: 0,
-        });
+        dispatch(interfaceActions.setHeight(currItem.height));
         setCloseLookState(currItem.height);
-        dispatch(actions.setPalette(neumorphColors[(todoLists.length - 1 - index) % neumorphColors.length]));
+        dispatch(interfaceActions.setPalette(neumorphColors[(todoLists.length - 1 - index) % neumorphColors.length]));
         setIndexOfLookedList(index);
         await setSprings(i => {
             if (i !== todoLists.length - 1 - index) return {to: false};
@@ -347,7 +349,7 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
             to: async animate => {
                 await animate({
                     y: window.innerHeight / 2 - currItem.height / 2 - 25,
-                    x: width / 2 + (width / columns) / 2 - 10,
+                    x: width / 2 + (width / columns) / 2 - (isMobile ? 30 : 10),
                     display: 'block',
                     immediate: true
                 });
@@ -369,15 +371,15 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
             const currItem = gridItems.current.find(item => item.index === indexOfLookedList)!
             return {x: currItem.x, y: currItem.y}
         });
-        dispatch(actions.setCloseLookState(false));
+        dispatch(interfaceActions.setCloseLookState(false));
         returnFromCloseLookState();
-        dispatch(actions.setHeight(height.current));
+        dispatch(interfaceActions.setHeight(height.current));
         await setWrapperAnimation({
             rotateX: 45,
             rotateZ: 45,
             y: 275,
         });
-        dispatch(actions.setPalette(defaultPalette));
+        dispatch(interfaceActions.setPalette(defaultPalette));
         setIndexOfLookedList(null);
         setSprings(i => {
             if (i !== todoLists.length - 1 - indexOfLookedList!) return {opacity: 1, display: 'block'};

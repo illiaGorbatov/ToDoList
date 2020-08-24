@@ -1,6 +1,5 @@
 import React, {useCallback, useEffect, useLayoutEffect, useRef, useState} from "react";
 import {shallowEqual, useDispatch, useSelector} from 'react-redux';
-import {actions} from "../../redux/functionalReducer";
 import {TaskType} from "../../redux/entities";
 import {AppStateType} from "../../redux/store";
 import styled from "styled-components/macro";
@@ -9,11 +8,15 @@ import {validate} from "../../hooks/validate";
 import TaskCheckbox from "./TaskCheckbox";
 import {NeumorphColorsType} from "../neumorphColors";
 import isEqual from "react-fast-compare";
+import {interfaceActions} from "../../redux/interfaceReducer";
+import {stateActions} from "../../redux/stateReducer";
+import {useDrag} from "react-use-gesture";
 
 const TaskWrapper = styled.div<{ $editable: boolean, $editorState: boolean}>`
     position: relative;
     text-align: left;
     z-index: ${props => props.$editorState ? 2 : 1};
+    cursor: ${props => props.$editable ? "grab" : "inherit"};
     ${props => props.$editable &&
     `&:hover ${TaskButtonWrapper},  ${TaskButtonWrapper}:focus-within {
        width: 4rem;
@@ -30,7 +33,6 @@ const TaskBackground = styled.div<{$palette: NeumorphColorsType, $editable: bool
     display: flex;
     position: relative;
     border-radius: 10px;
-    cursor: ${props => props.$editable ? "grab" : "inherit"};
     z-index: 2;
     transform: scale(${props => props.$editorState ? 1.3 : 1});
     transition: transform .5s cubic-bezier(0.25, 0, 0, 1);
@@ -71,10 +73,13 @@ const TaskBackground = styled.div<{$palette: NeumorphColorsType, $editable: bool
            &:before {box-shadow: 10px 10px 20px rgba(0, 0, 0, .4)};
            &:after {opacity: 1}
         }`}
-    ${props => props.$editorState && `&:after {opacity: 1}`}
+    ${props => props.$editorState && `
+    &:after {opacity: 1}
+    &:before {box-shadow: 10px 10px 20px rgba(0, 0, 0, .4)}`}
 `;
 
-const TaskText = styled.div`
+const TaskText = styled.div<{ contentEditable: boolean}>`
+  position: relative;
     padding: 10px;
     outline: none;
     display: inline-block;
@@ -83,6 +88,8 @@ const TaskText = styled.div`
     -webkit-line-break: after-white-space;
     width: 100%;
     font-size: 16px;
+    z-index: 3;
+    cursor: ${props => props.contentEditable ? 'text' : 'inherit'}
 `;
 
 
@@ -95,13 +102,13 @@ type PropsType = {
 const TodoListTask: React.FC<PropsType> = ({task, todoListId, palette}) => {
     const dispatch = useDispatch();
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
-    const focusedStatus = useSelector((state: AppStateType) => state.todoList.focusedStatus, shallowEqual);
+    const focusedStatus = useSelector((state: AppStateType) => state.interface.focusedStatus, shallowEqual);
 
     const [editorState, setEditorState] = useState<boolean>(false);
     const editTask = useCallback(() => {
         setEditorState(true);
-        dispatch(actions.setPalette(palette));
-        dispatch(actions.setFocusedStatus(true))
+        dispatch(interfaceActions.setPalette(palette));
+        dispatch(interfaceActions.setFocusedStatus(true))
     }, []);
 
     const textRef = useRef<HTMLDivElement>(null);
@@ -110,7 +117,7 @@ const TodoListTask: React.FC<PropsType> = ({task, todoListId, palette}) => {
     }, [editorState]);
 
     const deleteTask = useCallback(() => {
-        dispatch(actions.deleteTask(todoListId, task.id))
+        dispatch(stateActions.deleteTask(todoListId, task.id))
     }, []);
 
     useLayoutEffect(() => {
@@ -120,7 +127,7 @@ const TodoListTask: React.FC<PropsType> = ({task, todoListId, palette}) => {
 
     const changeDoneStatus = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         let newTask = {...task, status: e.currentTarget.checked ? 2 : 0};
-        dispatch(actions.changeTask(newTask))
+        dispatch(stateActions.changeTask(newTask))
     }, [task]);
 
     const onBlurHandler = useCallback(() => {
@@ -128,15 +135,15 @@ const TodoListTask: React.FC<PropsType> = ({task, todoListId, palette}) => {
         console.log(focusedStatus)
         if (validate(taskTitle)) {
             let newTask = {...task, title: taskTitle!};
-            dispatch(actions.changeTask(newTask));
+            dispatch(stateActions.changeTask(newTask));
             setEditorState(false);
-            dispatch(actions.setFocusedStatus(false));
+            dispatch(interfaceActions.setFocusedStatus(false));
         } else if (!validate(taskTitle) && task.title !== '') {
             textRef.current!.textContent = task.title;
             setEditorState(false);
-            dispatch(actions.setFocusedStatus(false));
+            dispatch(interfaceActions.setFocusedStatus(false));
         } else {
-            dispatch(actions.setFocusedStatus(false));
+            dispatch(interfaceActions.setFocusedStatus(false));
             deleteTask()
         }
     }, [task]);
@@ -148,16 +155,20 @@ const TodoListTask: React.FC<PropsType> = ({task, todoListId, palette}) => {
         }
     }, []);
 
-    const priority = task.priority === 0 ? 'Low' : 1 ? 'Middle' : 2 ?
-        'High' : 3 ? 'Urgently' : 'Later';
+    const captureClick = useDrag(({event}) => {
+        event?.stopPropagation();
+    });
+
+    /*const priority = task.priority === 0 ? 'Low' : 1 ? 'Middle' : 2 ?
+        'High' : 3 ? 'Urgently' : 'Later';*/
 
     return (
         <TaskWrapper $editable={editable && !focusedStatus} $editorState={editorState}>
             <TaskButtons editTask={editTask} deleteTask={deleteTask} palette={palette}/>
             <TaskBackground $editable={editable} $palette={palette} $editorState={editorState}>
-                <TaskCheckbox task={task} changeDoneStatus={changeDoneStatus} editable={editable} palette={palette}/>
+                <TaskCheckbox task={task} changeDoneStatus={changeDoneStatus} editable={editable}/>
                 <TaskText contentEditable={editorState} onKeyDown={e => onKeyDownHandler(e)}
-                          ref={textRef} onBlur={onBlurHandler}/>
+                          ref={textRef} onBlur={onBlurHandler} {...editorState && {...captureClick()}}/>
             </TaskBackground>
         </TaskWrapper>
 

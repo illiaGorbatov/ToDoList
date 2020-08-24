@@ -73,10 +73,9 @@ type PropsType = {
     task: TaskType;
     changeDoneStatus: (e: React.ChangeEvent<HTMLInputElement>) => void,
     editable: boolean,
-    palette: NeumorphColorsType
 }
 
-const TaskCheckbox: React.FC<PropsType> = ({task, changeDoneStatus, editable, palette}) => {
+const TaskCheckbox: React.FC<PropsType> = ({task, changeDoneStatus, editable}) => {
 
     return (
         <CheckboxWrapper $editable={editable}>

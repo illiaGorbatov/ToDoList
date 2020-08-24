@@ -1,7 +1,8 @@
-import React from "react";
+import React, {useState} from "react";
 import styled from "styled-components/macro";
 import {defaultPalette, NeumorphColorsType} from "../neumorphColors";
 import isEqual from "react-fast-compare";
+import {isMobile} from "react-device-detect";
 
 const RightButton = styled.div<{ $palette: NeumorphColorsType, $editable: boolean, $height: number }>`
   cursor: pointer;
@@ -44,6 +45,10 @@ const LeftButton = styled(RightButton)`
   left: ${props => props.$editable ? '-50%' : '50%'};
 `;
 
+const AdditionalButton = styled(RightButton)`
+  left: ${props => props.$editable ? '-150%' : '50%'};
+`;
+
 const InnerSmallerButtonText = styled.div`
   text-align: center;
   font-size: calc(15px + (25 - 15) * ((100vw - 300px) / (2000 - 300)));
@@ -54,10 +59,11 @@ type PropsType = {
     editable: boolean,
     addTodoList: () => void,
     rejectAllChanges: () => void,
-    interfaceHeight: number
+    interfaceHeight: number,
+    switchScrollableState: () => void
 }
 
-const OtherButtons: React.FC<PropsType> = ({palette, editable,
+const OtherButtons: React.FC<PropsType> = ({palette, editable, switchScrollableState,
                                                interfaceHeight, addTodoList, rejectAllChanges}) => {
 
     return (
@@ -72,6 +78,9 @@ const OtherButtons: React.FC<PropsType> = ({palette, editable,
                     remove changes
                 </InnerSmallerButtonText>
             </RightButton>
+            {isMobile &&
+                <AdditionalButton onClick={switchScrollableState} $palette={palette} $editable={editable} $height={interfaceHeight}/>
+            }
         </>
     )
 }

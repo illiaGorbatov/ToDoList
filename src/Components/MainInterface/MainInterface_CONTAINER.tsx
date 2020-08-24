@@ -1,35 +1,32 @@
 import React, {useCallback, useEffect, useMemo, useState} from "react";
 import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import {AppStateType} from "../../redux/store";
-import {actions, submitAllChanges} from "../../redux/functionalReducer";
 import {useSpring} from "react-spring";
 import RotatedBackground from "./RotatedBackground";
 import InterfaceWrapper from "./InterfaceWrapper";
 import EditButton from "./EditButton";
 import OtherButtons from "./OtherButtons";
+import {stateActions, submitAllChanges} from "../../redux/stateReducer";
+import {interfaceActions} from "../../redux/interfaceReducer";
 
 
 const MainInterface_CONTAINER = () => {
 
     const dispatch = useDispatch();
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
-    const currentPalette = useSelector((state: AppStateType) => state.todoList.currentPaletteIndex, shallowEqual);
-    const pendingState = useSelector((state: AppStateType) => state.todoList.pendingState, shallowEqual);
-    const initialLoading = useSelector((state: AppStateType) => state.todoList.initialLoadingState, shallowEqual);
-    const swapState = useSelector((state: AppStateType) => state.todoList.swapState, shallowEqual);
-    const allTasks = useSelector((state: AppStateType) => state.todoList.allTasks, shallowEqual);
-    const completedTasks = useSelector((state: AppStateType) => state.todoList.completedTasks, shallowEqual);
-    const fetching = useSelector((state: AppStateType) => state.todoList.fetchingState, shallowEqual);
-    const closeLook = useSelector((state: AppStateType) => state.todoList.closeLookState, shallowEqual);
-    const interfaceHeight = useSelector((state: AppStateType) => state.todoList.interfaceHeight, shallowEqual);
-    const width = useSelector((state: AppStateType) => state.todoList.width, shallowEqual);
+    const currentPalette = useSelector((state: AppStateType) => state.interface.currentPaletteIndex, shallowEqual);
+    const pendingState = useSelector((state: AppStateType) => state.interface.pendingState, shallowEqual);
+    const initialLoading = useSelector((state: AppStateType) => state.interface.initialLoadingState, shallowEqual);
+    const swapState = useSelector((state: AppStateType) => state.interface.swapState, shallowEqual);
+    const allTasks = useSelector((state: AppStateType) => state.interface.allTasks, shallowEqual);
+    const completedTasks = useSelector((state: AppStateType) => state.interface.completedTasks, shallowEqual);
+    const fetching = useSelector((state: AppStateType) => state.interface.fetchingState, shallowEqual);
+    const closeLook = useSelector((state: AppStateType) => state.interface.closeLookState, shallowEqual);
+    const interfaceHeight = useSelector((state: AppStateType) => state.interface.interfaceHeight, shallowEqual);
+    const width = useSelector((state: AppStateType) => state.interface.width, shallowEqual);
+    const scrollableState = useSelector((state: AppStateType) => state.interface.scrollableState, shallowEqual);
 
     const [buttonsWrapperHeight, setButtonsHeight] = useState<number>(0);
-
-    const switchEditMode = useCallback(() => {
-        if (!editable) dispatch(actions.enableEditMode());
-        if (editable) dispatch(submitAllChanges());
-    }, [editable]);
 
     useEffect(() => {
         let isMounted = true;
@@ -44,7 +41,7 @@ const MainInterface_CONTAINER = () => {
         }
         if (isMounted) {
             const height = getHeight(false);
-            dispatch(actions.setInterfaceHeight(height));
+            dispatch(interfaceActions.setInterfaceHeight(height));
             const buttonHeight = getHeight(true);
             setButtonsHeight(buttonHeight);
         }
@@ -53,7 +50,7 @@ const MainInterface_CONTAINER = () => {
                 clearTimeout(timeoutId);
                 timeoutId = window.setTimeout(() => {
                     const newHeight = getHeight(false);
-                    dispatch(actions.setInterfaceHeight(newHeight));
+                    dispatch(interfaceActions.setInterfaceHeight(newHeight));
                     const newButtonHeight = getHeight(true);
                     setButtonsHeight(newButtonHeight);
                 }, 150);
@@ -74,12 +71,21 @@ const MainInterface_CONTAINER = () => {
             title: '',
             tasks: []
         }
-        dispatch(actions.addTodoList(newList));
+        dispatch(stateActions.addTodoList(newList));
     }, []);
 
     const rejectAllChanges = useCallback(() => {
-        dispatch(actions.rejectAllChanges())
+        dispatch(stateActions.rejectAllChanges())
     }, []);
+
+    const switchScrollableState = useCallback(() => {
+        dispatch(interfaceActions.setScrollableState(!scrollableState))
+    }, [scrollableState]);
+
+    const switchEditMode = useCallback(() => {
+        if (!editable) dispatch(stateActions.enableEditMode());
+        if (editable) dispatch(submitAllChanges());
+    }, [editable]);
 
     //animation logic
     const [spring, setSpring] = useSpring(() => ({
@@ -125,6 +131,7 @@ const MainInterface_CONTAINER = () => {
                 backgroundHeight: interfaceHeight,
                 rotateZ: -35,
                 x: '0vw',
+                delay: (prop) => prop === 'rotateZ' ? 300 : 0,
                 config: {friction: 50}
             })
         } else if (editable) {
@@ -133,6 +140,7 @@ const MainInterface_CONTAINER = () => {
                 height: interfaceHeight,
                 width: window.innerWidth,
                 rotateZ: 0,
+                delay: (prop) => prop === 'width' ? 300 : 0
             })
         } else if (closeLook) {
             setSpring({
@@ -154,7 +162,7 @@ const MainInterface_CONTAINER = () => {
                             cantBeHovered={pendingState || initialLoading || swapState || fetching}
                             switchEditMode={switchEditMode} palette={currentPalette}
                             progressBarAnimation={progressBarAnimation}/>
-                <OtherButtons palette={currentPalette} editable={editable} addTodoList={addTodoList}
+                <OtherButtons palette={currentPalette} editable={editable} addTodoList={addTodoList} switchScrollableState={switchScrollableState}
                               rejectAllChanges={rejectAllChanges} interfaceHeight={buttonsWrapperHeight}/>
             </InterfaceWrapper>
         </>

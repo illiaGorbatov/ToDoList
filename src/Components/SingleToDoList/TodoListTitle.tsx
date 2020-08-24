@@ -2,9 +2,11 @@ import React, {useEffect, useLayoutEffect, useRef} from "react";
 import '../../App.css';
 import styled from "styled-components/macro";
 import {useDispatch} from "react-redux";
-import {actions} from "../../redux/functionalReducer";
 import { NeumorphColorsType } from "../neumorphColors";
 import {validate} from "../../hooks/validate";
+import {stateActions} from "../../redux/stateReducer";
+import {interfaceActions} from "../../redux/interfaceReducer";
+import {useDrag} from "react-use-gesture";
 
 const ListTitle = styled.div<{$palette: NeumorphColorsType, contentEditable: boolean}>`
   background-color: ${props => props.$palette.background};
@@ -15,6 +17,7 @@ const ListTitle = styled.div<{$palette: NeumorphColorsType, contentEditable: boo
   padding: 15px 10px;
   margin: 0 auto 10px auto;
   width: 100%;
+  cursor: ${props => props.contentEditable ? 'text' : 'inherit'};
   border-radius: 10px;
   outline: none;
   display: inline-block;
@@ -51,7 +54,7 @@ const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable,
     useEffect(() => {
         if (ref.current && isTitleEditable) {
             ref.current.focus();
-            dispatch(actions.setFocusedStatus(true))
+            dispatch(interfaceActions.setFocusedStatus(true))
         }
     }, [isTitleEditable]);
 
@@ -71,22 +74,26 @@ const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable,
     };
     const onBlurHandler = () => {
         if (validate(ref.current!.textContent)) {
-            dispatch(actions.changeTodoListTitle(id, ref.current!.textContent!));
+            dispatch(stateActions.changeTodoListTitle(id, ref.current!.textContent!));
             switchTitleMode(false);
-            dispatch(actions.setFocusedStatus(false));
+            dispatch(interfaceActions.setFocusedStatus(false));
         } else if (!validate(ref.current!.textContent) && listTitle !== '') {
             ref.current!.textContent = listTitle;
             switchTitleMode(false);
-            dispatch(actions.setFocusedStatus(false));
+            dispatch(interfaceActions.setFocusedStatus(false));
         } else {
-            dispatch(actions.setFocusedStatus(false));
+            dispatch(interfaceActions.setFocusedStatus(false));
             deleteTodoList()
         }
     };
 
+    const captureClick = useDrag(({event}) => {
+        event?.stopPropagation();
+    })
+
     return (
         <ListTitle contentEditable={isTitleEditable} ref={ref} onKeyDown={e => onKeyPressHandler(e)}
-                   onBlur={onBlurHandler} $palette={palette}/>
+                   onBlur={onBlurHandler} $palette={palette} {...isTitleEditable && {...captureClick()}}/>
     );
 }
 

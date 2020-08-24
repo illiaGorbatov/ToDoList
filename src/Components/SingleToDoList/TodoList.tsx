@@ -2,7 +2,6 @@ import React, {useCallback, useRef, useState} from "react";
 import TodoListTasks from '../Tasks/Tasks_WRAPPER';
 import TodoListTitle from "./TodoListTitle";
 import {shallowEqual, useDispatch, useSelector} from 'react-redux';
-import {actions} from "../../redux/functionalReducer";
 import {TaskType} from "../../redux/entities";
 import styled from "styled-components/macro";
 import {AppStateType} from "../../redux/store";
@@ -10,33 +9,29 @@ import {useHover} from "react-use-gesture";
 import ContextButtons, {ButtonWrapper} from "./ContextButtons";
 import isEqual from "react-fast-compare";
 import {defaultPalette, neumorphColors} from "../neumorphColors";
+import {stateActions} from "../../redux/stateReducer";
+import {interfaceActions} from "../../redux/interfaceReducer";
 
-const SingleListWrapper = styled.div<{ $editable: boolean}>`
+const SingleListWrapper = styled.div<{ $editable: boolean, $closeLookState: boolean }>`
   position: relative;
   transform-style: preserve-3d;
   transform-origin: 50% 50%;
   backface-visibility: hidden;
   overflow: visible;
   padding: 35px;
+  cursor: ${props => props.$editable || props.$closeLookState ? 'inherit' : 'pointer'};
   font-family: NunitoSans-Light;
   &:hover {
       z-index: 5;
   }
-  ${props => !props.$editable &&
+  ${props => !props.$editable && !props.$closeLookState &&
     `&:hover ${ListOuterLayer}{
         transform: translateZ(100px)
-  }`}
-`;
-
-const DetailsWrapper = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 100%;
-  transform-origin: 50% 50%;
-  transform: rotateZ(-90deg) translateY(-50%);
-  transform-style: preserve-3d;
-  font-size: 25px;
-  white-space: nowrap;
+     }
+     &:hover ${ListShadow}{
+        box-shadow: 0 0 35px 20px rgba(0, 0, 0, 0.8);
+        opacity: 0.5
+     }`}
 `;
 
 const ListOuterLayer = styled.div<{
@@ -99,7 +94,7 @@ const ListOuterLayer = styled.div<{
     }`}
 `;
 
-const ListInnerLayer = styled.div<{ $palette: number}>`
+const ListInnerLayer = styled.div<{ $palette: number }>`
   position: absolute;
   border-radius: 20px;
   top: 50%;
@@ -111,6 +106,24 @@ const ListInnerLayer = styled.div<{ $palette: number}>`
   box-shadow: ${props => neumorphColors[props.$palette].innerShadows};
   opacity: 0;
   transition: opacity .3s linear;
+`;
+
+const ListShadow = styled.div<{ $editable: boolean, $closeLookState: boolean }>`
+  display: ${props => props.$editable || props.$closeLookState ? 'none' : 'block'};
+  position: absolute;
+  z-index: -2;
+  width: calc(100% - 80px);
+  height: calc(100% - 80px);
+  top: 50%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-50%);
+  border-radius: 30px;
+  background: rgba(0, 0, 0, 0.7);
+  box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.8);
+  opacity: 0.7;
+  transition-property: box-shadow, opacity;
+  transition-duration: .6s;
+  transition-timing-function: cubic-bezier(0.25, 0, 0, 1);
 `;
 
 
@@ -131,7 +144,7 @@ const TodoList: React.FC<PropsType> = ({
 
     const dispatch = useDispatch();
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
-    const focusedStatus = useSelector((state: AppStateType) => state.todoList.focusedStatus, shallowEqual);
+    const focusedStatus = useSelector((state: AppStateType) => state.interface.focusedStatus, shallowEqual);
 
     const [isTasksHovered, setTasksHoveredStatus] = useState<boolean>(false);
     const setHoveredStatus = useCallback((status: boolean) => {
@@ -149,13 +162,6 @@ const TodoList: React.FC<PropsType> = ({
         }
     }, []);
 
-
-    const [filterValue, setFilterValue] = useState<string>('All');
-
-    const changeFilter = (newFilterValue: string) => {
-        setFilterValue(newFilterValue)
-    };
-
     const addTask = useCallback(() => {
         const taskId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
             .replace(/[xy]/g, (c, r) => ('x' == c ? (Math.random() * 16 | 0) : (r & 0x3 | 0x8)).toString(16));
@@ -164,14 +170,18 @@ const TodoList: React.FC<PropsType> = ({
             id: taskId,
             todoListId: id,
         }
-        dispatch(actions.addTask(newTask, id));
+        dispatch(stateActions.addTask(newTask, id));
     }, []);
 
     const deleteTodoList = useCallback(() => {
         deleteList(id)
-        dispatch(actions.deleteTodoList(id))
+        dispatch(stateActions.deleteTodoList(id))
     }, []);
 
+    const [filterValue, setFilterValue] = useState<string>('All');
+    const changeFilter = (newFilterValue: string) => {
+        setFilterValue(newFilterValue)
+    };
     const tasks = listTasks ? listTasks.filter(t => {
         if (filterValue === "All") {
             return true;
@@ -189,13 +199,12 @@ const TodoList: React.FC<PropsType> = ({
     const bind = useHover(({hovering}) => {
         if (focusedStatus || closeLook) return
         if (hovering) {
-            dispatch(actions.setPalette(neumorphColors[paletteIndex]));
+            dispatch(interfaceActions.setPalette(neumorphColors[paletteIndex]));
         }
         if (!hovering) {
-            dispatch(actions.setPalette(defaultPalette));
+            dispatch(interfaceActions.setPalette(defaultPalette));
         }
     });
-
     //close look animations
 
     const [isTitleEditable, setTitleEditMode] = useState<boolean>(false);
@@ -205,22 +214,20 @@ const TodoList: React.FC<PropsType> = ({
 
     /*console.log(`${listTitle} render`)*/
     return (
-        <SingleListWrapper {...!closeLook && {...bind()}} ref={ref} $editable={editable}>
+        <SingleListWrapper {...!closeLook && {...bind()}} ref={ref} $editable={editable} $closeLookState={closeLook}>
+            <ListShadow $editable={editable} $closeLookState={closeLook}/>
             <ListOuterLayer $palette={paletteIndex} $editable={editable} $isTasksHovered={isTasksHovered}
-                                  $closeLookState={closeLook} $focusedStatus={focusedStatus}>
+                            $closeLookState={closeLook} $focusedStatus={focusedStatus}>
                 <ListInnerLayer $palette={paletteIndex}/>
-                    <ContextButtons colors={neumorphColors[paletteIndex]} deleteTodoList={deleteTodoList}
-                                    addTask={addTask} editList={switchTitleMode}/>
-                    <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable}
-                                   deleteTodoList={deleteTodoList}
-                                   switchTitleMode={switchTitleMode} palette={neumorphColors[paletteIndex]}/>
-                    <TodoListTasks todoListId={id} tasks={tasks} setHeight={setHeight}
-                                   palette={neumorphColors[paletteIndex]}
-                                   setHoveredStatus={setHoveredStatus}/>
-                    {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}
-                    {/*<DetailsWrapper>
-                    more details...
-                </DetailsWrapper>*/}
+                <ContextButtons colors={neumorphColors[paletteIndex]} deleteTodoList={deleteTodoList}
+                                addTask={addTask} editList={switchTitleMode}/>
+                <TodoListTitle listTitle={listTitle} id={id} isTitleEditable={isTitleEditable}
+                               deleteTodoList={deleteTodoList}
+                               switchTitleMode={switchTitleMode} palette={neumorphColors[paletteIndex]}/>
+                <TodoListTasks todoListId={id} tasks={tasks} setHeight={setHeight}
+                               palette={neumorphColors[paletteIndex]}
+                               setHoveredStatus={setHoveredStatus}/>
+                {/* <TodoListFooter filterValue={filterValue} changeFilter={changeFilter}/>*/}
             </ListOuterLayer>
         </SingleListWrapper>
     );
