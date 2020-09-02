@@ -100,16 +100,18 @@ type PropsType = {
 };
 
 const TodoListTask: React.FC<PropsType> = ({task, todoListId, palette}) => {
-    const dispatch = useDispatch();
+
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const focusedStatus = useSelector((state: AppStateType) => state.interface.focusedStatus, shallowEqual);
+
+    const dispatch = useDispatch();
 
     const [editorState, setEditorState] = useState<boolean>(false);
     const editTask = useCallback(() => {
         setEditorState(true);
         dispatch(interfaceActions.setPalette(palette));
         dispatch(interfaceActions.setFocusedStatus(true))
-    }, []);
+    }, [palette, dispatch]);
 
     const textRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
@@ -118,21 +120,20 @@ const TodoListTask: React.FC<PropsType> = ({task, todoListId, palette}) => {
 
     const deleteTask = useCallback(() => {
         dispatch(stateActions.deleteTask(todoListId, task.id))
-    }, []);
+    }, [todoListId, task.id, dispatch]);
 
     useLayoutEffect(() => {
         textRef.current!.textContent = task.title;
         if (task.title === '') editTask()
-    }, [task]);
+    }, [task, editTask]);
 
     const changeDoneStatus = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         let newTask = {...task, status: e.currentTarget.checked ? 2 : 0};
         dispatch(stateActions.changeTask(newTask))
-    }, [task]);
+    }, [task, dispatch]);
 
     const onBlurHandler = useCallback(() => {
         const taskTitle = textRef.current!.textContent;
-        console.log(focusedStatus)
         if (validate(taskTitle)) {
             let newTask = {...task, title: taskTitle!};
             dispatch(stateActions.changeTask(newTask));
@@ -146,7 +147,7 @@ const TodoListTask: React.FC<PropsType> = ({task, todoListId, palette}) => {
             dispatch(interfaceActions.setFocusedStatus(false));
             deleteTask()
         }
-    }, [task]);
+    }, [task, deleteTask, dispatch]);
 
     const onKeyDownHandler = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
         if (e.keyCode === 13 || e.keyCode === 27) {

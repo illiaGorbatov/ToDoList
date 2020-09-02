@@ -4,7 +4,6 @@ import {ThunkAction, ThunkDispatch} from "redux-thunk";
 import {AppStateType, InferActionTypes} from "./store";
 import cloneDeep from "lodash-es/cloneDeep";
 import {movePos} from "../hooks/movePos";
-import {defaultPalette, NeumorphColorsType} from "../Components/neumorphColors";
 import {interfaceActions} from "./interfaceReducer";
 
 type InitialStateType = {
@@ -141,10 +140,6 @@ const stateReducer = (state: InitialStateType = initialState, action: StateActio
     }
 };
 
-type StateActionsType = InferActionTypes<typeof stateActions>;
-
-type DispatchedActionsTypes = InferActionTypes<typeof stateActions & typeof interfaceActions>;
-
 export const stateActions = {
     addTodoList: (newTodoList: TodoListType) => ({type: 'stateReducer/ADD_TODO_LIST', newTodoList} as const),
     addTask: (newTask: TaskType, todoListId: string) => ({type: 'stateReducer/ADD_TASK', newTask, todoListId} as const),
@@ -172,6 +167,9 @@ export const stateActions = {
     rejectAllChanges: () => ({type: 'stateReducer/REJECT_ALL_CHANGES'} as const),
 }
 
+type StateActionsType = InferActionTypes<typeof stateActions>;
+type DispatchedActionsTypes = InferActionTypes<typeof stateActions & typeof interfaceActions>;
+
 type ThunkType = ThunkAction<void, AppStateType, unknown, DispatchedActionsTypes>;
 type ThunkActionType = ThunkDispatch<AppStateType, unknown, DispatchedActionsTypes>;
 
@@ -180,7 +178,7 @@ export const loadTodoListsTC = (): ThunkType => (dispatch: ThunkActionType) => {
         dispatch(stateActions.restoreTodoList(data))
     })
 };
-export const addTodoListTC = (title: string): ThunkType => (dispatch: ThunkActionType) => {//done
+export const addTodoListTC = (title: string): ThunkType => (dispatch: ThunkActionType) => {
     api.addTodoList(title).then(data => {
         if (data.resultCode === 0) dispatch(stateActions.addTodoList(data.data.item))
     })
@@ -205,7 +203,6 @@ export const changeTodoListTitleTC = (todoListId: string, todoListTitle: string)
 
 export const initialization = (): ThunkType => async (dispatch: ThunkActionType) => {
     const authState = await api.getAuthState();
-    console.log(authState)
     if (!authState.data.id) {
         await api.logIn()
     }
@@ -252,7 +249,7 @@ export const submitAllChanges = (): ThunkType =>
         const addedLists = newTodoLists.filter(list => oldTodoLists.findIndex(oldList => oldList.id === list.id) === -1);
         const deletedLists = oldTodoLists.filter(list => newTodoLists.findIndex(newList => newList.id === list.id) === -1);
         const editedLists: Array<TodoListType> = []
-        newTodoLists.map(list => {
+        newTodoLists.forEach(list => {
             const oldList = oldTodoLists.find(oldList => oldList.id === list.id);
             if (oldList && list.title !== oldList.title) {
                 editedLists.push(list)
@@ -261,10 +258,10 @@ export const submitAllChanges = (): ThunkType =>
 
         let addedTasks: Array<TaskType> = [];
         const editedTasks: Array<TaskType> = [];
-        newTodoLists.map(list => {
+        newTodoLists.forEach(list => {
             const oldList = oldTodoLists.find(oldList => oldList.id === list.id);
             if (oldList) {
-                list.tasks.map(task => {
+                list.tasks.forEach(task => {
                     const oldTask = oldList.tasks.find(oldTask => oldTask.id === task.id)
                     if (!oldTask) {
                         addedTasks.push(task);
@@ -276,14 +273,14 @@ export const submitAllChanges = (): ThunkType =>
                 })
             }
             if (!oldList && list.tasks.length !== 0) {
-                list.tasks.map(task => addedTasks.push(task))
+                list.tasks.forEach(task => addedTasks.push(task))
             }
         })
         const deletedTasks: Array<TaskType> = [];
-        oldTodoLists.map(list => {
+        oldTodoLists.forEach(list => {
             const newList = newTodoLists.find(newList => newList.id === list.id);
             if (newList) {
-                list.tasks.map(task => {
+                list.tasks.forEach(task => {
                     const newTask = newList.tasks.find(newTask => newTask.id === task.id)
                     if (!newTask) {
                         deletedTasks.push(task)
@@ -305,28 +302,28 @@ export const submitAllChanges = (): ThunkType =>
         //queries
         dispatch(interfaceActions.setCompletedTask(true))
         if (deletedLists.length !== 0) {
-            deletedLists.map(list => {
+            deletedLists.forEach(list => {
                 api.deleteTodoList(list.id).then(data => {
                     if (data.resultCode === 0) dispatch(interfaceActions.setCompletedTask(false))
                 })
             })
         }
         if (deletedTasks.length !== 0) {
-            deletedTasks.map(task => {
+            deletedTasks.forEach(task => {
                 api.deleteTask(task.todoListId, task.id).then(data => {
                     if (data.resultCode === 0) dispatch(interfaceActions.setCompletedTask(false))
                 })
             })
         }
         if (editedLists.length !== 0) {
-            editedLists.map(list => {
+            editedLists.forEach(list => {
                 api.changeTodoListTitle(list.id, list.title).then(data => {
                     if (data.resultCode === 0) dispatch(interfaceActions.setCompletedTask(false))
                 })
             })
         }
         if (editedTasks.length !== 0) {
-            editedTasks.map(task => {
+            editedTasks.forEach(task => {
                 api.changeTask(task.todoListId, task.id, task).then(data => {
                     if (data.resultCode === 0) dispatch(interfaceActions.setCompletedTask(false))
                 })
@@ -420,7 +417,7 @@ export const submitAllChanges = (): ThunkType =>
                 : todoListsWithNewId.map(list => list.id);
             const swapOrder: Array<{ swappedId: string, beforeSwappedId: string | null }> = [];
             const order = listsOrder.length !== 0 ? listsOrder : todoListsWithNewId.map(list => list.id);
-            order.map((thisListPosId, index) => {
+            order.forEach((thisListPosId, index) => {
                 if (thisListPosId !== currentOrder[index]) {
                     if (index === 0) swapOrder.push({swappedId: thisListPosId, beforeSwappedId: null})
                     else swapOrder.push({swappedId: thisListPosId, beforeSwappedId: listsOrder[index - 1]});
@@ -428,7 +425,7 @@ export const submitAllChanges = (): ThunkType =>
                     currentOrder = movePos(currentOrder, oldIndex, index)
                 }
             });
-            swapOrder.map(item => {
+            swapOrder.forEach(item => {
                 api.swapTodoList(item.swappedId, item.beforeSwappedId)/*.then(data => {
                     if (data.resultCode !== 0) dispatch(actions.setError())
                 });*/
@@ -449,7 +446,7 @@ export const submitAllChanges = (): ThunkType =>
             }
             let addedTasksInLists: Array<{ todoListId: string, tasks: Array<string> }> = [];
             const currentListsStateOnServer = newTasksId.length > 1 ? await (async () => {
-                newTasksId.map(task => {
+                newTasksId.forEach(task => {
                     const list = addedTasksInLists.length !== 0 ?
                         addedTasksInLists.find(list => list.todoListId === task.todoListId) : undefined;
                     if (list) {
@@ -458,7 +455,7 @@ export const submitAllChanges = (): ThunkType =>
                     } else addedTasksInLists.push({todoListId: task.todoListId, tasks: [task.newId]})
                 })
                 let listsToUpdate: Array<string> = [];
-                addedTasksInLists.map(item => {
+                addedTasksInLists.forEach(item => {
                     if (item.tasks.length > 1) listsToUpdate.push(item.todoListId)
                 })
                 if (listsToUpdate.length !== 0) {
@@ -482,7 +479,7 @@ export const submitAllChanges = (): ThunkType =>
 
             let requiredOrder: Array<{ todoListId: string, tasks: Array<string> }> = [];
             if (currentListsStateOnServer && tasksOrder.length !== 0) {
-                currentListsStateOnServer.map(item => {
+                currentListsStateOnServer.forEach(item => {
                     const isItemInOrder = tasksOrder.find(currItem =>
                         currItem.todoListId === item.todoListId);
                     if (isItemInOrder) return;
@@ -492,11 +489,11 @@ export const submitAllChanges = (): ThunkType =>
                         tasks: orderFromCurrentState.tasks.map(task => task.id)
                     })
                 });
-                tasksOrder.map(item => requiredOrder.push({todoListId: item.todoListId, tasks: item.newTasksOrder}))
+                tasksOrder.forEach(item => requiredOrder.push({todoListId: item.todoListId, tasks: item.newTasksOrder}))
             } else if (!currentListsStateOnServer && tasksOrder.length !== 0) {
                 requiredOrder = tasksOrder.map(item => ({todoListId: item.todoListId, tasks: item.newTasksOrder}));
             } else if (currentListsStateOnServer && tasksOrder.length === 0) {
-                currentListsStateOnServer.map(item => {
+                currentListsStateOnServer.forEach(item => {
                     const orderFromCurrentState = todoListsWithNewId.find(list => item.todoListId === list.id)!;
                     requiredOrder.push({
                         todoListId: orderFromCurrentState.id,

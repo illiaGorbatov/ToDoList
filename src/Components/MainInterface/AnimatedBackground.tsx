@@ -26,7 +26,7 @@ const AnimatedBackground:React.FC = () => {
 
     useEffect(() => {
         setBackground({background: currentPalette.background})
-    }, [currentPalette])
+    }, [currentPalette, setBackground])
 
     return <Background style={animateBackground}/>
 }

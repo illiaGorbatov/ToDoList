@@ -1,7 +1,6 @@
 import React from "react";
 import {TaskType} from "../../redux/entities";
 import styled from "styled-components/macro";
-import {NeumorphColorsType} from "../neumorphColors";
 
 const CheckboxWrapper = styled.div<{$editable: boolean}>`
     width: 31px;

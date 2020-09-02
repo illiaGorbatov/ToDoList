@@ -1,11 +1,11 @@
-import React from "react";
+import React, {useEffect} from "react";
 import styled, {createGlobalStyle} from "styled-components/macro";
 import {library} from "@fortawesome/fontawesome-svg-core";
 import {far} from "@fortawesome/free-regular-svg-icons";
 import {fas} from "@fortawesome/free-solid-svg-icons";
 import AnimatedBackground from "./MainInterface/AnimatedBackground";
-import MainInterface_CONTAINER from "./MainInterface/MainInterface_CONTAINER";
-import Scroll_CONTAINER from "./AppAnimatedWrappers/ScrollableElements/Scroll_CONTAINER";
+import MainInterfaceContainer from "./MainInterface/MainInterfaceContainer";
+import ScrollContainer from "./AppAnimatedWrappers/ScrollableElements/ScrollContainer";
 
 library.add(far, fas);
 
@@ -40,13 +40,19 @@ const Wrapper = styled.div`
 
 const App: React.FC = () => {
 
+    useEffect(() => {
+        const reloadFunction = () => document.location.reload()
+        window.addEventListener("orientationchange", reloadFunction)
+        return () => window.removeEventListener("orientationchange", reloadFunction)
+    }, []);
+
     return (
         <>
             <GlobalStyles/>
             <AnimatedBackground/>
             <Wrapper>
-                <MainInterface_CONTAINER/>
-                <Scroll_CONTAINER/>
+                <MainInterfaceContainer/>
+                <ScrollContainer/>
             </Wrapper>
         </>
     );

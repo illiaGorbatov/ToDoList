@@ -56,7 +56,7 @@ const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable,
             ref.current.focus();
             dispatch(interfaceActions.setFocusedStatus(true))
         }
-    }, [isTitleEditable]);
+    }, [isTitleEditable, dispatch]);
 
     const ref = useRef<HTMLDivElement>(null);
     useLayoutEffect(() => {
@@ -64,7 +64,7 @@ const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable,
             ref.current.textContent = listTitle;
             if (listTitle === '') switchTitleMode(true)
         }
-    }, [listTitle]);
+    }, [listTitle, switchTitleMode]);
 
     const onKeyPressHandler = (e: React.KeyboardEvent) => {
         if (e.keyCode === 13 || e.keyCode === 27 ) {

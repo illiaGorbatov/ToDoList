@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {animated, useSprings, SpringStartFn, useSpring, SpringValue} from "react-spring";
+import {animated, useSprings, SpringStartFn, useSpring} from "react-spring";
 import {swap} from "../../../hooks/swap";
 import {useDrag} from "react-use-gesture";
 import styled from "styled-components/macro";
@@ -40,7 +40,7 @@ type GridItemsType = {
     index: number
 }
 
-const AllLists_CONTAINER: React.FC<PropsType> = ({
+const AllListsContainer: React.FC<PropsType> = ({
                                               setWrapperAnimation, scrollByListDrugging,
                                               setCloseLookState, returnFromCloseLookState, switchScrollBar
                                           }) => {
@@ -51,45 +51,10 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
     const interfaceHeight = useSelector((store: AppStateType) => store.interface.interfaceHeight, shallowEqual);
     const scrollableState = useSelector((state: AppStateType) => state.interface.scrollableState, shallowEqual);
     const focusedStatus = useSelector((state: AppStateType) => state.interface.focusedStatus, shallowEqual);
+
     const dispatch = useDispatch();
 
-    const columns = useMemo(() => {
-        return width >= 1700 ? 4 : width >= 1100 ? 3 : width >= 700 ? 2 : 1
-    }, [width]);
-    const currWidth = useMemo(() => width / columns, [width]);
-    useEffect(() => {
-        recalculateMeasures();
-        setSprings(i => {
-            const currentSettings = gridItems.current.find((list) => list.index === todoLists.length - 1 - i)!;
-            return {x: currentSettings.x, y: currentSettings.y}
-        });
-    }, [width, columns, currWidth]);
-
-
-// child height calculation logic
-    const temporaryValue = useRef<Array<{ height: number, id: string }>>([]);
-    const setNewHeights = useCallback((height: number, id: string) => {
-        const findHeight = temporaryValue.current.findIndex(item => item.id === id);
-        const newHeightsArray = findHeight === -1 ? [...temporaryValue.current, {height, id}]
-            : temporaryValue.current.map((item, i) => {
-                if (i === findHeight) return {height, id};
-                return item
-            });
-        temporaryValue.current = newHeightsArray
-        if (newHeightsArray.length === todoLists.length) {
-            recalculateMeasures();
-            setSprings(i => {
-                const currentSettings = gridItems.current.find((list) => list.index === todoLists.length - 1 - i)!;
-                return {x: currentSettings.x, y: currentSettings.y}
-            })
-        }
-    }, [todoLists, width, columns, currWidth])
-
-    const deleteList = useCallback((id: string) => {
-        temporaryValue.current = temporaryValue.current.filter(item => item.id !== id)
-    }, []);
-
-    const height = useRef<number>(0);
+    //state-like mutable container
     const gridItems = useRef<Array<GridItemsType>>([]);
 
     const [springs, setSprings] = useSprings(todoLists.length, i => {
@@ -106,6 +71,56 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
         }
     }, [todoLists])
 
+// child height calculation logic
+    const columns = useMemo(() => {
+        return width >= 1700 ? 4 : width >= 1100 ? 3 : width >= 700 ? 2 : 1
+    }, [width]);
+    const currWidth = useMemo(() => width / columns, [width, columns]);
+
+    const recalculateMeasures = useCallback(() => {
+        const newHeights = new Array(columns).fill(0);
+        gridItems.current = gridItems.current.map((item, i) => {
+            const heightInMeasuredArray = temporaryValue.current.find(list => item.id === list.id);
+            const height = heightInMeasuredArray ? heightInMeasuredArray.height : 0;
+            const column = i % columns;
+            const x = currWidth * column;
+            const y = (newHeights[column] += height) - height;
+            const rightX = x + currWidth;
+            const botY = y + height;
+            const horizontalCenter = x + currWidth / 2;
+            const verticalCenter = y + height / 2;
+            return {...item, x, y, rightX, botY, horizontalCenter, verticalCenter, height}
+        });
+        if (Math.max(...newHeights) !== height.current) {
+            height.current = Math.max(...newHeights);
+            dispatch(interfaceActions.setHeight(height.current));
+        }
+    }, [currWidth, columns, dispatch]);
+
+
+    const temporaryValue = useRef<Array<{ height: number, id: string }>>([]);
+    const setNewHeights = useCallback((height: number, id: string) => {
+        const findHeight = temporaryValue.current.findIndex(item => item.id === id);
+        const newHeightsArray = findHeight === -1 ? [...temporaryValue.current, {height, id}]
+            : temporaryValue.current.map((item, i) => {
+                if (i === findHeight) return {height, id};
+                return item
+            });
+        temporaryValue.current = newHeightsArray
+        if (newHeightsArray.length === todoLists.length) {
+            recalculateMeasures();
+            setSprings(i => {
+                const currentSettings = gridItems.current.find((list) => list.index === todoLists.length - 1 - i)!;
+                return {x: currentSettings.x, y: currentSettings.y}
+            })
+        }
+    }, [todoLists, setSprings, recalculateMeasures])
+
+    const deleteList = useCallback((id: string) => {
+        temporaryValue.current = temporaryValue.current.filter(item => item.id !== id)
+    }, []);
+
+    const height = useRef<number>(0);
 
 //swap animation logic
     useEffect(() => {
@@ -153,27 +168,16 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
             const currentSettings = gridItems.current.find((list) => list.index === todoLists.length - 1 - i)!;
             return {x: currentSettings.x, y: currentSettings.y}
         })
-    }, [todoLists]);
+        console.log('big effect')
+    }, [todoLists, columns, currWidth, dispatch, editable, recalculateMeasures, setSprings]);
 
-    const recalculateMeasures = useCallback(() => {
-        const newHeights = new Array(columns).fill(0);
-        gridItems.current = gridItems.current.map((item, i) => {
-            const heightInMeasuredArray = temporaryValue.current.find(list => item.id === list.id);
-            const height = heightInMeasuredArray ? heightInMeasuredArray.height : 0;
-            const column = i % columns;
-            const x = currWidth * column;
-            const y = (newHeights[column] += height) - height;
-            const rightX = x + currWidth;
-            const botY = y + height;
-            const horizontalCenter = x + currWidth / 2;
-            const verticalCenter = y + height / 2;
-            return {...item, x, y, rightX, botY, horizontalCenter, verticalCenter, height}
+    useEffect(() => {
+        recalculateMeasures();
+        setSprings(i => {
+            const currentSettings = gridItems.current.find((list) => list.index === todoLists.length - 1 - i)!;
+            return {x: currentSettings.x, y: currentSettings.y}
         });
-        if (Math.max(...newHeights) !== height.current) {
-            height.current = Math.max(...newHeights);
-            dispatch(interfaceActions.setHeight(height.current));
-        }
-    }, [currWidth, columns]);
+    }, [width, columns, currWidth, recalculateMeasures, todoLists.length, setSprings]);
 
     const reorder = useCallback((oldIndex: number, newIndex: number) => {
         const newHeights = new Array(columns).fill(0);
@@ -191,14 +195,14 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
             height.current = Math.max(...newHeights);
             dispatch(interfaceActions.setHeight(height.current));
         }
-    }, [currWidth, columns]);
+    }, [currWidth, columns, dispatch]);
 
     const calculatePositions = useCallback((x: number, y: number) => {
         const xPos = currItem.current.horizontalCenter + x;
         const yPos = currItem.current.verticalCenter + y;
         const halfHeight = currItem.current.height / 2;
         let i = gridItems.current.findIndex(item => {
-            if (item.x < xPos && item.rightX > xPos && item.verticalCenter + halfHeight > yPos && item.verticalCenter - halfHeight < yPos) return true
+            return (item.x < xPos && item.rightX > xPos && item.verticalCenter + halfHeight > yPos && item.verticalCenter - halfHeight < yPos)
         });
         return i < todoLists.length && i >= 0 ? i : null;
     }, [todoLists]);
@@ -217,7 +221,7 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
             const currentSettings = gridItems.current.find((list) => list.index === todoLists.length - 1 - i)!;
             return {x: currentSettings.x, y: currentSettings.y}
         })
-    }, [todoLists]);
+    }, [todoLists, setSprings]);
 
     const currItem = useRef<GridItemsType>(null as unknown as GridItemsType);
     const bounds = useRef<{ left: number, right: number, top: number, bottom: number, pageTop: number, pageBottom: number }>({
@@ -236,7 +240,7 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
         const pageTop = -eventCoords.current!.clientY + interfaceHeight + 35 + 25;
         const pageBottom = window.innerHeight - window.innerHeight * 0.1 + pageTop - interfaceHeight - 25;
         bounds.current = {left, right, top, bottom, pageTop, pageBottom}
-    }, [width, columns]);
+    }, [width, columns, interfaceHeight]);
 
     const gesture = useDrag(({
                                  args: [index, springsIndex], down, movement: [x, y],
@@ -318,6 +322,13 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
         }
     }, {filterTaps: true});
 
+    //close look logic
+    const [closeButtonAnimation, setCloseButtonAnimation] = useSpring(() => ({
+        x: 0,
+        y: 0,
+        opacity: 0,
+        display: 'none'
+    }));
 
     const [indexOfLookedList, setIndexOfLookedList] = useState<number | null>(null);
     const closeLook = useCallback(async (index: number) => {
@@ -356,7 +367,8 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
                 await animate({opacity: 1, immediate: false})
             }
         })
-    }, [todoLists, setCloseLookState, indexOfLookedList]);
+    }, [todoLists, setCloseLookState, indexOfLookedList, setCloseButtonAnimation, dispatch, columns, editable, setSprings,
+    width, switchScrollBar]);
 
     const returnFromCloseLook = useCallback(async () => {
         switchScrollBar(false)
@@ -385,14 +397,8 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
             if (i !== todoLists.length - 1 - indexOfLookedList!) return {opacity: 1, display: 'block'};
             return {to: false}
         });
-    }, [todoLists, returnFromCloseLookState, indexOfLookedList]);
-
-    const [closeButtonAnimation, setCloseButtonAnimation] = useSpring(() => ({
-        x: 0,
-        y: 0,
-        opacity: 0,
-        display: 'none'
-    }));
+    }, [todoLists, returnFromCloseLookState, indexOfLookedList, dispatch, setSprings, switchScrollBar, setCloseButtonAnimation,
+        setWrapperAnimation]);
 
     return (
         <>
@@ -410,4 +416,4 @@ const AllLists_CONTAINER: React.FC<PropsType> = ({
     )
 }
 
-export default React.memo(AllLists_CONTAINER, isEqual)
+export default React.memo(AllListsContainer, isEqual)

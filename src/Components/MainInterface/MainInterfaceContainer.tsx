@@ -10,7 +10,7 @@ import {stateActions, submitAllChanges} from "../../redux/stateReducer";
 import {interfaceActions} from "../../redux/interfaceReducer";
 
 
-const MainInterface_CONTAINER = () => {
+const MainInterfaceContainer = () => {
 
     const dispatch = useDispatch();
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
@@ -61,31 +61,33 @@ const MainInterface_CONTAINER = () => {
             isMounted = false;
             window.removeEventListener('resize', resizeListener);
         }
-    }, [editable]);
+    }, [editable, dispatch]);
 
     const addTodoList = useCallback(() => {
-        const id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-            .replace(/[xy]/g, (c, r) => ('x' == c ? (r = Math.random() * 16 | 0) : (r & 0x3 | 0x8)).toString(16));
+        const id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            let r = Math.random() * 16 | 0, v = c === 'x' ? r : ((r & 0x3) | 0x8);
+            return v.toString(16);
+        });
         const newList = {
             id,
             title: '',
             tasks: []
         }
         dispatch(stateActions.addTodoList(newList));
-    }, []);
+    }, [dispatch]);
 
     const rejectAllChanges = useCallback(() => {
         dispatch(stateActions.rejectAllChanges())
-    }, []);
+    }, [dispatch]);
 
     const switchScrollableState = useCallback(() => {
         dispatch(interfaceActions.setScrollableState(!scrollableState))
-    }, [scrollableState]);
+    }, [scrollableState, dispatch]);
 
     const switchEditMode = useCallback(() => {
         if (!editable) dispatch(stateActions.enableEditMode());
         if (editable) dispatch(submitAllChanges());
-    }, [editable]);
+    }, [editable, dispatch]);
 
     //animation logic
     const [spring, setSpring] = useSpring(() => ({
@@ -104,7 +106,7 @@ const MainInterface_CONTAINER = () => {
 
     useEffect(() => {
         if (editable) setSpring({width: window.innerWidth})
-    }, [width]);
+    }, [width, setSpring, editable]);
 
     useEffect(() => {
         setProgressBar(() => {
@@ -121,7 +123,7 @@ const MainInterface_CONTAINER = () => {
                 }
             }
         })
-    }, [allTasks, completedTasks]);
+    }, [allTasks, completedTasks, setProgressBar]);
 
     useEffect(() => {
         if (!initialLoading && !editable && !closeLook) {
@@ -147,12 +149,12 @@ const MainInterface_CONTAINER = () => {
                 x: '-100vw'
             })
         }
-    }, [editable, pendingState, initialLoading, swapState, fetching, closeLook, interfaceHeight]);
+    }, [editable, pendingState, initialLoading, swapState, fetching, closeLook, interfaceHeight, setSpring, buttonsWrapperHeight]);
 
     const actionMessage = useMemo(() =>
             initialLoading ? 'Loading' : editable ? 'Submit' : pendingState ? 'Sending data'
                 : 'Edit'
-        , [editable, pendingState, initialLoading, swapState, fetching]);
+        , [editable, pendingState, initialLoading]);
 
     return (
         <>
@@ -169,4 +171,4 @@ const MainInterface_CONTAINER = () => {
     )
 };
 
-export default MainInterface_CONTAINER
+export default MainInterfaceContainer

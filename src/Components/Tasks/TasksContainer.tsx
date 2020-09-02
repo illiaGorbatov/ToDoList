@@ -37,7 +37,7 @@ type PropsType = {
     setHoveredStatus: (status: boolean) => void
 };
 
-const Tasks_WRAPPER: React.FC<PropsType> = ({tasks, todoListId, setHeight, palette, setHoveredStatus}) => {
+const TasksContainer: React.FC<PropsType> = ({tasks, todoListId, setHeight, palette, setHoveredStatus}) => {
 
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const width = useSelector((store: AppStateType) => store.interface.width, shallowEqual);
@@ -82,9 +82,27 @@ const Tasks_WRAPPER: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
     const [forceRerender, rerender] = useState<number>(0);
     useEffect(() => {
         elementsRef.current = tasks.map(() => React.createRef());
-        rerender(forceRerender + 1);
+
+        let i = 1
+        rerender(i)
+        i++;
     }, [tasks]);
 
+    const calcPositions = useCallback((heightsArray: Array<number>) => {
+        initialY.current = heightsArray.map((height, index) => {
+            return heightsArray.reduce((total, item, i) => {
+                if (i !== 0 && i <= index) {
+                    total += heightsArray[i - 1]
+                }
+                return total
+            }, 0)
+        });
+        elementsBorder.current = initialY.current.map((item, i) => ({
+            topBorder: item,
+            center: item + heightsArray[i]/2,
+            bottomBorder: item + heightsArray[i]
+        }));
+    }, []);
 
     useLayoutEffect(() => {
         if (!editable && tasks.length !== 0) {
@@ -111,23 +129,8 @@ const Tasks_WRAPPER: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
         setCurrentHeight(heightsSum);
         setHeight(heightsSum);
         memoizedTasksId.current = tasks.map(item => item.id);
-    }, [forceRerender, width]);
-
-    const calcPositions = useCallback((heightsArray: Array<number>) => {
-        initialY.current = heightsArray.map((height, index) => {
-            return heightsArray.reduce((total, item, i) => {
-                if (i !== 0 && i <= index) {
-                    total += heightsArray[i - 1]
-                }
-                return total
-            }, 0)
-        });
-        elementsBorder.current = initialY.current.map((item, i) => ({
-            topBorder: item,
-            center: item + heightsArray[i]/2,
-            bottomBorder: item + heightsArray[i]
-        }));
-    }, []);
+        console.log('....here....')
+    }, [forceRerender, width, calcPositions, setHeight, setSprings, setCurrentHeight, editable, tasks, settings]);
 
     const getNewIndex = useCallback((index: number, y: number) => {
         if (y > 0) {
@@ -193,5 +196,5 @@ const Tasks_WRAPPER: React.FC<PropsType> = ({tasks, todoListId, setHeight, palet
     );
 }
 
-export default React.memo(Tasks_WRAPPER, isEqual);
+export default React.memo(TasksContainer, isEqual);
 

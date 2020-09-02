@@ -1,5 +1,5 @@
 import React, {useCallback, useRef, useState} from "react";
-import TodoListTasks from '../Tasks/Tasks_WRAPPER';
+import TodoListTasks from '../Tasks/TasksContainer';
 import TodoListTitle from "./TodoListTitle";
 import {shallowEqual, useDispatch, useSelector} from 'react-redux';
 import {TaskType} from "../../redux/entities";
@@ -34,10 +34,7 @@ const SingleListWrapper = styled.div<{ $editable: boolean, $closeLookState: bool
      }`}
 `;
 
-const ListOuterLayer = styled.div<{
-    $palette: number, $editable: boolean, $closeLookState: boolean,
-    $isTasksHovered: boolean, $focusedStatus: boolean
-}>`
+const ListOuterLayer = styled.div<{$palette: number, $editable: boolean, $closeLookState: boolean, $isTasksHovered: boolean, $focusedStatus: boolean}>`
   cursor: ${props => props.$editable ? 'grab' : 'inherit'};
   border-radius: 30px;
   padding: 35px;
@@ -160,38 +157,38 @@ const TodoList: React.FC<PropsType> = ({
         if (currHeight.current !== height) {
             setNewHeights(height + currHeight.current, id);
         }
-    }, []);
+    }, [id, setNewHeights]);
 
     const addTask = useCallback(() => {
-        const taskId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-            .replace(/[xy]/g, (c, r) => ('x' == c ? (Math.random() * 16 | 0) : (r & 0x3 | 0x8)).toString(16));
+        const taskId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            let r = Math.random() * 16 | 0, v = c === 'x' ? r : ((r & 0x3) | 0x8);
+            return v.toString(16);
+        });
         const newTask = {
             title: '',
             id: taskId,
             todoListId: id,
         }
         dispatch(stateActions.addTask(newTask, id));
-    }, []);
+    }, [id, dispatch]);
 
     const deleteTodoList = useCallback(() => {
         deleteList(id)
         dispatch(stateActions.deleteTodoList(id))
-    }, []);
+    }, [id, dispatch, deleteList]);
 
-    const [filterValue, setFilterValue] = useState<string>('All');
-    const changeFilter = (newFilterValue: string) => {
+    const [filterValue] = useState<string>('All');
+   /* const changeFilter = (newFilterValue: string) => {
         setFilterValue(newFilterValue)
-    };
+    };*/
     const tasks = listTasks ? listTasks.filter(t => {
-        if (filterValue === "All") {
-            return true;
-        }
         if (filterValue === "Active") {
             return t.status === 0;
         }
         if (filterValue === "Completed") {
             return t.status === 2;
         }
+        return true;
     }) : [];
 
     //hover Effect

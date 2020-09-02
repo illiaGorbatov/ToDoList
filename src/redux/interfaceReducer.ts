@@ -100,8 +100,6 @@ const interfaceReducer = (state: InitialStateType = initialState, action: Interf
     }
 };
 
-type InterfaceActionsTypes = InferActionTypes<typeof interfaceActions>;
-
 export const interfaceActions = {
     setFocusedStatus: (status: boolean) => ({type: 'interfaceReducer/SET_FOCUSED_STATUS', status} as const),
     setPalette: (palette: NeumorphColorsType) => ({type: 'interfaceReducer/SET_CURRENT_PALETTE_INDEX', palette} as const),
@@ -117,5 +115,7 @@ export const interfaceActions = {
     setCloseLookState: (state: boolean) => ({type: 'interfaceReducer/SET_CLOSE_LOOK_STATE', state} as const),
     setScrollableState: (state: boolean) => ({type: 'interfaceReducer/SET_SCROLLABLE_STATE', state} as const),
 }
+
+type InterfaceActionsTypes = InferActionTypes<typeof interfaceActions>;
 
 export default interfaceReducer
