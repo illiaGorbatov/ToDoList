@@ -5,14 +5,18 @@ import axiosRetry from "axios-retry";
 const instance = axios.create({
     baseURL: "https://social-network.samuraijs.com/api/1.1/todo-lists",
     withCredentials: true,
-    headers: {'API-KEY': 'b4801660-f864-43f9-8acc-579713cc64df'}
+    headers: {
+        'API-KEY': 'b4801660-f864-43f9-8acc-579713cc64df'
+    },
 });
 axiosRetry(instance, { retries: 4 });
 
 const loginInstance = axios.create({
     baseURL: "https://social-network.samuraijs.com/api/1.1/auth",
     withCredentials: true,
-    headers: {'API-KEY': 'b4801660-f864-43f9-8acc-579713cc64df'}
+    headers: {
+        'API-KEY': 'b4801660-f864-43f9-8acc-579713cc64df'
+    }
 });
 axiosRetry(loginInstance, { retries: 4 });
 
