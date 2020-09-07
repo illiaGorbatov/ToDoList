@@ -69,7 +69,7 @@ const AllListsContainer: React.FC<PropsType> = ({
             zIndex: 3,
             display: 'block',
         }
-    }, [todoLists])
+    })
 
 // child height calculation logic
     const columns = useMemo(() => {
@@ -111,10 +111,11 @@ const AllListsContainer: React.FC<PropsType> = ({
             recalculateMeasures();
             setSprings(i => {
                 const currentSettings = gridItems.current.find((list) => list.index === todoLists.length - 1 - i)!;
-                return {x: currentSettings.x, y: currentSettings.y}
+                if (currentSettings) return {x: currentSettings.x, y: currentSettings.y};
+                return {to: false}
             })
         }
-    }, [todoLists, setSprings, recalculateMeasures])
+    }, [todoLists, setSprings, recalculateMeasures]);
 
     const deleteList = useCallback((id: string) => {
         temporaryValue.current = temporaryValue.current.filter(item => item.id !== id)
@@ -168,7 +169,6 @@ const AllListsContainer: React.FC<PropsType> = ({
             const currentSettings = gridItems.current.find((list) => list.index === todoLists.length - 1 - i)!;
             return {x: currentSettings.x, y: currentSettings.y}
         })
-        console.log('big effect')
     }, [todoLists, columns, currWidth, dispatch, editable, recalculateMeasures, setSprings]);
 
     useEffect(() => {
@@ -333,9 +333,9 @@ const AllListsContainer: React.FC<PropsType> = ({
     const [indexOfLookedList, setIndexOfLookedList] = useState<number | null>(null);
     const closeLook = useCallback(async (index: number) => {
         if (editable || indexOfLookedList !== null) return;
+        dispatch(interfaceActions.setCloseLookState(true));
         const currItem = gridItems.current.find(item => item.index === index)!;
         switchScrollBar(false);
-        dispatch(interfaceActions.setCloseLookState(true));
         await setSprings(i => {
             if (i !== todoLists.length - 1 - index) return {
                 to: async animate => {
@@ -346,57 +346,61 @@ const AllListsContainer: React.FC<PropsType> = ({
             return {to: false}
         });
         dispatch(interfaceActions.setHeight(currItem.height));
+        setWrapperAnimation({
+            x: window.innerWidth <= 1210 ? '5vw' : '15vw',
+            rotateX: 0,
+            rotateZ: 0,
+            y: 0,
+        })
         setCloseLookState(currItem.height);
         dispatch(interfaceActions.setPalette(neumorphColors[(todoLists.length - 1 - index) % neumorphColors.length]));
         setIndexOfLookedList(index);
+        const itemY = currItem.height < window.innerHeight - 200 ? window.innerHeight / 2 - currItem.height / 2 : 100;
+        const itemX = width / 2 - (width / columns) / 2;
         await setSprings(i => {
             if (i !== todoLists.length - 1 - index) return {to: false};
-            return {
-                y: window.innerHeight / 2 - currItem.height / 2,
-                x: width / 2 - (width / columns) / 2
-            }
+            return {y: itemY,x: itemX}
         });
         setCloseButtonAnimation({
             to: async animate => {
-                await animate({
-                    y: window.innerHeight / 2 - currItem.height / 2 - 25,
-                    x: width / 2 + (width / columns) / 2 - (isMobile ? 30 : 10),
-                    display: 'block',
-                    immediate: true
-                });
+                const y = !isMobile ? itemY - 25 : itemY - 80;
+                const x = !isMobile ? width / 2 + (width / columns) / 2 - 10 : width / 2 - 30;
+                await animate({y, x, display: 'block', immediate: true});
                 await animate({opacity: 1, immediate: false})
             }
         })
     }, [todoLists, setCloseLookState, indexOfLookedList, setCloseButtonAnimation, dispatch, columns, editable, setSprings,
-    width, switchScrollBar]);
+    width, switchScrollBar, setWrapperAnimation]);
 
     const returnFromCloseLook = useCallback(async () => {
         switchScrollBar(false)
-        setCloseButtonAnimation({
+         await setCloseButtonAnimation({
             to: async animate => {
                 await animate({opacity: 0});
                 await animate({display: 'none'})
             }
         });
-        await setSprings(i => {
+        returnFromCloseLookState();
+        dispatch(interfaceActions.setHeight(height.current));
+        setSprings(i => {
             if (i !== todoLists.length - 1 - indexOfLookedList!) return {to: false};
             const currItem = gridItems.current.find(item => item.index === indexOfLookedList)!
             return {x: currItem.x, y: currItem.y}
         });
-        dispatch(interfaceActions.setCloseLookState(false));
-        returnFromCloseLookState();
-        dispatch(interfaceActions.setHeight(height.current));
         await setWrapperAnimation({
+            x: window.innerWidth <= 1210 ? '-5vw' : '-15vw',
             rotateX: 45,
             rotateZ: 45,
             y: 275,
         });
+        switchScrollBar(true)
         dispatch(interfaceActions.setPalette(defaultPalette));
         setIndexOfLookedList(null);
         setSprings(i => {
             if (i !== todoLists.length - 1 - indexOfLookedList!) return {opacity: 1, display: 'block'};
             return {to: false}
         });
+        dispatch(interfaceActions.setCloseLookState(false));
     }, [todoLists, returnFromCloseLookState, indexOfLookedList, dispatch, setSprings, switchScrollBar, setCloseButtonAnimation,
         setWrapperAnimation]);
 
@@ -409,7 +413,7 @@ const AllListsContainer: React.FC<PropsType> = ({
                     onClick={() => closeLook(i)}
                     $width={currWidth} key={list.id}>
                     <TodoList id={list.id} paletteIndex={(todoLists.length - 1 - i) % neumorphColors.length}
-                              deleteList={deleteList} setNewHeights={setNewHeights} closeLook={i === indexOfLookedList}
+                              deleteList={deleteList} setNewHeights={setNewHeights} currentLook={i === indexOfLookedList}
                               listTitle={list.title} listTasks={list.tasks}/>
                 </TodoListContainer>)}
         </>

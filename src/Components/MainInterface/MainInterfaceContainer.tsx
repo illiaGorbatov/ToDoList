@@ -15,12 +15,10 @@ const MainInterfaceContainer = () => {
     const dispatch = useDispatch();
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const currentPalette = useSelector((state: AppStateType) => state.interface.currentPaletteIndex, shallowEqual);
-    const pendingState = useSelector((state: AppStateType) => state.interface.pendingState, shallowEqual);
     const initialLoading = useSelector((state: AppStateType) => state.interface.initialLoadingState, shallowEqual);
-    const swapState = useSelector((state: AppStateType) => state.interface.swapState, shallowEqual);
     const allTasks = useSelector((state: AppStateType) => state.interface.allTasks, shallowEqual);
     const completedTasks = useSelector((state: AppStateType) => state.interface.completedTasks, shallowEqual);
-    const fetching = useSelector((state: AppStateType) => state.interface.fetchingState, shallowEqual);
+    const fetchingState = useSelector((state: AppStateType) => state.interface.fetchingState, shallowEqual);
     const closeLook = useSelector((state: AppStateType) => state.interface.closeLookState, shallowEqual);
     const interfaceHeight = useSelector((state: AppStateType) => state.interface.interfaceHeight, shallowEqual);
     const width = useSelector((state: AppStateType) => state.interface.width, shallowEqual);
@@ -149,23 +147,22 @@ const MainInterfaceContainer = () => {
                 x: '-100vw'
             })
         }
-    }, [editable, pendingState, initialLoading, swapState, fetching, closeLook, interfaceHeight, setSpring, buttonsWrapperHeight]);
+    }, [editable, initialLoading, fetchingState, closeLook, interfaceHeight, setSpring, buttonsWrapperHeight]);
 
     const actionMessage = useMemo(() =>
-            initialLoading ? 'Loading' : editable ? 'Submit' : pendingState ? 'Sending data'
-                : 'Edit'
-        , [editable, pendingState, initialLoading]);
+            initialLoading ? 'Loading' : editable ? 'Submit' : fetchingState !== null ? fetchingState : 'Edit'
+        , [editable, fetchingState, initialLoading]);
 
     return (
         <>
             <RotatedBackground palette={currentPalette} height={spring.backgroundHeight} rotateZ={spring.rotateZ} x={spring.x}/>
             <InterfaceWrapper height={spring.height} width={spring.width} interfaceHeight={buttonsWrapperHeight} x={spring.x}>
                 <EditButton actionMessage={actionMessage} interfaceHeight={buttonsWrapperHeight}
-                            cantBeHovered={pendingState || initialLoading || swapState || fetching}
+                            cantBeHovered={initialLoading || !!fetchingState}
                             switchEditMode={switchEditMode} palette={currentPalette}
                             progressBarAnimation={progressBarAnimation}/>
                 <OtherButtons palette={currentPalette} editable={editable} addTodoList={addTodoList} switchScrollableState={switchScrollableState}
-                              rejectAllChanges={rejectAllChanges} interfaceHeight={buttonsWrapperHeight}/>
+                              rejectAllChanges={rejectAllChanges} interfaceHeight={buttonsWrapperHeight} scrollableState={scrollableState}/>
             </InterfaceWrapper>
         </>
     )

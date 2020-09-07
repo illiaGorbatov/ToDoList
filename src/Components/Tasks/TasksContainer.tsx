@@ -11,6 +11,7 @@ import isEqual from "react-fast-compare";
 import {NeumorphColorsType} from "../neumorphColors";
 import {interfaceActions} from "../../redux/interfaceReducer";
 import {stateActions} from "../../redux/stateReducer";
+import {isMobile} from "react-device-detect";
 
 export const TasksWrapper = styled.div<{ $height: number }>`
   user-select: none;
@@ -41,6 +42,7 @@ const TasksContainer: React.FC<PropsType> = ({tasks, todoListId, setHeight, pale
 
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const width = useSelector((store: AppStateType) => store.interface.width, shallowEqual);
+    const scrollableState = useSelector((store: AppStateType) => store.interface.scrollableState, shallowEqual);
     const dispatch = useDispatch();
 
     const settings = useCallback((order: Array<number>, down?: boolean, originalIndex?: number, y?: number): any => (index: number) => {
@@ -129,7 +131,6 @@ const TasksContainer: React.FC<PropsType> = ({tasks, todoListId, setHeight, pale
         setCurrentHeight(heightsSum);
         setHeight(heightsSum);
         memoizedTasksId.current = tasks.map(item => item.id);
-        console.log('....here....')
     }, [forceRerender, width, calcPositions, setHeight, setSprings, setCurrentHeight, editable, tasks, settings]);
 
     const getNewIndex = useCallback((index: number, y: number) => {
@@ -155,6 +156,7 @@ const TasksContainer: React.FC<PropsType> = ({tasks, todoListId, setHeight, pale
     }, [])
 
     const gesture = useDrag(({args: [originalIndex, trueIndex], down, movement: [, y], event}) => {
+        if (isMobile && scrollableState) return;
         event?.stopPropagation();
         const curIndex = order.current.indexOf(trueIndex);
         if (initialYofDragged.current === null) {

@@ -60,11 +60,12 @@ type PropsType = {
     addTodoList: () => void,
     rejectAllChanges: () => void,
     interfaceHeight: number,
-    switchScrollableState: () => void
+    switchScrollableState: () => void,
+    scrollableState: boolean
 }
 
 const OtherButtons: React.FC<PropsType> = ({palette, editable, switchScrollableState,
-                                               interfaceHeight, addTodoList, rejectAllChanges}) => {
+                                               interfaceHeight, addTodoList, rejectAllChanges, scrollableState}) => {
 
     return (
         <>
@@ -79,7 +80,9 @@ const OtherButtons: React.FC<PropsType> = ({palette, editable, switchScrollableS
                 </InnerSmallerButtonText>
             </RightButton>
             {isMobile &&
-                <AdditionalButton onClick={switchScrollableState} $palette={palette} $editable={editable} $height={interfaceHeight}/>
+                <AdditionalButton onClick={switchScrollableState} $palette={palette} $editable={editable} $height={interfaceHeight}>
+                    {scrollableState ? 'Drug' : 'Scroll'}
+                </AdditionalButton>
             }
         </>
     )

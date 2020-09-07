@@ -12,7 +12,7 @@ const ScrollBarWrapper = styled(animated.div)<{ $palette: NeumorphColorsType, $v
   border-radius: 10px;
   height: ${props => props.$editable ? window.innerHeight - props.$interfaceHeight : window.innerHeight}px;
   top: ${props => props.$editable ? props.$interfaceHeight : 0}px;
-  right: 0;
+  right: ${props => props.$visible ? 0 : -50}px;
   overflow: hidden;
   transition: .6s cubic-bezier(0.25, 0, 0, 1);
   background: ${props => props.$palette.progressBarColor};
@@ -40,7 +40,6 @@ const ScrollBarThing = styled(animated.div)<{ $palette: NeumorphColorsType, $hei
 type PropsType = {
     palette: NeumorphColorsType,
     visible: boolean,
-    visibilityOfScrollBar: { opacity: SpringValue<number>, right: SpringValue<number>, display: SpringValue<string> },
     editable: boolean,
     interfaceHeight: number,
     drugged: boolean,
@@ -51,11 +50,11 @@ type PropsType = {
 
 const ScrollBar: React.FC<PropsType> = ({
                                             palette, interfaceHeight, editable, bindDraggedScrollBar, scrollBarHeight,
-                                            visible, drugged, top, visibilityOfScrollBar
+                                            visible, drugged, top
                                         }) => {
 
     return (
-        <ScrollBarWrapper $palette={palette} $visible={visible} style={visibilityOfScrollBar}
+        <ScrollBarWrapper $palette={palette} $visible={visible}
                           $editable={editable} $interfaceHeight={interfaceHeight}>
             <ScrollBarThing $palette={palette} $drugged={drugged}
                             style={{top}} {...!isMobile && {...bindDraggedScrollBar()}}

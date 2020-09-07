@@ -10,8 +10,8 @@ const AllLists = styled(animated.div)<{ $editable: boolean, $closeLook: boolean,
   top: ${props => props.$editable && !props.$closeLook ? props.$interfaceHeight : 0}px;
   height: calc(100vh - 280px);
   transform-origin: 50% 100%;
+  transition: top 0.5s cubic-bezier(0.25, 0, 0, 1);
   @media screen and (max-width: 1210px) {
-    transition: top 0.5s cubic-bezier(0.25, 0, 0, 1);
     top: ${props => props.$editable ? `${props.$interfaceHeight}px` : props.$closeLook ?
     '0px' : '-38vh'};
     width: 90vw

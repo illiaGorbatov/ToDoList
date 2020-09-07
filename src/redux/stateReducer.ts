@@ -210,7 +210,7 @@ export const initialization = (): ThunkType => async (dispatch: ThunkActionType)
 };
 
 const getStateFromServer = (initial: boolean): ThunkType => async (dispatch: ThunkActionType) => {
-    if (!initial) dispatch(interfaceActions.setFetchingState(true));
+    if (!initial) dispatch(interfaceActions.setFetchingState('fetching new data'));
     const lists = await api.restoreState();
     let listsWithTasks = lists;
     if (lists.length !== 0) {
@@ -233,7 +233,7 @@ export const submitAllChanges = (): ThunkType =>
     async (dispatch: ThunkActionType, getState: () => AppStateType) => {
 
         dispatch(stateActions.disableEditMode());
-        dispatch(interfaceActions.setPendingState(true))
+        dispatch(interfaceActions.setFetchingState('sending data'))
         /*dispatch(actions.setPendingState(true))*/
 
         const oldTodoLists = getState().todoList.deepCopy;
@@ -386,8 +386,7 @@ export const submitAllChanges = (): ThunkType =>
         } else await createAndChangeIdOfTasksInOrderList();
 
         //swap progress
-        dispatch(interfaceActions.setPendingState(false));
-        dispatch(interfaceActions.setSwapState(true))
+        dispatch(interfaceActions.setFetchingState('swap items'));
 
         //changing id
         if (newListsId.length !== 0) {
@@ -548,7 +547,7 @@ export const submitAllChanges = (): ThunkType =>
             });
             await Promise.all(swapOrderPending)
         }
-        dispatch(interfaceActions.setSwapState(false));
+        dispatch(interfaceActions.setFetchingState(null));
 
 
         if (addedLists.length !== 0 || addedTasks.length !== 0) {

@@ -5,32 +5,30 @@ type InitialStateType = {
     focusedStatus: boolean,
     currentPaletteIndex: NeumorphColorsType,
     initialLoadingState: boolean,
-    pendingState: boolean,
-    swapState: boolean,
-    fetchingState: boolean,
+    fetchingState: null | string,
     height: number,
     width: number,
     interfaceHeight: number,
     allTasks: number,
     completedTasks: number,
     closeLookState: boolean,
-    scrollableState: boolean
+    scrollableState: boolean,
+    animationInProgress: boolean
 };
 
 const initialState = {
     focusedStatus: false,
     currentPaletteIndex: defaultPalette,
     initialLoadingState: true,
-    pendingState: false,
-    swapState: false,
-    fetchingState: false,
+    fetchingState: null,
     height: 0,
     width: 0,
     interfaceHeight: 0,
     allTasks: 0,
     completedTasks: 0,
     closeLookState: false,
-    scrollableState: true
+    scrollableState: true,
+    animationInProgress: false
 };
 
 const interfaceReducer = (state: InitialStateType = initialState, action: InterfaceActionsTypes): InitialStateType => {
@@ -49,11 +47,6 @@ const interfaceReducer = (state: InitialStateType = initialState, action: Interf
             return {
                 ...state,
                 initialLoadingState: false
-            }
-        case "interfaceReducer/SET_PENDING_STATE":
-            return {
-                ...state,
-                pendingState: action.pendingState
             }
         case "interfaceReducer/SET_HEIGHT":
             return {
@@ -80,15 +73,11 @@ const interfaceReducer = (state: InitialStateType = initialState, action: Interf
                 ...state,
                 completedTasks: action.restore ? 0 : state.completedTasks+1
             }
-        case "interfaceReducer/SET_SWAP_STATE":
-            return {
-                ...state,
-                swapState: action.state
-            }
         case "interfaceReducer/SET_CLOSE_LOOK_STATE":
             return {
                 ...state,
-                closeLookState: action.state
+                closeLookState: action.state,
+                animationInProgress: action.state
             }
         case "interfaceReducer/SET_SCROLLABLE_STATE":
             return {
@@ -104,14 +93,12 @@ export const interfaceActions = {
     setFocusedStatus: (status: boolean) => ({type: 'interfaceReducer/SET_FOCUSED_STATUS', status} as const),
     setPalette: (palette: NeumorphColorsType) => ({type: 'interfaceReducer/SET_CURRENT_PALETTE_INDEX', palette} as const),
     completeInitialLoadingState: () => ({type: 'interfaceReducer/COMPLETE_INITIAL_LOADING_STATE'} as const),
-    setPendingState: (pendingState: boolean) => ({type: 'interfaceReducer/SET_PENDING_STATE', pendingState} as const),
     setHeight: (height: number) => ({type: 'interfaceReducer/SET_HEIGHT', height} as const),
     setWidth: (width: number) => ({type: 'interfaceReducer/SET_WIDTH', width} as const),
     setInterfaceHeight: (height: number) => ({type: 'interfaceReducer/SET_INTERFACE_HEIGHT', height} as const),
     setAllTasks: (tasks: number) => ({type: 'interfaceReducer/SET_ALL_TASKS', tasks} as const),
     setCompletedTask: (restore: boolean) => ({type: 'interfaceReducer/SET_COMPLETED_TASK', restore} as const),
-    setSwapState: (state: boolean) => ({type: 'interfaceReducer/SET_SWAP_STATE', state} as const),
-    setFetchingState: (state: boolean) => ({type: 'interfaceReducer/SET_FETCHING_STATE', state} as const),
+    setFetchingState: (state: string | null) => ({type: 'interfaceReducer/SET_FETCHING_STATE', state} as const),
     setCloseLookState: (state: boolean) => ({type: 'interfaceReducer/SET_CLOSE_LOOK_STATE', state} as const),
     setScrollableState: (state: boolean) => ({type: 'interfaceReducer/SET_SCROLLABLE_STATE', state} as const),
 }

@@ -12,7 +12,7 @@ import {defaultPalette, neumorphColors} from "../neumorphColors";
 import {stateActions} from "../../redux/stateReducer";
 import {interfaceActions} from "../../redux/interfaceReducer";
 
-const SingleListWrapper = styled.div<{ $editable: boolean, $closeLookState: boolean }>`
+const SingleListWrapper = styled.div<{ $editable: boolean, $closeLookState: boolean, $animationInProgress: boolean }>`
   position: relative;
   transform-style: preserve-3d;
   transform-origin: 50% 50%;
@@ -24,7 +24,7 @@ const SingleListWrapper = styled.div<{ $editable: boolean, $closeLookState: bool
   &:hover {
       z-index: 5;
   }
-  ${props => !props.$editable && !props.$closeLookState &&
+  ${props => !props.$editable && !props.$closeLookState && !props.$animationInProgress &&
     `&:hover ${ListOuterLayer}{
         transform: translateZ(100px)
      }
@@ -131,17 +131,20 @@ type PropsType = {
     paletteIndex: number,
     setNewHeights: (height: number, id: string) => void,
     deleteList: (id: string) => void,
-    closeLook: boolean
+    currentLook: boolean
 };
 
 const TodoList: React.FC<PropsType> = ({
                                            id, listTitle, listTasks, paletteIndex,
-                                           setNewHeights, deleteList, closeLook
+                                           setNewHeights, deleteList, currentLook
                                        }) => {
 
-    const dispatch = useDispatch();
     const editable = useSelector((state: AppStateType) => state.todoList.editable, shallowEqual);
     const focusedStatus = useSelector((state: AppStateType) => state.interface.focusedStatus, shallowEqual);
+    const closeLook = useSelector((state: AppStateType) => state.interface.closeLookState, shallowEqual);
+    const animationInProgress = useSelector((state: AppStateType) => state.interface.animationInProgress, shallowEqual);
+
+    const dispatch = useDispatch();
 
     const [isTasksHovered, setTasksHoveredStatus] = useState<boolean>(false);
     const setHoveredStatus = useCallback((status: boolean) => {
@@ -194,11 +197,10 @@ const TodoList: React.FC<PropsType> = ({
     //hover Effect
 
     const bind = useHover(({hovering}) => {
-        if (focusedStatus || closeLook) return
-        if (hovering) {
+        if (hovering && !closeLook && !focusedStatus) {
             dispatch(interfaceActions.setPalette(neumorphColors[paletteIndex]));
         }
-        if (!hovering) {
+        if (!hovering && !closeLook && !focusedStatus) {
             dispatch(interfaceActions.setPalette(defaultPalette));
         }
     });
@@ -211,10 +213,11 @@ const TodoList: React.FC<PropsType> = ({
 
     /*console.log(`${listTitle} render`)*/
     return (
-        <SingleListWrapper {...!closeLook && {...bind()}} ref={ref} $editable={editable} $closeLookState={closeLook}>
-            <ListShadow $editable={editable} $closeLookState={closeLook}/>
+        <SingleListWrapper {...bind()} ref={ref} $editable={editable} $closeLookState={currentLook}
+                           $animationInProgress={animationInProgress}>
+            <ListShadow $editable={editable} $closeLookState={currentLook}/>
             <ListOuterLayer $palette={paletteIndex} $editable={editable} $isTasksHovered={isTasksHovered}
-                            $closeLookState={closeLook} $focusedStatus={focusedStatus}>
+                            $closeLookState={currentLook} $focusedStatus={focusedStatus}>
                 <ListInnerLayer $palette={paletteIndex}/>
                 <ContextButtons colors={neumorphColors[paletteIndex]} deleteTodoList={deleteTodoList}
                                 addTask={addTask} editList={switchTitleMode}/>
