@@ -70,6 +70,7 @@ const ScrollContainer: React.FC = () => {
     const scrolledPercent = useRef<number>(0);
     const addedScrollConst = useRef<number>(window.innerWidth <= 1210 ? -window.innerHeight / 2 : 0);
     const memoizedData = useRef<Array<number>>([]);
+
     const [scrollingAnimation, setScroll] = useSpring(() => ({
         y: -addedScrollConst.current,
         top: `0%`,
@@ -80,18 +81,25 @@ const ScrollContainer: React.FC = () => {
     //resize logic
     useEffect(() => {
         const newScrollBarHeight = !height ? 0 : (window.innerHeight - (editable ? interfaceHeight : 0)) / height * 100;
-        if (window.innerWidth <= 1210 && !closeLook) {
-            const newBorder = editable ? (height - window.innerHeight < 0 ? 0 : height - window.innerHeight + interfaceHeight)
+        let newBorder: number;
+        if (!closeLook) {
+            newBorder = editable ? (height - window.innerHeight + interfaceHeight < 0 ? 0 : height - window.innerHeight + interfaceHeight)
                 : height;
             setBorders({border: newBorder, scrollBarHeight: newScrollBarHeight});
         } else if (window.innerWidth > 1210 && !closeLook) {
-            const newBorder = editable ? (height - window.innerHeight < 0 ? 0 : height - window.innerHeight + interfaceHeight)
+            newBorder = editable ? (height - window.innerHeight + interfaceHeight < 0 ? 0 : height - window.innerHeight + interfaceHeight)
                 : (height - window.innerHeight < 0 ? 0.5 * height : height - window.innerHeight / 2);
             setBorders({border: newBorder, scrollBarHeight: newScrollBarHeight});
-        }
+        } else newBorder = border
         addedScrollConst.current = editable || closeLook ? 0 : window.innerWidth <= 1210 ? -window.innerHeight / 2 : 0;
         if (!animationInProgress) {
-            setScroll({height, y: -scrolledY.current - addedScrollConst.current})
+            if (scrolledY.current > newBorder) {
+                scrolledPercent.current = 100 - scrollBarHeight;
+                setScroll({height, y: -newBorder - addedScrollConst.current, top: `${scrolledPercent.current}%`})
+            } else {
+                scrolledPercent.current = scrolledY.current / newBorder * (100 - scrollBarHeight);
+                setScroll({height, y: -scrolledY.current - addedScrollConst.current, top: `${scrolledPercent.current}%`})
+            }
         }
         if (!initialLoadingState && !animationInProgress) setWrapperAnimation({
             x: editable || closeLook ? (window.innerWidth <= 1210 ? '5vw' : '15vw') : (window.innerWidth <= 1210 ? '-5vw' : '-15vw'),
@@ -101,9 +109,10 @@ const ScrollContainer: React.FC = () => {
         });
         if (height < window.innerHeight - interfaceHeight) setVisible(false)
         else if (!animationInProgress) setVisible(true)
-        console.log(height, interfaceHeight, window.innerHeight)
-    }, [height, width, editable, setScroll, setWrapperAnimation, closeLook, interfaceHeight, initialLoadingState, animationInProgress]);
+    }, [height, width, editable, setScroll, setWrapperAnimation, closeLook, interfaceHeight, initialLoadingState,
+        animationInProgress, border, scrollBarHeight]);
 
+    //event handlers
     useWheel(({delta: [, y]}) => {
         if (!visible) return;
         scrolledY.current = scrolledY.current + y < border && scrolledY.current + y > 0 ? scrolledY.current + y

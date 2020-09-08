@@ -87,7 +87,7 @@ const TaskText = styled.div<{ contentEditable: boolean}>`
     overflow-wrap: break-word;
     -webkit-line-break: after-white-space;
     width: 100%;
-    font-size: 16px;
+    font-size: 20px;
     z-index: 3;
     cursor: ${props => props.contentEditable ? 'text' : 'inherit'}
 `;

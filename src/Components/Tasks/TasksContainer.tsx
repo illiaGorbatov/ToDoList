@@ -84,10 +84,7 @@ const TasksContainer: React.FC<PropsType> = ({tasks, todoListId, setHeight, pale
     const [forceRerender, rerender] = useState<number>(0);
     useEffect(() => {
         elementsRef.current = tasks.map(() => React.createRef());
-
-        let i = 1
-        rerender(i)
-        i++;
+        rerender(Math.random())
     }, [tasks]);
 
     const calcPositions = useCallback((heightsArray: Array<number>) => {
@@ -111,7 +108,10 @@ const TasksContainer: React.FC<PropsType> = ({tasks, todoListId, setHeight, pale
             order.current = tasks.map((_, i) => i);
             heights.current = elementsRef.current.map(ref => ref.current!.offsetHeight);
         }
-        if (editable && tasks.length > memoizedTasksId.current.length) {
+        if (editable && tasks.length === 1) {
+            order.current = [0]
+        }
+        if (editable && tasks.length > memoizedTasksId.current.length && elementsRef.current.length !== 0) {
             order.current = [0, ...order.current.map(item => item + 1)];
             heights.current = [elementsRef.current[0].current!.offsetHeight, ...heights.current];
         }

@@ -25,7 +25,7 @@ const ScrollBarThing = styled(animated.div)<{ $palette: NeumorphColorsType, $hei
   transform: translateX(-50%);
   height: ${props => props.$height}%;
   border-radius: 10px;
-  transition: background 0.3s cubic-bezier(0.25, 0, 0, 1);
+  transition: background 0.3s cubic-bezier(0.25, 0, 0, 1), height 0.3s cubic-bezier(0.25, 0, 0, 1);
   background: ${props => props.$drugged ? defaultPalette.background : props.$palette.background};
   cursor: grab;
   &:active {

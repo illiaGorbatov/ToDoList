@@ -12,7 +12,7 @@ const ListTitle = styled.div<{$palette: NeumorphColorsType, contentEditable: boo
   background-color: ${props => props.$palette.background};
   color: ${props => props.$palette.color};
   position: relative;
-  font-size: 25px;
+  font-size: 30px;
   text-align: center;
   padding: 15px 10px;
   margin: 0 auto 10px auto;
