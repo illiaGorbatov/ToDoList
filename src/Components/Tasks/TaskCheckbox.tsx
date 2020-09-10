@@ -1,5 +1,5 @@
 import React from "react";
-import {TaskType} from "../../redux/entities";
+import {TaskType} from "../../api/entities";
 import styled from "styled-components/macro";
 
 const CheckboxWrapper = styled.div<{$editable: boolean}>`

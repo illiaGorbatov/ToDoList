@@ -1,48 +1,12 @@
 @font-face {
-  font-family: 'DINNextLTPro-Regular';
-  src: url('fonts/DINNextLTPro-Regular.woff2') format('woff2');
+  font-family: 'Made Evolve Sans Light';
+  font-style: normal;
   font-weight: normal;
-  font-style: normal;
+  src: url("./fonts/MADE-EvolveSansLight.otf");
 }
-
 @font-face {
-  font-family: 'DINNextLTPro-Medium';
-  src: url('fonts/DINNextLTPro-Medium.woff2') format('woff2');
-  font-weight: 500;
+  font-family: 'MADE Evolve Bold';
   font-style: normal;
-}
-
-@font-face {
-  font-family: 'DINNextLTPro-Bold';
-  src: url('fonts/DINNextLTPro-Bold.woff2') format('woff2');
-  font-weight: bold;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'DINNextLTPro-Light';
-  src: url('fonts/DINNextLTPro-Light.woff2') format('woff2');
-  font-weight: 300;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'NunitoSans-ExtraLight';
-  src: url('fonts/NunitoSans-ExtraLight.ttf') format('ttf');
-  font-weight: 300;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'NunitoSans-Light';
-  src: url('fonts/NunitoSans-Light.ttf') format('ttf');
-  font-weight: 300;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'NunitoSans-Regular';
-  src: url('fonts/NunitoSans-Regular.ttf') format('ttf');
-  font-weight: 300;
-  font-style: normal;
+  font-weight: normal;
+  src: url("./fonts/MADEEvolveSansBoldEVO.otf");
 }

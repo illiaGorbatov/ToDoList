@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {animated, useSprings, SpringStartFn, useSpring} from "react-spring";
-import {swap} from "../../../hooks/swap";
+import {swap} from "../../../serviceFunctions/swap";
 import {useDrag} from "react-use-gesture";
 import styled from "styled-components/macro";
 import TodoList from "../../SingleToDoList/TodoList";
@@ -270,8 +270,8 @@ const AllListsContainer: React.FC<PropsType> = ({
                     const promise = new Promise((resolve) => {
                         timeoutId.current = window.setTimeout(() => {
                                 scrollByListDrugging('bottom');
-                                virtualY.current = virtualY.current + 5;
-                                addedY.current = addedY.current + 5;
+                                virtualY.current = virtualY.current + 8;
+                                addedY.current = addedY.current + 8;
                                 const newIndex = calculatePositions(x, virtualY.current);
                                 if (newIndex !== null && newIndex !== draggedList) reorder(draggedList, newIndex);
                                 setActualSprings(x, virtualY.current, springsIndex)
@@ -289,8 +289,8 @@ const AllListsContainer: React.FC<PropsType> = ({
                     const promise = new Promise((resolve) => {
                         timeoutId.current = window.setTimeout(() => {
                                 scrollByListDrugging('top');
-                                virtualY.current = virtualY.current - 5;
-                                addedY.current = addedY.current - 5;
+                                virtualY.current = virtualY.current - 8;
+                                addedY.current = addedY.current - 8;
                                 const newIndex = calculatePositions(x, virtualY.current);
                                 if (newIndex !== null && newIndex !== draggedList) reorder(draggedList, newIndex);
                                 setActualSprings(x, virtualY.current, springsIndex)

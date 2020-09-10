@@ -2,7 +2,7 @@ import React, {useCallback, useRef, useState} from "react";
 import TodoListTasks from '../Tasks/TasksContainer';
 import TodoListTitle from "./TodoListTitle";
 import {shallowEqual, useDispatch, useSelector} from 'react-redux';
-import {TaskType} from "../../redux/entities";
+import {TaskType} from "../../api/entities";
 import styled from "styled-components/macro";
 import {AppStateType} from "../../redux/store";
 import {useHover} from "react-use-gesture";
@@ -20,7 +20,6 @@ const SingleListWrapper = styled.div<{ $editable: boolean, $closeLookState: bool
   overflow: visible;
   padding: 35px;
   cursor: ${props => props.$editable || props.$closeLookState ? 'inherit' : 'pointer'};
-  font-family: NunitoSans-Light;
   &:hover {
       z-index: 5;
   }
@@ -211,7 +210,6 @@ const TodoList: React.FC<PropsType> = ({
         setTitleEditMode(state)
     }, []);
 
-    /*console.log(`${listTitle} render`)*/
     return (
         <SingleListWrapper {...bind()} ref={ref} $editable={editable} $closeLookState={currentLook}
                            $animationInProgress={animationInProgress}>

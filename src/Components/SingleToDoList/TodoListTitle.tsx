@@ -3,7 +3,7 @@ import '../../App.css';
 import styled from "styled-components/macro";
 import {useDispatch} from "react-redux";
 import { NeumorphColorsType } from "../neumorphColors";
-import {validate} from "../../hooks/validate";
+import {validate} from "../../serviceFunctions/validate";
 import {stateActions} from "../../redux/stateReducer";
 import {interfaceActions} from "../../redux/interfaceReducer";
 import {useDrag} from "react-use-gesture";
@@ -20,6 +20,7 @@ const ListTitle = styled.div<{$palette: NeumorphColorsType, contentEditable: boo
   cursor: ${props => props.contentEditable ? 'text' : 'inherit'};
   border-radius: 10px;
   outline: none;
+  font-family: 'MADE Evolve Bold', sans-serif;
   display: inline-block;
   overflow-wrap: break-word;
   -webkit-line-break: after-white-space;
@@ -89,7 +90,7 @@ const TodoListTitle: React.FC<PropsType> = ({listTitle, id, isTitleEditable,
 
     const captureClick = useDrag(({event}) => {
         event?.stopPropagation();
-    })
+    });
 
     return (
         <ListTitle contentEditable={isTitleEditable} ref={ref} onKeyDown={e => onKeyPressHandler(e)}

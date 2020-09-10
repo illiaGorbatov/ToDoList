@@ -1,9 +1,9 @@
-import {api} from "./api";
-import {TaskType, TodoListType} from "./entities";
+import {api} from "../api/api";
+import {TaskType, TodoListType} from "../api/entities";
 import {ThunkAction, ThunkDispatch} from "redux-thunk";
 import {AppStateType, InferActionTypes} from "./store";
 import cloneDeep from "lodash-es/cloneDeep";
-import {movePos} from "../hooks/movePos";
+import {movePos} from "../serviceFunctions/movePos";
 import {interfaceActions} from "./interfaceReducer";
 
 type InitialStateType = {
@@ -424,11 +424,9 @@ export const submitAllChanges = (): ThunkType =>
                     currentOrder = movePos(currentOrder, oldIndex, index)
                 }
             });
-            swapOrder.forEach(item => {
-                api.swapTodoList(item.swappedId, item.beforeSwappedId)/*.then(data => {
-                    if (data.resultCode !== 0) dispatch(actions.setError())
-                });*/
-            })
+            for (let order of swapOrder) {
+                await api.swapTodoList(order.swappedId, order.beforeSwappedId)
+            }
         }
 
         if (tasksOrder.length !== 0 || addedTasks.length > 1) {

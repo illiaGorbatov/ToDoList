@@ -3,9 +3,9 @@ import styled, {createGlobalStyle} from "styled-components/macro";
 import {library} from "@fortawesome/fontawesome-svg-core";
 import {far} from "@fortawesome/free-regular-svg-icons";
 import {fas} from "@fortawesome/free-solid-svg-icons";
-import AnimatedBackground from "./MainInterface/AnimatedBackground";
-import MainInterfaceContainer from "./MainInterface/MainInterfaceContainer";
-import ScrollContainer from "./AppAnimatedWrappers/ScrollableElements/ScrollContainer";
+import AnimatedBackground from "./Components/MainInterface/AnimatedBackground";
+import MainInterfaceContainer from "./Components/MainInterface/MainInterfaceContainer";
+import ScrollContainer from "./Components/AppAnimatedWrappers/ScrollableElements/ScrollContainer";
 
 library.add(far, fas);
 

@@ -1,12 +1,12 @@
 import React, {RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState} from "react";
 import TodoListTask from "./TodoListTask";
-import {TaskType} from "../../redux/entities";
+import {TaskType} from "../../api/entities";
 import {animated, useSprings} from "react-spring";
 import {useDrag, useHover} from "react-use-gesture";
 import styled from "styled-components/macro";
 import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import {AppStateType} from "../../redux/store";
-import {movePos} from "../../hooks/movePos";
+import {movePos} from "../../serviceFunctions/movePos";
 import isEqual from "react-fast-compare";
 import {NeumorphColorsType} from "../neumorphColors";
 import {interfaceActions} from "../../redux/interfaceReducer";

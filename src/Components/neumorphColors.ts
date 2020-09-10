@@ -46,19 +46,6 @@ export const neumorphColors: Array<NeumorphColorsType> = [
     }
 ];
 
-/*export const defaultPalette: NeumorphColorsType = {
-    background: '#FDA85D',
-    concaveBackground: 'linear-gradient(145deg, #e49754, #ffb464)',
-    shadows: '14px 14px 35px #c58349, -14px -14px 35px #ffcd71',
-    innerShadows: 'inset 14px 14px 35px #c58349, inset -14px -14px 35px #ffcd71',
-    littleShadows: '5px 5px 10px #c58349, -5px -5px 10px #ffcd71',
-    color: '#141718',
-    innerLittleShadows: 'inset 5px 5px 10px #c58349, inset -5px -5px 10px #ffcd71',
-    progressBarColor: '#ffcd71',
-    progressBarHoverColor: '#c58349',
-    default: true
-};*/
-
 export const defaultPalette: NeumorphColorsType = {
     background: '#EAE8DE',
     concaveBackground: ' linear-gradient(145deg, #d3d1c8, #faf8ee)',

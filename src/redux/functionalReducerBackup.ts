@@ -1,9 +1,9 @@
-import {api} from "./api";
-import {TaskType, TodoListType} from "./entities";
+import {api} from "../api/api";
+import {TaskType, TodoListType} from "../api/entities";
 import {ThunkAction, ThunkDispatch} from "redux-thunk";
 import {AppStateType, InferActionTypes} from "./store";
 import cloneDeep from "lodash-es/cloneDeep";
-import {movePos} from "../hooks/movePos";
+import {movePos} from "../serviceFunctions/movePos";
 import {defaultPalette, NeumorphColorsType} from "../Components/neumorphColors";
 
 type InitialStateType = {

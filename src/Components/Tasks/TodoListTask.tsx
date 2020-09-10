@@ -1,10 +1,10 @@
 import React, {useCallback, useEffect, useLayoutEffect, useRef, useState} from "react";
 import {shallowEqual, useDispatch, useSelector} from 'react-redux';
-import {TaskType} from "../../redux/entities";
+import {TaskType} from "../../api/entities";
 import {AppStateType} from "../../redux/store";
 import styled from "styled-components/macro";
 import TaskButtons, {TaskButtonWrapper} from "./TaskButtons";
-import {validate} from "../../hooks/validate";
+import {validate} from "../../serviceFunctions/validate";
 import TaskCheckbox from "./TaskCheckbox";
 import {NeumorphColorsType} from "../neumorphColors";
 import isEqual from "react-fast-compare";
@@ -79,13 +79,14 @@ const TaskBackground = styled.div<{$palette: NeumorphColorsType, $editable: bool
 `;
 
 const TaskText = styled.div<{ contentEditable: boolean}>`
-  position: relative;
+    position: relative;
     padding: 10px;
     outline: none;
     display: inline-block;
     min-width: 100px;
     overflow-wrap: break-word;
     -webkit-line-break: after-white-space;
+    font-family: 'Made Evolve Sans Light', sans-serif;
     width: 100%;
     font-size: 20px;
     z-index: 3;

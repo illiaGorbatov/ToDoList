@@ -4,7 +4,7 @@ import {animated, SpringValue} from "react-spring";
 
 const WholeWrapper = styled(animated.div)`
   position: absolute;
-  font-family: NunitoSans-ExtraLight, sans-serif;
+  font-family: 'Made Evolve Sans Light', sans-serif;
   box-sizing: border-box;
   display: grid;
   place-items: center;
