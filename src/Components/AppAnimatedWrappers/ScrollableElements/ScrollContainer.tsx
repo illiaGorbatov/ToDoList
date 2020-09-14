@@ -125,7 +125,6 @@ const ScrollContainer: React.FC = () => {
     }, {domTarget: window});
     useDrag(({delta: [, y], active, swipe: [, swipeY]}) => {
         if (isMobile && y < 0 && document.fullscreenElement === null) document.documentElement.requestFullscreen();
-        if (isMobile && y > 0 && document.fullscreenElement !== null) document.exitFullscreen();
         if (!visible || (!isMobile && !scrollableState)) return;
         if (swipeY !== 0) {
             const scrolledHeight = (window.innerHeight - interfaceHeight) * swipeY;
